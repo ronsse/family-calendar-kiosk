@@ -7,7 +7,8 @@ own household on a server and a Raspberry Pi. For repairs, see [runbook.md](runb
 
 - **Node 22 or newer.** `package.json` pins `>=22`. The server runs TypeScript directly with
   `node --experimental-strip-types`, so there is no compile step for the server.
-- **Python 3.12**, only if you want the scene tools in `tools/`. The wall itself does not need
+- **Python 3.12 with Pillow** (`python3 -m pip install -r tools/requirements.txt`), for the
+  scene tools in `tools/` and for `npm test`, which runs them. The wall itself does not need
   Python.
 - **For a deployment:** a Linux host with Docker, and a Raspberry Pi 5 running Raspberry Pi OS
   Lite with a touch panel. Any browser works for development.

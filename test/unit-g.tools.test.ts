@@ -38,14 +38,16 @@ const FIRST = SETTINGS[0] as Setting; // the fixture was recorded on the first s
 // No secret ever reaches a child process: the keys are stripped even if the shell has them.
 function cleanEnv(extra: Record<string, string>): NodeJS.ProcessEnv {
   // FAL_LEDGER: an empty ledger, so the household's real spend never trips the weekly budget.
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
+  // The caller's secrets are stripped BEFORE `extra` is applied, so a test can still pass a
+  // fake one on purpose (the timer test does) and have it arrive.
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  for (const k of ['FAL_KEY', 'NOUS_API_KEY', 'NVIDIA_API_KEY', 'OP_SERVICE_ACCOUNT_TOKEN']) delete env[k];
+  return {
+    ...env,
     WALL_CONTAINER: 'ge-no-such-container',
     FAL_LEDGER: join(tmpdir(), `unit-g-no-ledger-${process.pid}.jsonl`),
     ...extra,
   };
-  for (const k of ['FAL_KEY', 'NOUS_API_KEY', 'NVIDIA_API_KEY', 'OP_SERVICE_ACCOUNT_TOKEN']) delete env[k];
-  return env;
 }
 
 // TABLE MODE, explicitly. The fixture is the activity TABLE's pick: gen-scene draws from the table

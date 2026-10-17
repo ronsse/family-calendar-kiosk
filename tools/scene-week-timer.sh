@@ -18,16 +18,17 @@ OFFSET=100
 env_file="${SCENE_OP_ENV_FILE:-tools/op.env}"
 token_file="${OP_SERVICE_ACCOUNT_TOKEN_FILE:-$HOME/.config/op-service-token}"
 
+# The env file first: it is the cheaper check and needs no secret read.
+if [ ! -f "$env_file" ]; then
+  echo "$env_file is missing; copy tools/op.env.example and fill in the references" >&2
+  exit 2
+fi
 if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
   if ! OP_SERVICE_ACCOUNT_TOKEN="$(cat "$token_file")"; then
     echo "cannot read the 1Password service token from $token_file" >&2
     exit 2
   fi
   export OP_SERVICE_ACCOUNT_TOKEN
-fi
-if [ ! -f "$env_file" ]; then
-  echo "$env_file is missing; copy tools/op.env.example and fill in the references" >&2
-  exit 2
 fi
 
 op run --env-file="$env_file" -- \

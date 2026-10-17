@@ -1,0 +1,3 @@
+# Python packages for the scene tools in tools/ (and for npm test, which runs them).
+#   python3 -m pip install -r tools/requirements.txt
+Pillow>=10
