@@ -412,6 +412,102 @@
         "pool"
       ],
       "family": "climbing"
+    },
+    {
+      "do": "wearing a pointy paper party hat and blowing a party blower that unrolls",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "party-blower"
+    },
+    {
+      "do": "carrying a wrapped present with a big bow, very carefully, in both arms",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "present"
+    },
+    {
+      "do": "holding the string of a bright balloon high overhead",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "balloon"
+    },
+    {
+      "do": "taking a turn at a striped paper piñata with a stick",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "pinata"
+    },
+    {
+      "do": "frozen mid-dance in a game of musical statues, arms up",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "dancing"
+    },
+    {
+      "do": "carrying a slice of cake on a paper plate, tongue out in concentration",
+      "seasons": [],
+      "settings": [
+        "party"
+      ],
+      "family": "cake"
+    },
+    {
+      "do": "pulling a small wheeled suitcase covered in stickers",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "suitcase"
+    },
+    {
+      "do": "pointing up at the big departure board",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "pointing"
+    },
+    {
+      "do": "waving goodbye with both arms",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "waving"
+    },
+    {
+      "do": "wearing a backpack stuffed so full it is nearly as big as they are",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "backpack"
+    },
+    {
+      "do": "holding a ticket up high to show it to the conductor",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "ticket"
+    },
+    {
+      "do": "pressing their nose to a big window to watch the trains",
+      "seasons": [],
+      "settings": [
+        "travel"
+      ],
+      "family": "window"
     }
   ],
   "shared": [
@@ -432,7 +528,9 @@
       ]
     },
     {
-      "cast": [3],
+      "cast": [
+        3
+      ],
       "do": "two of them carrying a big basket between them while the third runs ahead",
       "seasons": [],
       "settings": [
@@ -464,7 +562,9 @@
       ]
     },
     {
-      "cast": [3],
+      "cast": [
+        3
+      ],
       "do": "two of them on a see-saw while the third pushes a swing",
       "seasons": [],
       "settings": [
@@ -495,7 +595,9 @@
       ]
     },
     {
-      "cast": [3],
+      "cast": [
+        3
+      ],
       "do": "two of them carrying a tall stack of books between them while the third leads the way",
       "seasons": [],
       "settings": [
@@ -507,6 +609,20 @@
       "seasons": [],
       "settings": [
         "pool"
+      ]
+    },
+    {
+      "do": "{all_of_them} leaning over the cake together, cheeks puffed to blow out the candles",
+      "seasons": [],
+      "settings": [
+        "party"
+      ]
+    },
+    {
+      "do": "{all_of_them} sitting in a row on a pile of suitcases, swinging their legs",
+      "seasons": [],
+      "settings": [
+        "travel"
       ]
     }
   ],
@@ -521,6 +637,8 @@
     "town": "streets, a market or a village lane",
     "indoor": "inside a room: a library, a workshop, a hall",
     "snow": "snowy and frozen whatever the calendar says; the setting counts as winter",
-    "pool": "a swimming pool, indoors or out"
+    "pool": "a swimming pool, indoors or out",
+    "party": "a birthday party: balloons, a cake, presents and games",
+    "travel": "a station, an airport or a quayside on the day a trip begins"
   }
 }

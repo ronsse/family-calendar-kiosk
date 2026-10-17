@@ -4,6 +4,8 @@ A wall-mounted calendar and chore board for a family whose children can't all re
 
 ![A touch panel on a wall showing an illustrated meadow scene: three cartoon children play by a stream, on a moose and up a tree, while a black-and-white dog peeks out from the grass](docs/images/hero.png)
 
+Each week's picture is shaped by your week. The forecast sets the sky and the coats, a holiday brings its props, and a match or a dance class on the calendar scatters a ball and cones or ballet slippers through the crowd. A big event chooses the whole picture: a birthday party on the calendar puts the children at a birthday party, a ski trip puts them on a ski hill, a camping trip at a campsite. Most weeks have no big event, and the picture rotates through the season's settings. An all-day event that starts with `scene:` lets you ask for something outright, such as "scene: ski trip". Event titles never leave the house; only a `scene:` note does, because you wrote it to be sent.
+
 ## What it does
 
 ### A picture that is also the front door

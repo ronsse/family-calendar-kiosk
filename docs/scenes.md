@@ -23,6 +23,17 @@ week.
 
 ![The dog's sheet](images/dog-sheet.png)
 
+Each week's picture is shaped by your week. The forecast sets the sky and the coats, a
+holiday brings its props, and the calendar's event *categories* scatter things through the
+crowd: a ball and cones in a week with a match, ballet slippers in a week with dance. One big
+event chooses the whole setting: a birthday party is drawn at a birthday party, a ski trip on a
+ski hill, a camping trip at a campsite, a vacation at a station on the morning you set off. The
+rules are `tools/scene-headlines.json`; a weekly lesson never counts, and most weeks have no big
+event and rotate through the season's settings as usual. An all-day event whose title starts with
+`scene:` lets you ask for something outright, such as `scene: ski trip`. Event titles never leave
+the house; only a `scene:` note does, because you wrote it to be sent.
+[scene-pipeline.md](scene-pipeline.md) §2 has the design.
+
 `scenes.mode` in `household.json` picks one of three modes ([household-config.md](household-config.md)):
 
 - **`off`**: no picture. The wall opens on the board.

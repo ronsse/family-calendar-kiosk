@@ -17,6 +17,9 @@ Three sources, each optional, each degrading to nothing rather than to a guess:
             dance things and a sport thing this week" becomes props in the crowd ("ballet
             slippers", "a ball and cones"). The only titles that leave the house are the
             ones a person wrote to be sent, by starting an all-day event with `scene:`.
+            And at most one HEADLINE: a one-off event in tools/scene-headlines.json (a
+            birthday party, a ski or camping trip) that chooses the week's SETTING. It is
+            matched inside the container and comes out as an id; most weeks have none.
   holidays  A table by date. A holiday is a prop, not a premise: costumes go OVER ordinary
             clothes with the hair showing, because hair is how the children are found.
 
@@ -222,38 +225,28 @@ def weather_line(w: dict) -> str:
 # ---------------------------------------------------------------------------------------------
 # calendar
 
-COUNTS_JS = r"""
-const {DatabaseSync} = require("node:sqlite");
-const db = new DatabaseSync("/data/wall.db", {readOnly: true});
-const [from, to] = process.argv.slice(2);
-const latest = `select max(id) from sync_run r2 where r2.source_id = e.source_id and r2.state = 'promoted'`;
-const day = `coalesce(e.all_day_start_date, substr(e.starts_at_utc, 1, 10))`;
-const counts = db.prepare(`
-  select a.category, count(*) n from calendar_event e join asset a on a.id = e.icon_asset_id
-  where e.sync_run_id = (${latest}) and ${day} between ? and ? group by 1`).all(from, to);
-const hints = db.prepare(`
-  select e.title from calendar_event e
-  where e.sync_run_id = (${latest}) and ${day} between ? and ?
-    and e.all_day_start_date is not null and lower(e.title) like 'scene:%'`).all(from, to);
-console.log(JSON.stringify({
-  counts: Object.fromEntries(counts.map(r => [r.category, r.n])),
-  hints: hints.map(r => r.title.slice(6).trim()).filter(Boolean),
-}));
-"""
+CALENDAR_JS = HERE / "scene-calendar.cjs"
+HEADLINES_PATH = HERE / "scene-headlines.json"
+
+
+def load_headlines() -> list[dict]:
+    with open(HEADLINES_PATH, encoding="utf-8") as fh:
+        return json.load(fh)["headlines"]
 
 
 def fetch_calendar(monday: dt.date) -> dict:
-    """Counts by category and opt-in `scene:` notes, read in the container over stdin.
+    """Counts by category, opt-in `scene:` notes and the week's HEADLINE, read in the container.
 
-    The DB is a docker volume, so the query runs inside the container with node:sqlite rather
-    than copying the file out. Titles never leave this function except the ones after a
-    `scene:` marker — that is the one channel a person composes for the picture.
+    The DB is a docker volume, so tools/scene-calendar.cjs runs inside the container with
+    node:sqlite rather than copying the file out. Titles never leave it except the ones after a
+    `scene:` marker — that is the one channel a person composes for the picture. The headline
+    comes back as a rule id and a setting id from scene-headlines.json, never as words.
     """
     sunday = monday + dt.timedelta(days=6)
     got = subprocess.run(
         ["docker", "exec", "-i", CONTAINER, "node", "--no-warnings", "-",
-         monday.isoformat(), sunday.isoformat()],
-        input=COUNTS_JS, capture_output=True, text=True, timeout=30, check=False,
+         monday.isoformat(), sunday.isoformat(), json.dumps(load_headlines())],
+        input=CALENDAR_JS.read_text(encoding="utf-8"), capture_output=True, text=True, timeout=30, check=False,
     )
     if got.returncode != 0:
         raise RuntimeError((got.stderr or got.stdout).strip().splitlines()[-1:] or ["exit "
@@ -280,7 +273,7 @@ def compute(monday: dt.date) -> dict:
         "week": iso_week(monday), "monday": monday.isoformat(),
         "fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "weather": None, "weather_line": "", "calendar": None, "props_line": "",
-        "hints": [], "holidays": holidays_in(monday), "notes": [],
+        "hints": [], "holidays": holidays_in(monday), "headline": None, "notes": [],
     }
     place = load_place()
     # Open-Meteo forecasts 16 days ahead. Further out it answers 400, which reads as a broken
@@ -301,6 +294,11 @@ def compute(monday: dt.date) -> dict:
         cal = fetch_calendar(monday)
         ctx["calendar"] = cal["counts"]
         ctx["hints"] = cal["hints"]
+        ctx["headline"] = cal.get("headline")
+        if ctx["headline"]:
+            h = ctx["headline"]
+            ctx["notes"].append(f"headline: {h['id']} from the {h['source']} — "
+                                f"the setting is {h['setting']}")
     except Exception as exc:  # noqa: BLE001
         ctx["notes"].append(f"calendar: none ({type(exc).__name__}: {exc})")
     # The headcount comes from the same cast file the prompt is built from (db/cast.json).

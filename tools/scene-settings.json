@@ -349,6 +349,26 @@
       ],
       "swimwear": true,
       "wardrobe": "swimming clothes. Each child wears a swim shirt (a rash guard, short- or long-sleeved) on top and swim shorts or swimsuit bottoms below, in bright colours, a different combination each. Each child's hair keeps exactly its own colour, length and style — no swim caps, and no goggles over the face."
+    },
+    {
+      "id": "birthday-party",
+      "_comment": "A HEADLINE setting (tools/scene-headlines.json): drawn only in a week with a birthday party on the calendar or a `scene:` note asking for one, never by the rotation — hence \"season\": []. Indoors so it is right in any month, with a garden through the doors for the weather line to land on.",
+      "season": [],
+      "setting": "a birthday party in a big sunny room with wide glass doors open onto a garden, strings of bunting and paper lanterns zig-zagging overhead, a long table under a spotty cloth with a tall layered cake covered in lit candles, a heap of wrapped presents with curly ribbons, balloons bobbing against the ceiling",
+      "crowd": "party guests of every age, a grown-up carrying a jug of lemonade, an entertainer twisting long balloons into animals, a stack of paper plates and cups, a small child asleep under the table, a cat stealing a sausage roll, streamers, a gramophone, a grandparent in a paper crown, a cake knife waiting on a napkin",
+      "tags": [
+        "party"
+      ]
+    },
+    {
+      "id": "setting-off",
+      "_comment": "A HEADLINE setting (tools/scene-headlines.json): drawn only in a week with a trip on the calendar (vacation, flight, road trip) or a `scene:` note asking for one — hence \"season\": []. A grand old station rather than an airport: it reads as SETTING OFF for any kind of trip, and a station's crowd is a seek-and-find by nature.",
+      "season": [],
+      "setting": "a grand old railway station on the morning of a trip, a high arched roof of glass and iron, a red steam train and a sleek blue train side by side at the platforms, a huge round clock hanging from the roof, a departure board of coloured panels, sunlight slanting through steam",
+      "crowd": "travellers with suitcases and hat boxes, a porter pushing a tall trolley of luggage, a family hugging goodbye, a conductor with a whistle, a pigeon on the clock, a kiosk selling pretzels, a newspaper stand, a stack of postcards, a lost umbrella, a guard waving a green flag",
+      "tags": [
+        "travel"
+      ]
     }
   ]
 }

@@ -237,6 +237,36 @@ than a hole in the rule:
   containing a name is refused at the wire like anything else. The channel is deliberate; it is
   not unchecked.
 
+### 2.3a A big event chooses the setting (2026-10-17)
+
+Categories and notes above only scatter props through the crowd. A week with one big event in
+it — a birthday party, a ski trip, a camping weekend, a vacation — now chooses the whole
+picture's **setting** instead of the season's rotation. Most weeks have no such event, and those
+weeks are drawn exactly as before (the plan for a week with no headline is byte-identical).
+
+The rules are a table, `tools/scene-headlines.json`: each names whole `words`, an optional `with`
+(the title must also carry one of these; `{child}` is any active child's name on the wall) and
+the `setting` it chooses. The first rule any event matches wins, so the specific sits above the
+general and a ski trip is a ski hill rather than a station. §2.1 still holds: the match runs
+**inside the wall container** in `tools/scene-calendar.cjs`, which reads the titles and the
+children's names there and prints only the rule's id and the setting id. Three rules keep it rare:
+
+- **A routine is not an event.** A title that also appears a week or more away from this
+  occurrence (the wall holds about sixty days ahead) is a lesson or a club, so a ski lesson every
+  Saturday never turns every winter picture into a ski hill. A multi-day all-day event is one
+  row and still counts.
+- **A birthday needs a party or one of the children.** An aunt's birthday on a contacts calendar
+  is not a party picture; a child's birthday, or anybody's birthday party, is.
+- **A `scene:` note is matched first, and taken at its word.** `scene: birthday` needs no
+  "party" beside it, because nobody types that by accident.
+
+A person's `--setting` still wins, and a household's `scenes.settings` allowlist can rule a
+headline setting out. The two settings that exist only for headlines, `birthday-party` and
+`setting-off`, carry `"season": []` so the rotation never draws them unasked, and their own
+places (`party`, `travel`) in `scene-activities.json`. `check_headlines()` refuses to run if a
+rule names a setting that does not exist. The headline is frozen with the rest of the brief, and
+the dry run prints it on the `setting :` line.
+
 ## 2.4 Where the activities come from — proposed, and my recommendation
 
 > **Reversed 2026-10-12 — see §2.5.** The household asked for written activities, and the

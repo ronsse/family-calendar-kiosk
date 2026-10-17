@@ -253,6 +253,9 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   **Only a COMPLETE brief freezes** (2026-10-01): one missing weather (with a place configured)
   or the calendar is provisional and is fetched again next run. W40's had been frozen sixteen
   days early by a test run, with no forecast and stale counts. `npm run verify:context`.
+  **A one-off big event picks the SETTING** (2026-10-17): `tools/scene-headlines.json`, matched
+  inside the container by `tools/scene-calendar.cjs` so only a rule id leaves. A title that recurs
+  a week or more away is routine and never counts; a week with no headline is byte-identical.
 - **The Sunday timer retries an ERROR, never a refusal.** On 2026-09-27 DNS failed at 02:54,
   `op read` could not reach 1Password, scene-week exited 2 — and nothing ran for a week, the
   wall silently kept the old picture. `scene-week.service` now restarts on failure every 30 min,

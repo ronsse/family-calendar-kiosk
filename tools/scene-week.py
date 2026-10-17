@@ -53,6 +53,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 REPO = HERE.parent
 STYLES = json.loads((HERE / "scene-styles.json").read_text())["styles"]
 SETTINGS = json.loads((HERE / "scene-settings.json").read_text())["settings"]
+ALL_SETTINGS = list(SETTINGS)
 COMPOSITIONS = json.loads((HERE / "scene-compositions.json").read_text())["compositions"]
 ALL_COMPOSITIONS = list(COMPOSITIONS)
 PREMISES = json.loads((HERE / "scene-premises.json").read_text())["premises"]
@@ -258,6 +259,39 @@ def check_tables(children: int = 3, written: bool = False) -> None:
         )
 
 
+def headline_setting(ctx: dict | None, forced: str | None) -> tuple[str | None, str]:
+    """The setting this week must be drawn in, if anything but the rotation decides it.
+
+    A person's `--setting` wins. Then the week's HEADLINE (scene_context: a one-off birthday
+    party, ski trip or camping trip on the calendar, or an all-day `scene:` note) — unless the
+    household's `scenes.settings` allowlist leaves that setting out, which is a household saying
+    it never wants it. Otherwise None, and choose() rotates exactly as it always has: most weeks
+    have no headline, and a week without one must draw the same picture it drew before this
+    existed. A headline setting stays OUT of the scene id, like everything the week chose.
+    """
+    if forced is not None:
+        return forced, "forced by --setting"
+    head = (ctx or {}).get("headline")
+    if not head:
+        return None, ""
+    if not any(st["id"] == head["setting"] for st in SETTINGS):
+        return None, (f"headline {head['id']!r} wants {head['setting']!r}, which the household's "
+                      "scenes.settings leaves out — rotation's pick")
+    return head["setting"], f"headline: {head['id']}, from the {head['source']}"
+
+
+def check_headlines() -> None:
+    """Every headline names a setting that exists. A typo here would otherwise surface only on
+    the one week the event happens, as a crash after the brief was frozen."""
+    ids = {st["id"] for st in ALL_SETTINGS}
+    for h in scene_context.load_headlines():
+        if h.get("setting") not in ids:
+            raise SystemExit(f"scene-headlines.json: {h.get('id')!r} names setting "
+                             f"{h.get('setting')!r}, which is not in scene-settings.json")
+        if not h.get("words"):
+            raise SystemExit(f"scene-headlines.json: {h.get('id')!r} has no words and can never match")
+
+
 def check_settings_cover_the_year() -> None:
     months = set()
     for s in SETTINGS:
@@ -414,6 +448,7 @@ def main() -> int:
     try:
         check_tables(children=n_children, written=written_mode)
         check_settings_cover_the_year()
+        check_headlines()
     except SystemExit as err:
         print(err, file=sys.stderr)
         limited = [k for k in ("styles", "settings", "premises") if cfg.get(k) is not None]
@@ -425,7 +460,15 @@ def main() -> int:
     # picture from a Monday one. And a Sunday belongs to the week AHEAD (scene_context.week_for_today).
     monday = parse_week(args.week) if args.week else scene_context.week_for_today()
     week = iso_week(monday)
-    style, setting, composition = choose(monday, args.setting, args.style, args.camera)
+    # THIS WEEK. Frozen on first use so a re-run says the same words (the seed already makes
+    # the rest of the prompt repeat). Each source that failed says so and the picture does
+    # without it; none of them is a reason to have no picture. Read BEFORE the setting is
+    # chosen, because a headline event can choose it.
+    context_path = None
+    if not args.no_context:
+        ctx, context_path = scene_context.context_for(monday)
+    setting_id, setting_note = headline_setting(ctx if context_path else None, args.setting)
+    style, setting, composition = choose(monday, setting_id, args.style, args.camera)
     premise = next(p for p in PREMISES if p["id"] == args.premise)
     # A premise that names its camera or is not drawn in this week's style family is settled
     # here, in the plan, rather than as a refusal after the key has been read.
@@ -466,13 +509,6 @@ def main() -> int:
         except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as err:
             style_note = f"COULD NOT READ THE WALL ({err}) — rotation's pick, may repeat"
 
-    # THIS WEEK. Frozen on first use so a re-run says the same words (the seed already makes
-    # the rest of the prompt repeat). Each source that failed says so and the picture does
-    # without it; none of them is a reason to have no picture.
-    context_path = None
-    if not args.no_context:
-        ctx, context_path = scene_context.context_for(monday)
-
     # Decided here, in the plan, rather than down in the generate path: `--dry-run` exists to
     # show for free exactly what a paid run would draw, and the one thing on this page most
     # worth reading before spending is which book moment it is about to put on the wall.
@@ -484,7 +520,7 @@ def main() -> int:
     print(f"week    : {week}")
     print(f"id      : {scene_id}")
     print(f"style   : {style['id']}  ({style_note})")
-    print(f"setting : {setting['id']}")
+    print(f"setting : {setting['id']}" + (f"  ({setting_note})" if setting_note else ""))
     print(f"camera  : {composition['id']}")
     print(f"premise : {args.premise}")
     if moment:
