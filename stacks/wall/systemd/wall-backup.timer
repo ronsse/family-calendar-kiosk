@@ -1,0 +1,12 @@
+[Unit]
+Description=family-calendar — daily wall backup
+
+[Timer]
+# 04:45 UTC. On the reference install this sits after the host's own nightly backup and before
+# a job that mirrors the backups directory to a second disk, so tonight's copy is on two disks
+# by morning. Move it to fit your own backup schedule.
+OnCalendar=*-*-* 04:45:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

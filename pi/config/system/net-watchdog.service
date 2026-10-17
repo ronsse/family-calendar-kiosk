@@ -1,0 +1,9 @@
+[Unit]
+Description=Put the wall back on the network if its Wi-Fi drops and stays down
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+# Written by setup.sh: KIOSK_ENV points at the kiosk user's kiosk.env, for DASHBOARD_URL.
+EnvironmentFile=-/etc/default/net-watchdog
+ExecStart=/usr/local/sbin/net-watchdog.sh

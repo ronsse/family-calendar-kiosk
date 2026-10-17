@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<labwc_config>
+
+  <core>
+    <gap>0</gap>
+  </core>
+
+  <theme>
+    <cornerRadius>0</cornerRadius>
+  </theme>
+
+  <!--
+    One inert keybind, deliberately.
+
+    labwc falls back to a built-in default keybind set when a config defines none, so an
+    empty <keyboard> section is NOT the same as "no shortcuts" — the defaults would still
+    ship Alt+Tab, Alt+F4 and friends. Defining a single no-op replaces that whole set.
+
+    Children and guests touch this screen (PRD §4: guardrails are architectural, never
+    prompt- or convention-level). There is no keyboard on the wall, but there is a USB
+    port. Recovery is over SSH.
+  -->
+  <keyboard>
+    <keybind key="W-Escape">
+      <action name="None"/>
+    </keybind>
+  </keyboard>
+
+  <!-- Mouse/touch defaults are kept: they are what deliver taps to the surface. -->
+  <mouse>
+    <default/>
+  </mouse>
+
+</labwc_config>

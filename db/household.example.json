@@ -1,0 +1,22 @@
+{
+  "_comment": "The household's SETTINGS (schema v1). Copy to db/household.json (gitignored) and apply with: npm run provision -- --settings db/household.json. Every key but version is optional; a missing one is the default. The roster (children, routines, chores) is db/household.example.sql.",
+  "version": 1,
+  "timezone": "America/Denver",
+  "locale": "en-US",
+  "currency": "USD",
+  "features": { "chores": true, "money": true, "routines": true, "countdowns": true },
+  "boardWindows": [
+    { "opensAtLocal": "05:45", "closesAtLocal": "08:30" },
+    { "opensAtLocal": "18:45", "closesAtLocal": "20:45" }
+  ],
+  "pets": [{ "id": "dog", "kind": "dog", "name": "Biscuit" }],
+  "scenes": {
+    "mode": "generated",
+    "provider": "fal",
+    "styles": null,
+    "settings": null,
+    "premises": ["plain"],
+    "weeklyBudgetUsd": 1.0,
+    "activities": "written"
+  }
+}

@@ -1,0 +1,9 @@
+[Unit]
+Description=Restart the wall kiosk if the browser process is hung-but-alive
+After=kiosk.service kiosk-watchdog.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/kiosk.env
+Environment=KIOSK_PROFILE_DIR=%h/.config/chromium-kiosk
+ExecStart=%h/.local/bin/kiosk-liveness.sh

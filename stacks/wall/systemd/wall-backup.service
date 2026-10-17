@@ -1,0 +1,16 @@
+[Unit]
+# The wall's database and picture library, out of the Docker volume. See tools/wall-backup.sh.
+Description=family-calendar — back up the wall's database and pictures
+Documentation=file://%h/projects/family-calendar/docs/runbook.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/family-calendar
+# Where the tarballs go: ${WALL_BACKUP_DEST:-${WALL_DATA_ROOT:-/srv/family-calendar}/backups/family-wall}
+# (tools/wall-backup.sh). Empty here on purpose; set the real value in the optional,
+# untracked ~/.config/family-calendar/units.env, which install.sh seeds and never overwrites.
+# EnvironmentFile= wins over Environment=, so a value there replaces this one.
+Environment=WALL_DATA_ROOT=
+EnvironmentFile=-%h/.config/family-calendar/units.env
+ExecStart=%h/projects/family-calendar/tools/wall-backup.sh
+TimeoutStartSec=10min

@@ -1,0 +1,9 @@
+[
+  { "entity_id": "calendar.household", "name": "Household" },
+  { "entity_id": "calendar.child_a", "name": "Child A" },
+  { "entity_id": "calendar.child_b", "name": "Child B" },
+  { "entity_id": "calendar.child_c", "name": "Child C" },
+  { "entity_id": "calendar.adult_one", "name": "Adult One" },
+  { "entity_id": "calendar.holidays", "name": "Holidays" },
+  { "entity_id": "calendar.hobby", "name": "Hobby" }
+]

@@ -1,0 +1,526 @@
+{
+  "_comment": [
+    "What the three children are DOING in a scene. Supplied by the household 2026-09-02, with",
+    "the instruction that they must not always be doing the same thing — the first scenes had",
+    "flowers / marshmallow / scooter welded to slots 1 / 2 / 0 and every picture repeated it.",
+    "",
+    "THIS FILE REPLACED A CONVENTION, AND THE CONVENTION HAD A REASON. assets/scenes/*.json used",
+    "to say that slots keep the same activity across scenes 'because the pre-reader finds herself",
+    "by look and position, and a scene change that also moves everyone would make her hunt",
+    "again'. That trade is now made the other way ON PURPOSE: hunting is the POINT of a",
+    "search-and-find picture, and the identity channel that survives is the one that was always",
+    "doing the work — hair and garment colour, which are pinned by the portraits and unchanged.",
+    "",
+    "`solo` entries are drawn per child. `shared` entries put two or three of them in one",
+    "activity together, which is the thing the old structure could not express at all.",
+    "",
+    "`seasons` is a filter, not a promise: an empty list means any time of year. The scheduler",
+    "picks activities that suit the setting and the weather, so 'sledding' and 'lake' are not",
+    "offered in the same week.",
+    "",
+    "SHARED ACTIVITIES FIGHT THE TAP GUTTER, and the refusal is what mediates it. 'all three",
+    "sitting in a row on a fallen log' put them 1px and 4px apart on 2026-09-03 — no overlap, but",
+    "well under the 16px inert gutter two tap targets need, so scene-regions.py refused the whole",
+    "scene. That is the system working: a re-roll costs $0.14 and a wrong tap costs a child",
+    "opening her sibling's screen. gen-scene.py now asks for a whole child's width between them,",
+    "which helps; entries that seat them in a row will still refuse more often than the rest.",
+    "",
+    "`family` STOPS TWO CHILDREN DOING THE SAME KIND OF THING. Three of the twenty-one solo",
+    "entries are animal-riding, so an unconstrained sample of three drew one child on a bear and",
+    "another on an elk in the same picture — which reads as the generator having one idea rather",
+    "than as three children with three ideas. pick_activities() now takes at most one entry per",
+    "family, which is also why the list wants breadth of KIND rather than more entries of a kind",
+    "already covered.",
+    "",
+    "EVERY ENTRY NAMES ITS PLACES, AND THERE IS NO 'ANYWHERE' (2026-10-04). `settings` used to be",
+    "allowed empty, meaning 'fits anywhere', and a setting with empty `tags` admitted every row —",
+    "both on purpose, so that nothing untagged could ever produce an empty menu. What it produced",
+    "instead was a deer ride and a tree climb inside a school library: the outdoor table carried",
+    "forward into a room it was never written for, and nothing said so until the picture came back.",
+    "The filter fails CLOSED now. `places` below is the whole vocabulary; an entry with no places,",
+    "a setting with no tags, or a tag outside the list is refused by `scene-week.check_tables()`",
+    "before anything is paid for, and so is any setting that cannot fill three different KINDS of",
+    "activity in every season it is drawn in. tools/scene_activities.py is the one definition."
+  ],
+  "solo": [
+    {
+      "do": "riding on the back of a large friendly moose",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "mountain"
+      ],
+      "family": "animal-riding"
+    },
+    {
+      "do": "riding on the back of a big gentle bear",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "mountain"
+      ],
+      "family": "animal-riding"
+    },
+    {
+      "do": "riding on the back of a friendly elk",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "mountain"
+      ],
+      "family": "animal-riding"
+    },
+    {
+      "do": "holding a bird that has landed on their hands",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "park",
+        "mountain",
+        "town",
+        "beach",
+        "snow"
+      ],
+      "family": "animal"
+    },
+    {
+      "do": "balancing along a low wall or a log with both arms out",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "park",
+        "town",
+        "snow"
+      ],
+      "family": "gymnastics"
+    },
+    {
+      "do": "throwing a ball",
+      "seasons": [],
+      "settings": [
+        "park",
+        "meadow",
+        "beach",
+        "town"
+      ],
+      "family": "ball"
+    },
+    {
+      "do": "fishing from the bank with a small rod",
+      "seasons": [],
+      "settings": [
+        "lake",
+        "river",
+        "forest",
+        "beach"
+      ],
+      "family": "water"
+    },
+    {
+      "do": "hiking with a small backpack and a walking stick",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "mountain"
+      ],
+      "family": "walking"
+    },
+    {
+      "do": "riding a bicycle",
+      "seasons": [],
+      "settings": [
+        "park",
+        "town",
+        "meadow"
+      ],
+      "family": "wheels"
+    },
+    {
+      "do": "flying a kite on a long string",
+      "seasons": [],
+      "settings": [
+        "meadow",
+        "beach",
+        "park"
+      ],
+      "family": "sky"
+    },
+    {
+      "do": "climbing high in the branches of a tree",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "park",
+        "meadow"
+      ],
+      "family": "climbing"
+    },
+    {
+      "do": "sitting on a branch reading a book",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "park"
+      ],
+      "family": "climbing"
+    },
+    {
+      "do": "splashing at the edge of the water",
+      "seasons": [
+        "spring",
+        "summer"
+      ],
+      "settings": [
+        "lake",
+        "river",
+        "beach"
+      ],
+      "family": "water"
+    },
+    {
+      "do": "building a snowman",
+      "seasons": [
+        "winter"
+      ],
+      "settings": [
+        "snow",
+        "park",
+        "meadow",
+        "forest",
+        "mountain",
+        "town"
+      ],
+      "family": "snow"
+    },
+    {
+      "do": "pulling a sledge up a slope",
+      "seasons": [
+        "winter"
+      ],
+      "settings": [
+        "snow",
+        "mountain",
+        "meadow",
+        "park"
+      ],
+      "family": "snow"
+    },
+    {
+      "do": "jumping in a puddle in wellington boots",
+      "seasons": [
+        "spring",
+        "autumn"
+      ],
+      "settings": [
+        "town",
+        "park",
+        "forest",
+        "meadow"
+      ],
+      "family": "water"
+    },
+    {
+      "do": "carrying a lantern along a path",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "town",
+        "snow"
+      ],
+      "family": "walking"
+    },
+    {
+      "do": "toasting a marshmallow over a campfire",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow",
+        "lake"
+      ],
+      "family": "campfire"
+    },
+    {
+      "do": "picking wildflowers",
+      "seasons": [
+        "spring",
+        "summer"
+      ],
+      "settings": [
+        "meadow",
+        "park"
+      ],
+      "family": "foraging"
+    },
+    {
+      "do": "riding a scooter along a path",
+      "seasons": [],
+      "settings": [
+        "park",
+        "meadow",
+        "town"
+      ],
+      "family": "wheels"
+    },
+    {
+      "do": "pulling a book down from a high shelf, up on a little step stool",
+      "family": "books",
+      "seasons": [],
+      "settings": [
+        "indoor"
+      ]
+    },
+    {
+      "do": "curled up in a big beanbag with a picture book open on their knees",
+      "family": "reading",
+      "seasons": [],
+      "settings": [
+        "indoor"
+      ]
+    },
+    {
+      "do": "building a tall wobbly tower out of wooden blocks",
+      "family": "building",
+      "seasons": [],
+      "settings": [
+        "indoor"
+      ]
+    },
+    {
+      "do": "painting a picture at a little wooden easel",
+      "family": "art",
+      "seasons": [],
+      "settings": [
+        "indoor",
+        "park",
+        "town"
+      ]
+    },
+    {
+      "do": "pushing a little wooden trolley loaded with books",
+      "family": "wheels",
+      "seasons": [],
+      "settings": [
+        "indoor"
+      ]
+    },
+    {
+      "do": "playing a small drum",
+      "family": "music",
+      "seasons": [],
+      "settings": [
+        "indoor",
+        "town",
+        "park"
+      ]
+    },
+    {
+      "do": "eating a big ice-cream cone",
+      "family": "treat",
+      "seasons": [
+        "spring",
+        "summer"
+      ],
+      "settings": [
+        "town",
+        "park",
+        "beach"
+      ]
+    },
+    {
+      "do": "holding a toffee apple on a stick",
+      "family": "treat",
+      "seasons": [
+        "autumn"
+      ],
+      "settings": [
+        "town",
+        "park"
+      ]
+    },
+    {
+      "do": "carrying a pumpkin almost too big to hold",
+      "family": "harvest",
+      "seasons": [
+        "autumn"
+      ],
+      "settings": [
+        "town",
+        "park",
+        "meadow"
+      ]
+    },
+    {
+      "do": "skating in little circles on the ice",
+      "family": "ice",
+      "seasons": [
+        "winter"
+      ],
+      "settings": [
+        "snow",
+        "lake"
+      ]
+    },
+    {
+      "do": "jumping off the side of the pool feet-first, mid-air above the water",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "jumping"
+    },
+    {
+      "do": "whooshing out of the bottom of a curly water slide",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "sliding"
+    },
+    {
+      "do": "sitting on the edge of the pool, kicking their feet and splashing",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "splashing"
+    },
+    {
+      "do": "standing in the shallow end holding a big bright beach ball over their head",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "ball"
+    },
+    {
+      "do": "lying back on a bright foam pool noodle in the shallow end",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "floating"
+    },
+    {
+      "do": "climbing the ladder out of the pool, dripping",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ],
+      "family": "climbing"
+    }
+  ],
+  "shared": [
+    {
+      "do": "{all_of_them} building a den out of long sticks together",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "park"
+      ]
+    },
+    {
+      "do": "{all_of_them} sitting in a row on a fallen log",
+      "seasons": [],
+      "settings": [
+        "forest",
+        "meadow"
+      ]
+    },
+    {
+      "cast": [3],
+      "do": "two of them carrying a big basket between them while the third runs ahead",
+      "seasons": [],
+      "settings": [
+        "town",
+        "park",
+        "meadow",
+        "forest"
+      ]
+    },
+    {
+      "do": "{all_of_them} in a rowing boat on the water",
+      "seasons": [
+        "spring",
+        "summer",
+        "autumn"
+      ],
+      "settings": [
+        "lake",
+        "river"
+      ]
+    },
+    {
+      "do": "{all_of_them} throwing a ball between them",
+      "seasons": [],
+      "settings": [
+        "park",
+        "meadow",
+        "beach"
+      ]
+    },
+    {
+      "cast": [3],
+      "do": "two of them on a see-saw while the third pushes a swing",
+      "seasons": [],
+      "settings": [
+        "park"
+      ]
+    },
+    {
+      "do": "{all_of_them} lying on their fronts looking into a rock pool",
+      "seasons": [],
+      "settings": [
+        "beach",
+        "river",
+        "lake"
+      ]
+    },
+    {
+      "do": "{all_of_them} having a snowball fight",
+      "seasons": [
+        "winter"
+      ],
+      "settings": [
+        "snow",
+        "park",
+        "meadow",
+        "forest",
+        "mountain",
+        "town"
+      ]
+    },
+    {
+      "cast": [3],
+      "do": "two of them carrying a tall stack of books between them while the third leads the way",
+      "seasons": [],
+      "settings": [
+        "indoor"
+      ]
+    },
+    {
+      "do": "{all_of_them} sitting in a row on the pool edge with their feet in the water",
+      "seasons": [],
+      "settings": [
+        "pool"
+      ]
+    }
+  ],
+  "places": {
+    "forest": "among trees",
+    "meadow": "open grass, a lawn or a hillside",
+    "park": "a playground, a green or a garden",
+    "mountain": "high, rocky, steep ground",
+    "lake": "the shore of still fresh water",
+    "river": "the bank of moving water",
+    "beach": "sand and sea",
+    "town": "streets, a market or a village lane",
+    "indoor": "inside a room: a library, a workshop, a hall",
+    "snow": "snowy and frozen whatever the calendar says; the setting counts as winter",
+    "pool": "a swimming pool, indoors or out"
+  }
+}

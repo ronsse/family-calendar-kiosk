@@ -1,0 +1,134 @@
+{
+  "_comment": [
+    "The committed style table (docs/scene-pipeline.md WP-0). Extracted 2026-09-02 from five",
+    "example prompts the household supplied. The SUBJECT was stripped out of each — a boy in an",
+    "oak tree, a whale in the sky, a rainy window seat — and only the styling kept, because the",
+    "setting comes from the week (weather, and the coming weekend's event CATEGORY) and the style",
+    "is what rotates.",
+    "",
+    "WHAT IS NOT IN HERE, ON PURPOSE: any clause about who the children are. That lives once, in",
+    "gen-scene.py's CHILDREN block, and it is IDENTICAL across every style. The children are the",
+    "one thing that must not vary, so their clause is not a per-style field that could drift.",
+    "",
+    "THE WORDING IS THE HOUSEHOLD'S, NOT AN ADAPTATION OF IT. A first pass softened two of these",
+    "on the repo's display rules and was WRONG to. Those rules — no hairline strokes, no sub-14px",
+    "type — are about UI, where a stroke either resolves or the element is broken. An illustration",
+    "has no such duty: texture that softens into tone at distance is texture working. Both",
+    "softenings were A/B generated and measured (see each `wall` field) and both were reverted.",
+    "",
+    "The one rule that IS load-bearing here is not about strokes at all. This screen is",
+    "NAVIGATION — the rail is hidden on it, so a child who cannot find herself has no way onward.",
+    "Every style must leave the three children findable at ten feet. Detail finer than that is a",
+    "reward for walking up, which H8 calls an asset on a screen a child touches.",
+    "",
+    "`crowd` says whether the style supports the dense search-and-find treatment. Three findable",
+    "children is mandatory everywhere; a Waldo-grade crowd behind them is optional.",
+    "",
+    "`family` (added 2026-09-12) is illustration | anime | photoreal. It picks the noun in the",
+    "prompt's first line (an illustration is drawn; a photograph is taken) and the fal model that",
+    "draws it, from gen-scene.py DEFAULT_MODEL — or set `model` on the row to pin one. A model may",
+    "only be asked for a family it was MEASURED to hold the cast in (tools/fal_api.py MODELS);",
+    "gen-scene.py refuses the others rather than trying them."
+  ],
+  "styles": [
+    {
+      "id": "house",
+      "label": "Colouring-book cartoon",
+      "family": "illustration",
+      "crowd": true,
+      "wall": "The incumbent. Flat, heavy-outlined, maximum contrast — the benchmark the other four are judged against, and the safe fallback if a style sheet is ever rejected.",
+      "style": "Style: children's colouring-book cartoon. VERY THICK uniform black outlines on every shape, flat solid fills, no shading, no gradients, no texture.",
+      "palette": "Colours: flat solid fills from this palette — sand #E7DCC9, deep sand #E0D3BC, tan #B9A888, brown #7D6B57, cream #FFFDF9, blue #0D3399, magenta #D02076, amber #FFAE14, green #128239, red #A8221B, and near-black #171310 for the outlines only. The sky is plain flat sand #E7DCC9. Every shape is BRIGHTLY and FLATLY coloured."
+    },
+    {
+      "id": "pencil-spot",
+      "label": "Graphite with spot colour",
+      "family": "illustration",
+      "crowd": true,
+      "wall": "TESTED ON THE REAL THING 2026-09-02, and the household's original wording was kept whole. An earlier pass removed 'fine crosshatching' on the repo's no-hairline-strokes rule; that rule is about UI — type, card borders, chrome — where a stroke either resolves or the element is broken. Illustration texture has no such duty: crosshatching that softens into tone at ten feet is crosshatching WORKING. Measured, the fine version retains 80% of its RMS contrast at the 10-foot acuity limit against 82% for the softened one — the same — while carrying materially MORE contrast to begin with (58.7 vs 50.7). It is the better image on this panel, not the riskier one. The one genuinely load-bearing part is unchanged and is not about strokes: the spot colour is BOUND TO THE THREE CHILDREN, so they are the only saturated things in a graphite world. That is the best fit of the six — spot colour and 'find yourself' are the same idea.",
+      "style": "Style: children's-book illustration in detailed pencil sketch style with selective spot colour. The entire scene is rendered in beautifully detailed graphite pencil with FINE CROSSHATCHING and subtle shading, showing the intricate texture of bark, leaves and fabric. Masterful fine detail, with individual leaves carefully drawn. Clouds are rendered with soft pencil shading creating atmospheric depth. The paper texture is visible, giving it an authentic hand-drawn quality.",
+      "palette": "Colours: the whole scene is graphite grey and off-white paper EXCEPT {the_children} in the foreground, who {are} the only fully coloured things in the picture — their clothing in strong saturated colour against the pencil world. The spot colour elements create focal points that draw the eye through the composition."
+    },
+    {
+      "id": "dreamlike",
+      "label": "Luminous dream",
+      "family": "illustration",
+      "crowd": false,
+      "wall": "TESTED 2026-09-02 with the blur clause left in, and the worry was unfounded. 'A soft, slightly blurred dreamlike quality' is read by the model as ATMOSPHERE — palette, glow, haze in the distance — not as a Gaussian blur over the subjects: the three children came back with crisp outlines and full saturation against it. An earlier pass dropped the clause on the theory that soft edges would stop a three-year-old finding herself. They do not, because they were never applied to her. `crowd` stays false, which is about composition rather than the panel: floating islands and drifting jellyfish are sparse by nature, and forcing a dense crowd into this style makes clutter rather than a search.",
+      "style": "Style: whimsical fantasy children's-book illustration with a dreamlike colour palette. The entire scene has a soft, slightly blurred dreamlike quality, as if viewed through enchanted glass. Colours are ethereal and luminous, with gentle light seeming to emanate from within every element. The composition sweeps upward, creating a feeling of flight and freedom.",
+      "palette": "Colours: ethereal and luminous — the sky transitions from warm peach at the horizon through soft lavender to deep midnight blue with scattered stars above. Soft pink, lavender, coral and mint. Tiny glowing lights drift like luminous lanterns."
+    },
+    {
+      "id": "cozy-painted",
+      "label": "Warm painterly",
+      "family": "illustration",
+      "crowd": false,
+      "wall": "Unchanged from the household's wording. The one addition is composition, not correction: the three children sit INSIDE the warm pool of light rather than at its edge, because this style's whole logic is a lit pool and a dark surround and a child rendered in the shadow half is a child who cannot be found.",
+      "style": "Style: cosy children's-book digital painting with warm rich lighting from a single golden source, casting a beautiful warm glow. Visible digital brushstrokes give it a handcrafted painterly quality, with rich detail in wood grain, soft fabric texture and warm shadows in the corners. {The_children} in the foreground {are} placed INSIDE the warm pool of light, fully lit, never in the shadowed half.",
+      "palette": "Colours: dominated by warm amber, gold, deep brown and soft cream, set against a cool blue-grey for anything outside or in shadow. Rich and warm rather than bright and flat."
+    },
+    {
+      "id": "naive-crayon",
+      "label": "Child's own drawing",
+      "family": "illustration",
+      "crowd": true,
+      "wall": "Unchanged from the household's wording, and the note here is a DESIGN observation rather than a claim about the display: round-headed stick proportions strip out nearly every way to tell one child from another. That got SHARPER on 2026-09-05, when clothing stopped being an identity channel — in this style a child is now distinguished by hair colour and hair length alone, drawn in thick crayon strokes. Portraits 2 and 3 are both blonde. This is the one style where that is likely to actually fail, and the identity check in scene-regions.py is what will catch it.",
+      "style": "Style: bright naive children's illustration resembling a child's own drawing. Simple proportions with large round heads, big bright eyes and wide wobbly smiles, drawn in thick crayon-like strokes. Broad visible strokes of colour that do not quite reach every edge, energetic back-and-forth crayon fill, slightly wobbly lines and uneven colouring. The charming imperfection and joyful energy of a child's artwork.",
+      "palette": "Colours: bright primaries — red, blue, yellow and green — applied in thick crayon strokes, with pink and orange for flowers and details. The sun is a big yellow circle with straight lines radiating out. Everything is bright and cheerfully over-saturated."
+    },
+    {
+      "id": "lantern-night",
+      "label": "Luminous night",
+      "family": "illustration",
+      "crowd": false,
+      "wall": "NOT YET TESTED, and after pencil-spot and dreamlike both came back fine the prior should be that this one is fine too. The stated concern is different in kind from those two, though — it is about overall LUMINANCE rather than fine detail, and a dark picture on a bright wall is the one claim a contrast measurement cannot settle from here. Keep the 'children live inside lit pools' clause until somebody has looked at it on the glass; it costs nothing and it is good composition regardless. It did force a restatement worth having: 'the top strip must be calm and light' was written because white chrome pills float over that corner above a pale sand sky. A deep indigo sky serves those pills BETTER. The rule was always 'low in detail and even in tone'.",
+      "style": "Style: magical night-time children's-book illustration with luminous atmospheric lighting. A warm golden light source casts a rich circle of light, in strong contrast with cool moonlight elsewhere. Soft edges where light meets darkness; rich and atmospheric. {The_children} in the foreground {are} each fully inside a pool of warm light, brightly lit head to foot, with clear readable outlines — nothing about them is hidden in shadow.",
+      "palette": "Colours: deep indigo night sky scattered with bright stars and a large crescent moon, against rich warm gold and amber where the light falls. Points of soft warm firefly light and glowing mushrooms in soft blue and green. {The_children}'s clothing is strongly saturated and lit."
+    },
+    {
+      "id": "anime",
+      "label": "Anime",
+      "family": "anime",
+      "crowd": true,
+      "wall": "Added 2026-09-12 after the fal probe held the cast in this manner on every model that held it at all. Cel shading and clean line keep the children findable at distance the way the colouring-book style does; the risk is the opposite of photoreal's — anime faces converge on one face, so hair and height do all the recognising here, which is exactly the contract. Untested on the glass.",
+      "style": "Style: a hand-drawn anime film background painting with cel-shaded characters, in the manner of a Studio Ghibli feature. Lush, detailed painted scenery with soft gradients and atmospheric light; the characters drawn with clean, even ink lines, flat cel colours with one shadow tone, simple expressive faces and large clear eyes. Everything shares one consistent film look.",
+      "palette": "Colours: rich painterly greens, blues and earth tones in the scenery, with warm light; the children in clear flat colours that separate cleanly from the painted background."
+    },
+    {
+      "id": "soft-3d",
+      "label": "Soft 3D",
+      "family": "render",
+      "crowd": true,
+      "wall": "Added 2026-09-20 at the household's request for a 3D angle. STYLISED ON PURPOSE and that is not a detail: photoreal was removed two days earlier because near-miss faces are worse than a drawing, and a 3D render is one adjective away from re-creating exactly that. Rounded cartoon proportions and large clear eyes keep this on the drawing side of the line. Big soft forms and strong rim light should read well at ten feet; untested on the glass. HOUSEHOLD VERDICT 2026-09-23: kept — \"the 3d renders looked good, and they don't try to look like an actual photo.\" That second clause is the acceptance criterion for this whole family, not a compliment: a render that reached for photorealism would fail for the reason photoreal was removed on 2026-09-18.",
+      "style": "Style: a frame from a modern 3D-animated family film. Smooth stylised characters with rounded cartoon proportions, large clear eyes and soft subsurface skin; scenery modelled in gentle rounded forms with soft global illumination, warm rim light and a shallow depth of field that keeps {the_children} crisp against a softly blurred distance. Clean, polished, unmistakably computer-animated rather than photographic.",
+      "palette": "Colours: warm saturated hero colours on the children against cooler, softer scenery, with one warm light source and bounced fill."
+    },
+    {
+      "id": "claymation",
+      "label": "Claymation",
+      "family": "render",
+      "crowd": true,
+      "wall": "Row 12 of docs/scene-inputs.md, finally built. The handmade tells — thumbprints, seams, slightly lumpy edges — are what make it read as a made object rather than a render, and they are also what keeps it from drifting toward photorealism. Strong silhouettes suit the ten-foot test; untested on the glass. HOUSEHOLD VERDICT 2026-09-23: kept — \"the 3d renders looked good, and they don't try to look like an actual photo.\" That second clause is the acceptance criterion for this whole family, not a compliment: a render that reached for photorealism would fail for the reason photoreal was removed on 2026-09-18.",
+      "style": "Style: a frame from a stop-motion animated film, every object modelled in plasticine and felt. Visible thumbprints, tool marks and soft seams in the clay; the children as chunky clay puppets with simple bead eyes and slightly lumpy hand-built hair; the set built from painted card, fabric and moss on a tabletop, lit with small warm studio lamps that cast real soft shadows. Shallow tilt-shift focus makes it clear this is a small built world.",
+      "palette": "Colours: rich matte clay colours with no gloss, the children in strong distinct clay colours that separate from a muted handmade set."
+    },
+    {
+      "id": "paper-diorama",
+      "label": "Paper diorama",
+      "family": "render",
+      "crowd": true,
+      "wall": "Row 12's 'paper cut-out' and 'felt' in one. The layered construction does the composition for free — near, middle and far are literally separate sheets — which is the same thing `layered-depth` asks the camera for, so the two should pair well. HOUSEHOLD VERDICT 2026-09-23: kept — \"the 3d renders looked good, and they don't try to look like an actual photo.\" That second clause is the acceptance criterion for this whole family, not a compliment: a render that reached for photorealism would fail for the reason photoreal was removed on 2026-09-18.",
+      "style": "Style: a photograph of a handmade layered paper diorama inside a shallow box. Every element is cut from textured coloured paper and card and stood in separate layers — near, middle and far — with visible cut edges, paper fibres, slight curl and small shadows falling from each layer onto the one behind it. {The_children} {are} jointed paper figures with simple cut-paper hair and painted faces. Soft even light from above.",
+      "palette": "Colours: flat matte paper colours in clear layers, cool and pale in the far sheets and warm and saturated in the near ones, the children brightest of all."
+    },
+    {
+      "id": "low-poly",
+      "label": "Low poly",
+      "family": "render",
+      "crowd": true,
+      "wall": "The most abstract style in the table and the one most likely to fail the finder: faceted faces carry almost no detail, so hair colour and height order do ALL of the recognising here. That is the identity contract stated exactly, which is why it is worth trying — but if a child cannot find herself in it, this is the style to drop first. HOUSEHOLD VERDICT 2026-09-23: kept — \"the 3d renders looked good, and they don't try to look like an actual photo.\" That second clause is the acceptance criterion for this whole family, not a compliment: a render that reached for photorealism would fail for the reason photoreal was removed on 2026-09-18.",
+      "style": "Style: a clean low-polygon 3D render. Every form built from a small number of flat triangular facets with crisp edges between them, flat shading and no texture at all; simple faceted trees, angular mountains and blocky water. {The_children} {are} simple low-poly figures whose HAIR is a clear faceted shape in an unmistakable colour, and whose relative heights are obvious. Bright even light with clean hard-edged shadows.",
+      "palette": "Colours: a limited flat palette of clear saturated colours with no gradients or texture; each child's hair colour is one of the strongest colours in the frame."
+    }
+  ]
+}

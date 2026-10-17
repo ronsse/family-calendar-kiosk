@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+  The viewport is FIXED and known: an Elo 2270L at 1920x1080 running Chromium with
+  --force-device-scale-factor=2.0, i.e. 960x540 logical px. There is no second breakpoint and
+  no media query anywhere in this bundle (design/README rule 10). `width=device-width` is here
+  so the numbers agree; nothing about this page is responsive and nothing should become so.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  No webfont link. A third party in the 6:00 AM display path fails PRD §4's availability test
+  on its own, and this is the exact line design/README calls out as deliberately NOT taken from
+  DinkyDash. Every face (Nunito, Fredoka, Fraunces, Wall Reader) is a self-hosted woff2,
+  declared in tokens.css. The theme is an attribute on this <html>, set by the app.
+-->
+<title>Family calendar</title>
+<link rel="icon" href="data:,">
+<!--
+  The design system, loaded as a real stylesheet rather than imported from TypeScript: the
+  same `tsc` pass covers the server, where a `.css` import does not resolve. Vite hashes and
+  inlines this at build time, so it is one request that cannot 404 independently of the bundle.
+-->
+<link rel="stylesheet" href="./src/design/tokens.css">
+<style>
+  /*
+    Kiosk ground rules. Everything here is about a panel a three-year-old touches, not about
+    layout — the layout lives in the components and is sized in logical px from tokens.
+  */
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-family);
+    /* The wall is exactly one screen. A scrollbar here means something is mis-sized, and a
+       scrolled wall at 6:00 AM shows the wrong half of the day. */
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body {
+    /* There is no keyboard and no mouse. A text selection a child cannot clear, a long-press
+       context menu, and the 300ms double-tap zoom delay are all pure downside on glass. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    /* Wayland: `unclutter` and `xset` are X11-era and do nothing here (CLAUDE.md). Hiding the
+       pointer is therefore the page's job, and CSS is the only mechanism that works. */
+    cursor: none;
+  }
+  /* A stray focus ring on a wall is a permanent artefact — nobody is going to tab away from
+     it. Focus is still visible where a renderer asks for it, via --c-focus. */
+  :focus { outline: none; }
+  #wall { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="wall"></div>
+<script type="module" src="./src/main.tsx"></script>
+</body>
+</html>

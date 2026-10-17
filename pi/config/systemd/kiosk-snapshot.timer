@@ -1,0 +1,15 @@
+[Unit]
+Description=Refresh the last-known-good snapshot while the dashboard is healthy
+
+[Timer]
+# Every 5 minutes. Frequent enough that the saved view is never badly stale,
+# rare enough that it is not meaningful SD-card wear (the PNG lands in
+# ~/.local/share, not tmpfs, precisely because it MUST survive a reboot —
+# a power cut is exactly when it gets used).
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Check the wall's network once a minute
+
+[Timer]
+# 2 min after boot: a boot that has not associated yet is not a failure.
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

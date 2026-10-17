@@ -1,0 +1,96 @@
+{
+  "_comment": [
+    "WHERE THE CAMERA IS. The fourth data table, alongside scene-settings.json (where it",
+    "happens), scene-styles.json (how it is drawn) and scene-activities.json (what they are",
+    "doing).",
+    "",
+    "It exists because of an observation the household made looking at the first six scenes:",
+    "*'all of the images seem to have the same distance and depth of the picture — there should",
+    "be more options or more differences.'* That was exactly right and the cause was structural,",
+    "not a model limitation. Setting varied the PLACE and style varied the RENDERING, and nothing",
+    "varied the CAMERA, so a snowy hill and an autumn forest in two different styles were still",
+    "the same photograph: mid-distance, eye level, three-quarter view, children across the middle",
+    "band of the frame. Six pictures that rhyme.",
+    "",
+    "WHAT A COMPOSITION MAY NOT DO, and it is the whole reason these strings are short. This",
+    "picture is NAVIGATION — the rail is hidden on the scene, so a child who cannot find herself",
+    "has no way onward — and tools/scene-regions.py refuses any image where a child is under the",
+    "96px tap floor, under the height floor, inside the inert gutter, facing away, or unclothed.",
+    "So every entry here moves the VANTAGE and leaves the subject alone. `PLACEMENT` and `FACING`",
+    "in gen-scene.py are appended after this clause and win any argument with it; a composition",
+    "that fought them would simply produce refusals and cost $0.15 a time to learn that.",
+    "",
+    "That is also why there is no `across-the-water`, no `from-the-far-shore` and no `aerial`,",
+    "all of which were on the household's list of ideas in spirit. Each one is a camera that puts",
+    "the children in the background, and the background is precisely where they may not be.",
+    "",
+    "NOTHING HOUSEHOLD-SPECIFIC GOES IN HERE. These strings are sent verbatim to a hosted model.",
+    "`crowd` says whether the vantage can carry a dense search-and-find crowd behind the",
+    "children: a doorway frame or a low angle sees much less of the place than an eye-level view",
+    "does, and forcing a Waldo-grade crowd into a narrow aperture produces clutter rather than a",
+    "search — and clutter behind a child is what makes her unfindable.",
+    "",
+    "THE CAMERA IS NEVER BEHIND THE CHILDREN, and this is the correction the first generated scene",
+    "bought. `close-front` originally read '...the place opens out BEHIND THEM into the middle",
+    "distance', which is a true description of the depth wanted and also an invitation to stand",
+    "behind them to see it. The model accepted the invitation: all three sat in a row on one log",
+    "with their backs to the viewer and their heads turned round over their shoulders — precisely",
+    "the pose FACING was written to forbid after the same thing happened on 2026-09-03, and",
+    "precisely what tools/scene-regions.py refuses.",
+    "",
+    "The lesson generalises to every entry here and is why each one now names where the camera IS",
+    "rather than only what it can see: a clause that describes the background relative to the",
+    "children is a clause about where you are standing, whether it means to be or not. FACING and",
+    "PLACEMENT are appended after these and would have caught it — the gate did its job by never",
+    "getting the chance — but a composition that reliably produces refusals costs $0.15 a time.",
+    "",
+    "A second, smaller one from the same picture: at close range 'a tenth of the picture's width'",
+    "between children is a smaller gap on the ground than it is at middle distance, and three",
+    "children seated together on one log is the shape that swallows it. The close entries say so."
+  ],
+  "compositions": [
+    {
+      "id": "eye-level",
+      "label": "Eye level, middle distance",
+      "crowd": true,
+      "wall": "THE INCUMBENT — every scene generated before 2026-09-10 is this one, and it is in the table so that it is a choice rather than a default nobody made. It is also the safe fallback: it sees the most of the place, carries the densest crowd, and has the highest pass rate through the region finder.",
+      "camera": "Camera: at a standing adult's eye level, looking straight into the scene from the middle distance. The horizon sits across the upper third."
+    },
+    {
+      "id": "close-front",
+      "label": "Close to the front",
+      "crowd": true,
+      "wall": "The children large and near, the place falling away behind them. The best of these for the pre-reader — a face at this size is unmistakable from the sofa — and the one that most rewards walking up, because the detail on the clothing and the faces is real at this scale (H8: close-up detail is an ASSET on a screen a child touches). REWORDED 2026-09-10 after the first image it produced: see the note in `_comment` about why 'the place opens out behind them' is a clause about where the camera is.",
+      "camera": "Camera: IN FRONT OF {the_children} and close to them, at their own height, LOOKING TOWARDS THEM — the camera is never behind them. They face the camera and they are LARGE in the frame, filling much of its height, with their faces and clothing clearly visible. The place recedes away past them on both sides and between them, giving a clear sense of depth. Even this close they are well apart, with clear ground between one and the next — never three in a row on one bench, log or step."
+    },
+    {
+      "id": "high-angle",
+      "label": "Looking down from above",
+      "crowd": true,
+      "wall": "A raised vantage — a balcony, a bridge, the top of a slope — so the ground plane does the work and the whole place is laid out at once. Reads as a map, which is a different kind of picture to search. The risk is faces: the clause says 'looking up' explicitly, and FACING refuses anything drawn from behind or above the crown of the head.",
+      "camera": "Camera: raised well above the scene and tilted down, as if from a balcony, a footbridge or the top of a slope, so the ground spreads out below and the whole place can be taken in at once. {The_children} {are} looking UP towards the camera so their faces are fully visible; never draw them from directly overhead or from behind. The camera is in front of them as well as above them."
+    },
+    {
+      "id": "low-angle",
+      "label": "From near the ground",
+      "crowd": false,
+      "wall": "A worm's-eye view from about a small dog's height, which makes the children tall and heroic against the sky and puts something ordinary — grass, a kerb, a root — enormously in the foreground. Deliberately `crowd: false`: this camera sees very little of the place behind, and a dense crowd in the little it does see becomes noise.",
+      "camera": "Camera: LOW — near the ground, about the height of a small dog, tilted slightly up. {The_children} stand{s} tall against the sky above the camera and their faces are clearly visible looking down towards it. Something ordinary and close — grass, a kerbstone, a tree root, a puddle — is very large in the foreground corner."
+    },
+    {
+      "id": "through-frame",
+      "label": "Through a doorway",
+      "crowd": false,
+      "wall": "The scene seen through an opening — a doorway, an archway, a window, a gap in branches — with the frame itself dark and near in the foreground. Gives a picture two depths for free and is the strongest composition in the set for a lit night scene, because the dark surround makes the light inside it glow. `crowd: false` for the same reason as `low-angle`: the aperture only shows so much.",
+      "camera": "Camera: looking INTO the scene through an opening in the foreground — a doorway, a stone archway, a window frame, or a gap between two close tree trunks. The opening itself is dark, close and only partly in frame, and it surrounds the picture on at least two sides. {The_children} {are} beyond it, in the light, filling the opening."
+    },
+    {
+      "id": "layered-depth",
+      "label": "Three depths",
+      "cast": [3],
+      "crowd": true,
+      "wall": "One child near, one at middle distance, one further back, so the picture is read in depth rather than across. The most search-and-find of the six — the eye has to travel — and the one that most needs PLACEMENT's floor honoured, since 'further back' is exactly the direction a child may not go. The clause names the floor itself rather than trusting the appended one.",
+      "camera": "Camera: eye level, but the scene is built in THREE CLEAR DEPTHS — a near foreground, a middle distance and a far background, each with its own things happening in it. One child is in the near foreground, one in the middle distance and one further back. Even the furthest of the three is drawn large and clear, at least a quarter of the picture's height; none of them is a small figure in the background. The camera stays in front of all three of them; none is seen from behind."
+    }
+  ]
+}

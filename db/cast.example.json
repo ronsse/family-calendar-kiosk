@@ -1,0 +1,57 @@
+{
+  "_why": "The cast sheet in WORDS: what the scene prompt says about each child. The real one is db/cast.json (gitignored, build-plan §3.1 — ages and names are household data); this synthetic copy is what gen-scene.py falls back to, so a fresh checkout still draws three plausible children. Ages are the ones the artist is TOLD; heights only matter as RATIOS, which the prompt turns into body landmarks (\"comes up to the eldest's chin\"). No photograph is ever attached (ADR-0002 disclosure test) — appearance travels as text and as the committed avatars in assets/avatars/. `looks` is a build clause for the GENERATOR only — the finder never sees it, because at scene scale build is a weak signal and a weak signal is something to fail on wrongly (the eye-colour lesson).",
+  "children": [
+    {
+      "slot": 1,
+      "avatar": "assets/avatars/a.jpg",
+      "sex": "girl",
+      "age": 8,
+      "height_cm": 128,
+      "hair": "black hair cut in a chin-length bob with a straight fringe",
+      "eyes": "brown",
+      "looks": "tall and lanky, the tallest by a clear margin",
+      "find": {
+        "min_in": 1.0,
+        "max_in": 2.4
+      }
+    },
+    {
+      "slot": 2,
+      "avatar": "assets/avatars/b.jpg",
+      "sex": "girl",
+      "age": 6,
+      "height_cm": 116,
+      "hair": "red curly hair to the shoulders, usually tied back in one puffy ponytail",
+      "eyes": "hazel",
+      "looks": "small-framed and quick, with a scatter of freckles across her nose",
+      "find": {
+        "min_in": 1.3,
+        "max_in": 3.0
+      }
+    },
+    {
+      "slot": 3,
+      "avatar": "assets/avatars/c.jpg",
+      "sex": "boy",
+      "age": 4,
+      "height_cm": 102,
+      "hair": "short dark-brown hair, cropped close at the sides and a little spiky on top",
+      "eyes": "brown",
+      "looks": "stocky and solid, with a round face and short legs",
+      "find": {
+        "min_in": 1.6,
+        "max_in": 3.4
+      }
+    }
+  ],
+  "height_source": "synthetic — the example file",
+  "dog": {
+    "breed": "a medium-sized black-and-white border collie with a long coat and pricked ears",
+    "height_cm": 55,
+    "length_cm": 100,
+    "size_source": "synthetic — the example file"
+  },
+  "appearance_source": "synthetic — the example file",
+  "_dog_why": "The `dog` block is OPTIONAL. A household with no dog leaves it out: the prompt then carries no dog lines and scene-regions.py skips the dog pass, so the Easter egg is simply absent. With a dog, he is the scale anchor — his size is measured against the children, never the frame.",
+  "_find_why": "How hard each child is to FIND, as limits rather than a size. Asked for 2026-09-23: the eldest should have to search the crowd, the youngest should spot himself at once, and the middle one should be somewhere between — but it 'doesn't have to be consistent', so these are the bounds and the picture varies inside them. Inches on the glass, the unit MIN_CHILD_HEIGHT_IN already uses (the Elo 2270L is 10.54in tall). `min_in` replaces the one shared floor in scene-regions.py PER CHILD, so a small eldest passes where she used to be refused as 'too far back' — the old single floor actively fought this feature."
+}

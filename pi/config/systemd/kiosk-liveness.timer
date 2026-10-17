@@ -1,0 +1,15 @@
+[Unit]
+Description=Poll the kiosk browser so a hung-but-alive Chromium recovers unattended
+
+[Timer]
+# Same cadence as kiosk-watchdog.timer. Three consecutive misses (~3 min)
+# plus the 90s post-start grace is the cost of not flashing the wall on a
+# single slow poll. Persistent=false: a backlog of hang-checks after the
+# Pi was off is not a reason to restart Chromium on boot.
+OnBootSec=45s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

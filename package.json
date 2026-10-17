@@ -1,0 +1,45 @@
+{
+  "name": "family-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test 'test/**/*.test.ts'",
+    "verify:schema": "python3 db/verify-schema.py",
+    "verify:prompts": "python3 tools/prompt_guard.py --selftest",
+    "migrate": "node --experimental-strip-types src/db/migrate.ts",
+    "build": "vite build --config web/vite.config.ts",
+    "dev": "vite --config web/vite.config.ts",
+    "start": "node --experimental-strip-types stacks/wall/entry/main.ts",
+    "provision": "node --experimental-strip-types stacks/wall/entry/provision.ts",
+    "audit:panel": "node tools/panel-audit.mjs",
+    "verify:spoilers": "python3 tools/scene_story.py --selftest",
+    "verify:activities": "python3 tools/scene_activities.py --selftest && python3 tools/scene_activity_writer.py --selftest",
+    "verify:styles": "python3 tools/scene_memory.py --selftest",
+    "verify:context": "python3 tools/scene_context.py --selftest",
+    "verify:cast": "python3 tools/scene_cast.py --selftest",
+    "verify:config": "python3 tools/household_config.py --dump db/household.example.json >/dev/null",
+    "verify:release": "tools/release/verify-clean.sh --public",
+    "screenshots": "node tools/release/capture-screenshots.mjs"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "ical.js": "^2.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^6.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^8.2.2"
+  }
+}

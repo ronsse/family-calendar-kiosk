@@ -1,0 +1,107 @@
+# family-calendar — the wall app (ADR-0004). What the panel in the living room renders.
+#
+# Deploy:   cd ~/projects/family-calendar/stacks/wall
+#           op run --env-file=op.env -- docker compose up -d --build
+# Logs:     docker compose logs -f
+# Stop:     docker compose stop          # the wall falls back to last-known-good, by design
+# Provision a device token / the parent PIN (once, and out of band — see entry/provision.ts):
+#           docker compose exec wall node --experimental-strip-types \
+#             stacks/wall/entry/provision.ts --device "living room wall"
+#           docker compose exec wall node --experimental-strip-types \
+#             stacks/wall/entry/provision.ts --pin 1111
+#
+# ## Secrets
+#
+# `op.env` holds `op://` REFERENCES, never values, and is gitignored. `op run` resolves them
+# from a 1Password service account and puts the real values in the environment of the
+# `docker compose` process, which compose then interpolates below. Nothing containing a token
+# is ever written to disk in this directory, and `docker compose config` without `op run`
+# prints empty strings rather than secrets.
+#
+# `op.env` and not `.env`: compose AUTO-LOADS `./.env` for interpolation, so a `.env` full of
+# `op://` strings would silently win on any invocation that forgot `op run` — and the failure
+# mode is HA_TOKEN literally being the string "op://...", i.e. a calendar that never syncs and
+# says nothing about why.
+#
+# ## Networking
+#
+# Host mode, for two reasons that both bite in practice:
+#
+#   - Docker's published ports BYPASS ufw's chains; a host-bound socket does not. This process
+#     holds the household's full schedule and has no remote-access requirement, so ufw
+#     governing 8124 for the LAN and tailnet is the whole access model, alongside the device
+#     token on every data route.
+#   - In bridge mode the container resolves names through Docker's embedded DNS, where
+#     `homeserver` does not exist. `HA_BASE_URL=http://homeserver:8123` would fail to resolve, and
+#     the fix everybody reaches for is pinning the server's LAN IP — which has already drifted once
+#     and is forbidden for that reason.
+#
+# Same choice, same reasoning, as stacks/homeassistant. Do NOT add a `ports:` block: with host
+# mode it does nothing, and adding one back later is how the ufw property gets lost.
+
+services:
+  wall:
+    build:
+      # The whole repo: the image needs src/, web/, db/ and stacks/wall/entry.
+      context: ../..
+      dockerfile: stacks/wall/Dockerfile
+    container_name: family-calendar-wall
+    restart: unless-stopped
+    network_mode: host
+
+    environment:
+      # The household zone. Override with WALL_TZ in the environment of `docker compose`.
+      TZ: ${WALL_TZ:-America/Denver}
+      WALL_PORT: "8124"
+      WALL_BIND: "0.0.0.0"
+      WALL_DB: /data/wall.db
+      WALL_ASSET_ROOT: /data/assets
+
+      # Home Assistant stays the calendar integration layer (ADR-0001); it is simply no longer
+      # what the wall renders. Absent, the app runs with chores and routines and no upstream
+      # calendar, and says so in its log rather than presenting an empty week as a quiet one.
+      HA_BASE_URL: ${HA_BASE_URL:-}
+      HA_TOKEN: ${HA_TOKEN:-}
+
+      # Which adapter reads the calendars: `homeassistant` (default) or `ics`, which reads
+      # each Google calendar's "secret address in iCal format" directly and has no OAuth
+      # token to die every seven days. One variable per calendar, named from the
+      # `calendar_source.external_ref` the database already holds, so switching back and
+      # forth is this line and nothing else. The addresses are credentials: op.env only.
+      WALL_CALENDAR_SOURCE: ${WALL_CALENDAR_SOURCE:-homeassistant}
+      ICS_URL_CALENDAR_FAMILY: ${ICS_URL_CALENDAR_FAMILY:-}
+      ICS_URL_CALENDAR_BIRTHDAYS: ${ICS_URL_CALENDAR_BIRTHDAYS:-}
+      ICS_URL_CALENDAR_HOLIDAYS_IN_UNITED_STATES: ${ICS_URL_CALENDAR_HOLIDAYS_IN_UNITED_STATES:-}
+      ICS_URL_CALENDAR_SCHOOL: ${ICS_URL_CALENDAR_SCHOOL:-}
+
+    volumes:
+      # The database is the only state that matters, and household assets sit beside it so
+      # there is one thing to back up rather than two that can get out of step. A named volume
+      # rather than a bind mount: this must survive `docker compose down`, a rebuild, and a
+      # careless `rm -rf` in the checkout.
+      - wall-data:/data
+      - /etc/localtime:/etc/localtime:ro
+
+    healthcheck:
+      # Same definition of "up" as the kiosk gate's probe — `ok`, not `dbWritable`. Two
+      # definitions is how a container reports healthy while the wall shows a screenshot.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8124/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    logging:
+      # An SD-card-free box still has a finite disk, and this process logs every calendar
+      # sweep. Bounded, so a year of uptime is not a full filesystem at 06:00.
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  wall-data:

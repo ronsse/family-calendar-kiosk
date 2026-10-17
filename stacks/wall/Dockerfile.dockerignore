@@ -1,0 +1,41 @@
+# Build context filter for stacks/wall/Dockerfile.
+#
+# BuildKit looks for `<dockerfile>.dockerignore` before the context root's `.dockerignore`,
+# which is what lets this stack carry its own filter without putting a file at the repo root
+# that every other build would then inherit.
+#
+# The context is the WHOLE REPO, because the image needs src/, web/, db/ and the entry point.
+# Unfiltered that is ~93 MB, most of it Home Assistant's icon cache and a node_modules tree
+# that `npm ci` is about to rebuild anyway — sent over the daemon socket on every build, and
+# invalidating the cache whenever any of it changes.
+
+# The sibling stack's runtime state. Thousands of cached brand icons, a SQLite database, and
+# the household's actual Home Assistant configuration — none of which belongs in an image.
+stacks/homeassistant/
+
+# Rebuilt inside the image against this exact base. Copying the host's would ship a
+# better-sqlite3 compiled for the host's libc.
+node_modules/
+
+# Built inside the image by `npm run build`.
+web/dist/
+
+.git/
+.gitignore
+
+# Local databases and their WAL sidecars. The real one is a volume.
+dev.db*
+*.db-shm
+*.db-wal
+
+# Secrets never enter a build context, resolved or otherwise.
+.env
+op.env
+**/op.env
+
+# Nothing here changes what the server does.
+docs/
+pi/
+test/
+README.md
+CLAUDE.md

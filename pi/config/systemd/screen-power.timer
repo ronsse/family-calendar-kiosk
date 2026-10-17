@@ -1,0 +1,13 @@
+[Unit]
+Description=Reconcile the wall's screen power every minute, so a missed edge self-heals
+
+[Timer]
+# Every minute, not at 06:00 and 21:00: a one-shot that misses its moment (a reboot, a
+# crashed session, a monitor power-cycled by hand) would leave the wall dark until tomorrow.
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

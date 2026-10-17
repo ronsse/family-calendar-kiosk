@@ -1,0 +1,15 @@
+[Unit]
+Description=Wake the dark wall on a touch, and let it go dark again after 5 idle minutes
+After=kiosk.service
+
+[Service]
+EnvironmentFile=-%h/.config/kiosk.env
+# Started from labwc's autostart AFTER import-environment, so WAYLAND_DISPLAY is set.
+# `resume` fires on the first input after an idle timeout: a touch on the dark panel.
+# That first touch still reaches Chromium — swayidle cannot swallow it — which on the idle
+# picture means at most opening a child's screen.
+ExecStart=/usr/bin/swayidle -w \
+  timeout 300 '%h/.local/bin/screen-power.sh --idle' \
+  resume '%h/.local/bin/screen-power.sh --wake'
+Restart=always
+RestartSec=5s

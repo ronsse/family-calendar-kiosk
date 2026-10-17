@@ -1,0 +1,605 @@
+/*
+ * family-calendar — design tokens.  Unit G (build-plan.md §4).
+ *
+ * The single source of visual truth.  Renderers (unit H) read these variables and
+ * declare no raw colours, sizes or weights of their own.
+ *
+ * THE PANEL IS THE DESIGN CONSTRAINT.
+ *   Elo 2270L, 21.5", 1920x1080 physical, wall-mounted at child height.
+ *   Chromium runs --force-device-scale-factor=2.0, so the layout viewport is
+ *   960 x 540 LOGICAL px and 1 logical px == 2 physical px == ~0.50 mm.
+ *   Every number in this file is LOGICAL px.  Halve nothing, double nothing.
+ *
+ *   225 nits behind anti-glare etched glass.  The etch diffuses ambient light back
+ *   at the viewer, so a daylit living room adds a roughly uniform veil over the
+ *   whole surface.  WCAG's contrast formula already models ~5% of peak white as
+ *   flare (the +0.05 terms); this panel is dimmer and hazier than the reference,
+ *   so every contrast figure quoted in this file uses a 10% flare term instead:
+ *
+ *       panelContrast(a, b) = (max(Ya,Yb) + 0.10) / (min(Ya,Yb) + 0.10)
+ *
+ *   That is a strictly harsher metric than WCAG.  The numbers in the comments are
+ *   panelContrast, not WCAG, and test/unit-g.contrast.test.ts recomputes all of
+ *   them from these hex values on every run.
+ *
+ * THREE THEMES (2026-10-11).  The :root block is FELT, the default, and is the whole
+ * vocabulary.  `:root[data-wall-theme="gallery"]` and `[data-wall-theme="storybook"]`
+ * below may only OVERRIDE a name declared in :root, never introduce one, and the
+ * attribute is set on <html> by the wall (logic/theme.ts) from the household's choice.
+ * Every floor and every CONTRAST_RULE is tested against all three sets.
+ *
+ * Format contract: exactly one `--name: value;` per line inside each block.
+ * test/unit-g.tokens.test.ts parses this file line by line and mirrors it against
+ * tokens.ts (cssTokens and themeOverrides).  Keep the shape boring.
+ */
+
+/* Every face below is self-hosted: a latin subset, a woff2 under fonts/ with its OFL text beside
+ * it. Vite bundles each url() into the build, so it is served by our own stack and the 6:00 AM
+ * path gains no third party. A browser fetches a face only when something on screen asks for
+ * it, so the two faces the current theme does not name cost disk, not load.
+ *
+ * Nunito (OFL 1.1, fonts/OFL-Nunito.txt; from @fontsource-variable/nunito, one variable file
+ * covering every weight). Until 2026-10-11 --font-family NAMED Nunito and nothing supplied it,
+ * so the wall rendered in DejaVu Sans from the day it shipped: a font choice with no font behind
+ * it. It is storybook's text face and every theme's first fallback. */
+@font-face {
+  font-family: "Nunito";
+  src: url("./fonts/nunito-latin-wght.woff2") format("woff2");
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fredoka (OFL 1.1, fonts/OFL-Fredoka.txt, no Reserved Font Name): felt's one family. Variable,
+ * wght 300-700, so --fw-800 renders at 700. Its digits are PROPORTIONAL and it has no tabular
+ * figures at all — see --font-numeric. */
+@font-face {
+  font-family: "Fredoka";
+  src: url("./fonts/fredoka-latin-wght.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fraunces (OFL 1.1, fonts/OFL-Fraunces.txt, no Reserved Font Name): storybook's DISPLAY face
+ * only, never running text. Variable wght 100-900 with the other three axes pinned at subset
+ * time to what the design asked for (SOFT 100, WONK 0, opsz 72), which is why it is one file.
+ * If the soft serifs smear behind the etch, re-cut with SOFT 0; that is the risk the design
+ * review names for it. */
+@font-face {
+  font-family: "Fraunces";
+  src: url("./fonts/fraunces-latin-wght.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* "Wall Reader" IS ANDIKA (SIL International, OFL 1.1, fonts/OFL-Andika.txt) — gallery's face,
+ * designed for early readers (single-storey a and g, letters drawn not to be mistaken for one
+ * another). It is renamed because
+ * its licence makes "Andika" and "SIL" Reserved Font Names, and a subset is a Modified Version
+ * under OFL §3, which may not carry them. The rename is in the file's own name table too.
+ * Only the Bold ships: the weight floor is 600, and the nearest face to 600 and to 800 is 700,
+ * so a Regular file would be one nothing could ever ask for. */
+@font-face {
+  font-family: "Wall Reader";
+  src: url("./fonts/wall-reader-latin-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---------------------------------------------------------------------
+   * 1. GROUND AND INK
+   *
+   * Light and explicit.  A dark theme on a 225-nit anti-glare panel in a
+   * daylit room turns the glass into a mirror; the backlight cannot win, so
+   * we side with the ambient light instead of fighting it.
+   *
+   * THE SAND GROUND IS GONE, from all three themes (2026-10-11).  #E7DCC9 was
+   * warm AND mid-value, so white cards on it looked like yellowed paper on
+   * cardboard, and the household called it brown.  It could not simply be made
+   * white: ink at 7.0 on the ground and a card at 1.25 off it together pin any
+   * ground near luminance .74 or below.  Each theme takes a different way out;
+   * felt's is a cool blue-grey board with white paper pinned to it:
+   *   bg .701, sunken .723, surface 1.000
+   * Paper on felt is 1.37.  The sunken well is a touch LIGHTER than the felt
+   * (1.03 apart), which is fine because a well only ever sits inside a white
+   * card, 1.34 below it.  The real edge is still --c-border.
+   * ------------------------------------------------------------------- */
+
+  --c-bg: #D3DBE4;
+  --c-surface: #FFFFFF;
+  --c-surface-sunken: #D7DEE5;
+  --c-surface-inverse: #1B1E2B;
+
+  /* Borders do the work that shadows cannot: a blurred shadow is invisible at
+   * 225 nits behind etched glass.  --c-border 3.07 on surface, 2.24 on bg.
+   * Felt's card language is drawn in --c-border-strong (the dark outline and
+   * the hard offset under every sheet), 8.55 on paper. */
+  --c-border: #7F8CA0;
+  --c-border-strong: #2A2F3D;
+
+  /* All text on the wall is one of these three.  Never a hue: coloured type is
+   * the first thing to collapse on this panel.  Colour lives in fills and edges. */
+  --c-ink: #1B1E2B;
+  --c-ink-muted: #454C5E;
+  --c-ink-inverse: #FFFFFF;
+
+  /* ---------------------------------------------------------------------
+   * 2. IDENTITY — one accent per child slot
+   *
+   * Hues chosen for dichromats: blue / magenta / amber sits on the blue-yellow
+   * axis with a magenta that stays separable under protanopia and deuteranopia.
+   * Deliberately NO green here — green belongs to "done" and must never also
+   * mean "this is Child B".
+   *
+   * More importantly the three ladder in LIGHTNESS (.060 / .168 / .524 in felt),
+   * so they separate in full greyscale — every pair clears the 1.6 floor in
+   * every theme.  1 against 2 is the tightest pair in the whole system (1.68
+   * here), which is why each theme darkened the blue a shade in 2026-10.
+   *
+   * REPAINTED 2026-08-26, brighter on request. Every hue gained chroma and the two
+   * lighter accents gained luminance; what did NOT move is the contract, which is
+   * declared as data in CONTRAST_RULES and graded on the panel's 0.10 flare term
+   * rather than WCAG's 0.05. The candidate palette was checked against all 41 rules
+   * before it was written here, and four earlier candidates were rejected by them:
+   * a brighter magenta stopped carrying white type, a brighter amber tint stopped
+   * lifting off a white card, and a brighter green stopped carrying white type twice.
+   * Brightness is bounded by the panel, not by taste.
+   *
+   * -on: which ink sits on the solid.  Slot 3 is light enough that white type
+   * on it is unreadable, so renderers MUST read the -on token instead of
+   * assuming white.  Type on any solid must be --fs-400 (24px) or larger.
+   *
+   * -tint: a decorative light fill, legal ONLY on --c-surface (1.29-1.33 there,
+   * and 1.03-1.07 on --c-bg, i.e. invisible).  A tint never carries identity on
+   * its own; the solid bar, the avatar and the fixed column position do that.
+   * ------------------------------------------------------------------- */
+
+  --c-id-1: #1A3AA6;
+  --c-id-1-tint: #D2DDFF;
+  --c-id-1-on: #FFFFFF;
+  --c-id-2: #D4267C;
+  --c-id-2-tint: #FFD6E9;
+  --c-id-2-on: #FFFFFF;
+  --c-id-3: #FFB01E;
+  --c-id-3-tint: #FFDE92;
+  --c-id-3-on: #1B1E2B;
+
+  /* ---------------------------------------------------------------------
+   * 3. STATE — chore / routine-step progress
+   *
+   * Colour is the WEAKEST channel this panel has, so it carries the least
+   * information.  State is primarily FORM: outline -> tinted -> solid+check ->
+   * faded.  The colours below only reinforce it.
+   *
+   * The four edges ladder properly (done .056 / to-do .173 / waiting .340 /
+   * void .590 in felt) at 1.74, 1.62 and 1.57 panelContrast between
+   * neighbours, so a colourblind or greyscale viewer reads the same four steps.
+   *
+   * "done" is a SOLID fill, not a tint: finishing something should be the
+   * loudest event on the wall, and a light green tint next to a light amber
+   * tint is exactly the deuteranope trap.
+   * ------------------------------------------------------------------- */
+
+  --c-state-todo-edge: #6B757A;
+  --c-state-todo-fill: #FFFFFF;
+  --c-state-doing-edge: #E08A00;
+  --c-state-doing-fill: #FFDC73;
+  --c-state-done-edge: #0B4E24;
+  --c-state-done-fill: #178340;
+  --c-state-void-edge: #C2CBD5;
+  --c-state-void-fill: #FFFFFF;
+
+  /* ---------------------------------------------------------------------
+   * TODAY, on the week view.  A CALENDAR position, not a chore state.
+   *
+   * It borrowed --c-state-doing-* until 2026-09-09, which the WeekView source
+   * had already flagged as wanted-but-missing: the two have nothing to do
+   * with each other, and today's column would have silently followed the
+   * chore palette anywhere it moved.  The operator asking for green forced the
+   * decoupling, which is the right reason to do it.
+   *
+   * The pale green it became then lasted until the themes (2026-10-11), which
+   * took the designer's: felt and storybook draw today as a SATURATED yellow
+   * strip and gallery as a pale sky blue.  Each theme still clears both
+   * measured axes (felt: 1.28 against the white day columns either side, ink
+   * on it 7.58).  If the green is wanted back, it is these two lines per
+   * theme and nothing else.
+   *
+   * The "light tint next to light amber tint is the deuteranope trap" warning
+   * above does NOT apply here, and the separate token is why: no chore state
+   * is drawn on the week view, so today is never adjacent to
+   * --c-state-doing-fill.  It is the only filled thing on that screen.
+   * ------------------------------------------------------------------- */
+  /* ---------------------------------------------------------------------
+   * CALENDAR SOURCES.  Which CALENDAR an event came from.
+   *
+   * A third identity axis, and independent of the other two: state colours
+   * say what has happened to a chore, child accents say whose it is, and
+   * these say where it came from.  Used as the 4px stripe down the left of
+   * an event row and nowhere else, which is why the bar to clear is
+   * --c-border's 1.5 against a card rather than a text ratio.
+   *
+   * LADDERED BY LUMINANCE, not chosen by hue.  The first draft was six
+   * pleasant colours and two of them (moss, grey) measured 1.03 against each
+   * other — the same stripe to a greyscale or dichromatic reader, which is
+   * the trap the state palette above already records.  These step .052 ->
+   * .081 -> .134 -> .205 -> .307, and the four that actually render separate
+   * by at least 1.15.  Grey is the excluded Todoist calendar's and never
+   * renders, which is the only reason it may still sit beside moss (1.02 in
+   * felt).
+   *
+   * The stripe is a SECONDARY cue.  The emoji and the words carry the event;
+   * this says which calendar without anybody having to read a legend.
+   * ------------------------------------------------------------------- */
+  --c-src-slate: #2E4257;
+  --c-src-plum: #7A3A66;
+  --c-src-teal: #1F7175;
+  --c-src-moss: #4A8C3A;
+  --c-src-grey: #75808E;
+  --c-src-sun: #C98A1E;
+
+  --c-today-fill: #FFE07A;
+  --c-today-edge: #9A6B00;
+
+  /* superseded: dimmed, not recoloured.  0.70 keeps composited ink at 4.95
+   * panelContrast on white in felt (5.27 gallery, 5.07 storybook), which the
+   * fluent band still reads. */
+  --o-state-void: 0.7;
+  --o-disabled: 0.45;
+
+  /* ---------------------------------------------------------------------
+   * 4. FEEDBACK
+   *
+   * --c-danger is adult-surface only (the PIN sheet).  Nothing a child can
+   * reach is ever red: the wall has no destructive action on it by design
+   * (PRD §4, guardrails are architectural).
+   *
+   * Freshness (types.ts MaterializationStatus) maps onto state colours:
+   *   ok -> done-edge, stale -> doing-edge, error -> danger.
+   * ------------------------------------------------------------------- */
+
+  --c-danger: #B4201A;
+  --c-focus: #0B57D0;
+
+  /* The leave-by banner (logic/departures.ts).  Two phases, two hues, and
+   * neither is a chore state or the danger red: "get ready" is a calm sky
+   * blue, "time to go" a warm orange.  They never show at once, so what
+   * matters is ink on each fill and each fill lifting off a white card. */
+  --c-leave-ready-fill: #CFE6F7;
+  --c-leave-ready-edge: #1F5F8F;
+  --c-leave-go-fill: #FFCBA6;
+  --c-leave-go-edge: #B3410F;
+
+  /* ---------------------------------------------------------------------
+   * 5. TYPE
+   *
+   * FLOOR: --fs-100 is 14 logical px == 28 physical px.  Nothing smaller ships,
+   * ever.  There is no "caption" or "fine print" token because there is no
+   * legitimate use for one on a wall read from two metres by a five-year-old.
+   *
+   * The step ratio (~1.2 low, ~1.35 high) and the role relationships are lifted
+   * from DinkyDash (MIT): its headline sits at ~2x its body and its metadata at
+   * ~0.95x, which is a wider spread than a document scale and reads correctly
+   * from across a room.  Its ABSOLUTE sizes do not transfer (it targets 800x480
+   * and its smallest step lands near 10px), and neither does its fluid
+   * `html { font-size: clamp(13px, 3.2vmin, 24px) }` root -- a fluid root makes
+   * the 14px floor a function of the viewport, i.e. not a floor.  Fixed px here.
+   * ------------------------------------------------------------------- */
+
+  --fs-100: 14px;
+  --fs-200: 17px;
+  --fs-300: 20px;
+  --fs-400: 24px;
+  --fs-500: 30px;
+  --fs-600: 40px;
+  --fs-700: 54px;
+  --fs-800: 72px;
+  --fs-900: 96px;
+
+  /* Weight floor is 600.  A 400-weight stem at this pixel density is a hairline
+   * and hairlines vanish behind the etch. */
+  --fw-600: 600;
+  --fw-700: 700;
+  --fw-800: 800;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.25;
+  --lh-normal: 1.45;
+
+  --ls-tight: -0.01em;
+  --ls-normal: 0em;
+  --ls-caps: 0.06em;
+
+  /* No webfont link, by rule -- and unit-g.tokens.test.ts enforces it by scanning
+   * this file.  DinkyDash <link>s Nunito from Google's font CDN; copying that
+   * would put a third party in the 6:00 AM display path, which PRD §4 forbids on
+   * the availability test alone.  Every face is a self-hosted woff2 served by our
+   * own stack -- the @font-face rules at the top.
+   *
+   * Three roles.  --font-family is everything read; --font-display is the big
+   * numerals and headings (style.ts numeralText switches to it at 24px and up);
+   * --font-numeric is a number set small.  Felt is ONE family in all three, as
+   * designed: weight carries the hierarchy.
+   *
+   * KNOWN COST: Fredoka has no tabular figures, and neither does Fraunces, so
+   * numeralText's `tabular-nums` is inert under felt and on storybook's big
+   * numerals.  The digits are proportional ("1" is two-thirds the width of "2"),
+   * so the date beside the header clock moves a few px when the minute changes.
+   * Kept on purpose: those numerals ARE felt's look.  Gallery's face and Nunito
+   * have tabular digits by default. */
+  --font-family: "Fredoka", "Nunito", system-ui, -apple-system, "Segoe UI", "DejaVu Sans", sans-serif;
+  --font-numeric: "Fredoka", "Nunito", system-ui, "DejaVu Sans", sans-serif;
+  --font-display: "Fredoka", "Nunito", system-ui, "DejaVu Sans", sans-serif;
+
+  /* ---------------------------------------------------------------------
+   * 6. ICONS
+   *
+   * For the picture band these ARE the interface, so the scale runs much larger
+   * than a normal icon scale and its floor (24px) is above most.  A routine step
+   * for the pre-reader is --icon-600: a 128px logical / 256px physical picture,
+   * ~64 mm on the glass.
+   * ------------------------------------------------------------------- */
+
+  --icon-100: 24px;
+  --icon-200: 32px;
+  --icon-300: 48px;
+  --icon-400: 64px;
+  --icon-500: 96px;
+  --icon-600: 128px;
+  --icon-700: 160px;
+
+  /* ---------------------------------------------------------------------
+   * 7. TAP TARGETS
+   *
+   * FLOOR: 64 logical px == 128 physical == ~32 mm.  Apple says 44pt, Android
+   * says 48dp; both assume an adult index finger and a device held at a
+   * comfortable angle.  This is a three-year-old, standing, reaching up, on
+   * capacitive glass.  64 is the smallest thing that ships.
+   *
+   * --sp-tap-gap is not optional.  Adjacent targets must be separated by dead
+   * space or a fat-finger miss silently hits the neighbouring chore.
+   * ------------------------------------------------------------------- */
+
+  /* Minimum tap-target heights, per band. Revised 2026-08-26 by adversarial panel (H9).
+   * The old 132/104/64 were set when every screen was sized to be read from three metres, and
+   * they were the binding constraint once the type scale dropped: a child's own screen
+   * overflowed its pane and degraded to a scroll. Published child-touch work puts the usable
+   * range at 20-30mm; 132px is 66mm, which nothing in it supports. 96px is 48mm, and with the
+   * mandatory 16px inert gutter a 20-25mm finger pad still has 11-14mm of slack per edge.
+   * 64px (32mm) stays the absolute floor for everyone, forever.
+   * Rungs: min 64 = fluent, md 80 = emergent, lg 96 = pre-reader. xl 132 is now unused by any
+   * band and kept only so the scale itself still has a top. */
+  --tap-min: 64px;
+  --tap-md: 80px;
+  --tap-lg: 96px;
+  --tap-xl: 132px;
+
+  /* ---------------------------------------------------------------------
+   * 8. SPACE AND SHAPE
+   * ------------------------------------------------------------------- */
+
+  --sp-0: 0px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-tap-gap: 16px;
+
+  /* Corners are per theme, as the mockups draw them: felt's paper is 14 and
+   * only its big sheet is 22; gallery's mats and keys are 4 everywhere;
+   * storybook's tick boxes are 8 and its cards and tabs 14.  A pill is a pill
+   * everywhere.  Read through `radius` in tokens.ts, never as a number. */
+  --r-sm: 14px;
+  --r-md: 14px;
+  --r-lg: 14px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Stroke floor is 2 logical px.  1px logical is 2 physical, which the etch
+   * smears into the background.  There is no 1px token to reach for.
+   *
+   * The numbered strokes are SHARED by all three themes: layout arithmetic
+   * (logic/stepGrid.ts and friends) counts them, so they stay numbers.  What a
+   * theme changes is its CARD: --stroke-card and --edge-card are the outline
+   * of `card()`, and the two shadows its ledge. */
+  --stroke-min: 2px;
+  --stroke-1: 2px;
+  --stroke-2: 3px;
+  --stroke-3: 4px;
+  --stroke-focus: 6px;
+  --stroke-card: 3px;
+
+  /* One card language per theme.  Felt: paper with a dark outline and a hard
+   * 5px offset, the way a cut-out sheet sits on a board.  A hard offset ledge,
+   * never a blurred shadow -- blur is invisible here.  --shadow-control is the
+   * smaller ledge under a round button or a sticker. */
+  --edge-card: var(--c-border-strong);
+  --shadow-card: 5px 5px 0 0 var(--c-border-strong);
+  --shadow-control: 4px 4px 0 0 var(--c-border-strong);
+  --shadow-none: none;
+
+  /* The ground's texture.  Felt is the only theme with one: a dot grid in the
+   * pin colour, 14px apart, painted by the wall's root.  'none' elsewhere. */
+  --ground-texture: radial-gradient(var(--c-border) 1.2px, transparent 1.4px);
+  --ground-texture-size: 14px 14px;
+
+  /* ---------------------------------------------------------------------
+   * 9. LAYOUT
+   *
+   * The wall is a fixed, known viewport.  There is no responsive story and no
+   * second breakpoint; treat any media query as a smell.
+   * ------------------------------------------------------------------- */
+
+  --wall-w: 960px;
+  --wall-h: 540px;
+  --wall-pad: 24px;
+  --wall-gutter: 16px;
+  /* 64, not 56: this bar holds 64px tap targets and the floor is absolute. At 56 the doors
+     had to overhang it, which ate 4px of the 16px wall gutter and put the grown-ups door
+     within 15px of the section switcher — caught by tools/panel-audit.mjs, not by a test. */
+  --wall-header-h: 64px;
+  /* The switcher rail. ONE width: a 64px face in 8px of padding, and nothing beside it. */
+  --wall-rail-w: 80px;
+  /* The illustrated horizon band along the bottom edge, behind everything. */
+  --wall-backdrop-h: 208px;
+  /* Every card in the idle wall's two list columns is exactly this tall. */
+  --wall-list-card-h: 88px;
+  /* One row of the idle wall's day agenda. */
+  --wall-agenda-row-h: 36px;
+  --wall-agenda-time-w: 84px;
+  /* The rail's home button. Not a face, so not a face's size. */
+  /* 64, not 56: it is a tap target and 64 is the absolute floor for everyone, forever.
+     It was 56 and `tools/panel-audit.mjs` caught it on the glass. The rail has 420px and
+     home 64 + three 96px faces + three 16px gaps is 400, so it fits with room. */
+  --wall-rail-home-h: 64px;
+  /* Felt's face rail runs along the BOTTOM edge, where the three-year-old's reach is. 64, not
+     the drawn 96: the bar holds 64px tap targets and every pixel it takes comes out of the
+     child's pane above it, which at 64 is 348px tall (16 + 64 + 16 + 348 + 16 + 64 + 16). */
+  --wall-rail-bottom-h: 64px;
+  /* Gallery's plinth and storybook's spine: one side column, full-bleed to the left edge.
+     104, not the drawn 168, so the body stays 816px wide — the width every grown-up screen,
+     the week grid and the approval queue were measured against. */
+  --wall-side-w: 104px;
+
+  /* ---------------------------------------------------------------------
+   * 10. TIME
+   *
+   * --dur-undo and --dur-idle-decay are not decoration; they are adopted
+   * decisions from the H2 tournament (§Q1 graft, §Q3 graft) and live here so
+   * there is exactly one number for each.
+   * ------------------------------------------------------------------- */
+
+  --dur-tap: 120ms;
+  --dur-settle: 260ms;
+  --dur-undo: 2000ms;
+  --dur-idle-decay: 90000ms;
+}
+
+/* =========================================================================
+ * GALLERY.  White mats hung on a pale grey-green wall: nearly square corners,
+ * a thin grey ledge under each mat instead of felt's dark outline, and Wall
+ * Reader for every word -- the face drawn for early readers.
+ *
+ * The coolest and quietest of the three.  Mat on wall 1.31, ink on the mat
+ * 10.11, the mat's edge (--c-border) 2.41 on it.  The designer's mat had no
+ * outline, only the ledge and a bevel line inset 8px; it keeps a 2px edge
+ * here, because 1.31 is the step most at the mercy of a dim panel and the
+ * outline is what survives one.  Today is a pale sky-blue column rather than
+ * a yellow strip.  Only the names that differ from felt are declared;
+ * unit-g.tokens.test.ts holds this block to `themeOverrides`.
+ * ========================================================================= */
+:root[data-wall-theme="gallery"] {
+  --c-bg: #DDE0DA;
+  --c-surface-sunken: #D8DCD6;
+  --c-surface-inverse: #1A1F23;
+  --c-border: #9AA39F;
+  --c-border-strong: #4C565A;
+  --c-ink: #14181B;
+  --c-ink-muted: #48525A;
+  --c-id-1: #1434A0;
+  --c-id-1-tint: #CCD9FF;
+  --c-id-2-tint: #FFCCE4;
+  --c-id-3: #F0A800;
+  --c-id-3-tint: #FFE19C;
+  --c-id-3-on: #14181B;
+  --c-state-doing-fill: #FFE3A6;
+  --c-state-done-edge: #0A4A28;
+  --c-state-done-fill: #15803A;
+  --c-state-void-edge: #C3C9C6;
+  --c-src-slate: #2B3E52;
+  --c-src-plum: #76386A;
+  --c-src-teal: #1D6E73;
+  --c-src-moss: #44883A;
+  --c-src-grey: #7A8084;
+  --c-src-sun: #C2851A;
+  --c-today-fill: #D5E7F6;
+  --c-today-edge: #2A5C8C;
+  --c-danger: #A8221B;
+  --c-leave-ready-fill: #CDE9DB;
+  --c-leave-ready-edge: #1E6B4C;
+  --c-leave-go-fill: #FFCEAA;
+
+  --font-family: "Wall Reader", "Nunito", system-ui, -apple-system, "Segoe UI", "DejaVu Sans", sans-serif;
+  --font-numeric: "Wall Reader", "Nunito", system-ui, "DejaVu Sans", sans-serif;
+  --font-display: "Wall Reader", "Nunito", system-ui, "DejaVu Sans", sans-serif;
+
+  --r-sm: 4px;
+  --r-md: 4px;
+  --r-lg: 4px;
+  --r-xl: 4px;
+
+  --stroke-card: 2px;
+  --edge-card: var(--c-border);
+  --shadow-card: 0 3px 0 0 var(--c-border);
+  --shadow-control: 0 3px 0 0 var(--c-border-strong);
+  --ground-texture: none;
+  --ground-texture-size: auto;
+}
+
+/* =========================================================================
+ * STORYBOOK.  The content is set ON the page: unbleached paper, navy ink, a
+ * navy spine down the left that holds the faces, and rules and dotted
+ * leaders where felt draws cards.  Nunito for everything read; Fraunces for
+ * the numerals and headings only, and never below 24px.
+ *
+ * Paper is warm but DESATURATED and lighter than the old sand (.762 against
+ * .724), so it reads as paper rather than as brown.  White on it is 1.28, the
+ * lowest card step of the three, which is why storybook leans on rules and
+ * the spine rather than on cards.  Ink on paper 7.72.  A page lies flat, so
+ * a card here has no ledge; a tab or a key still does, because a ledge is
+ * how a child knows a thing can be pressed.
+ * ========================================================================= */
+:root[data-wall-theme="storybook"] {
+  --c-bg: #E6E2D8;
+  --c-surface-sunken: #DDD8CD;
+  --c-surface-inverse: #1E2140;
+  --c-border: #9896A8;
+  --c-border-strong: #4C4C70;
+  --c-ink: #171A33;
+  --c-ink-muted: #4E4F6A;
+  --c-ink-inverse: #FFFDF9;
+  --c-id-1: #1434A0;
+  --c-id-2: #D02076;
+  --c-id-3: #F3AD00;
+  --c-id-3-tint: #FFDF93;
+  --c-id-3-on: #1E2140;
+  --c-state-doing-fill: #FFE2A2;
+  --c-state-done-fill: #17813B;
+  --c-state-void-edge: #CBC9C3;
+  --c-src-grey: #80796F;
+  --c-today-edge: #8A5A00;
+  --c-danger: #A8221B;
+  --c-leave-ready-fill: #D5E4F7;
+
+  --font-family: "Nunito", system-ui, -apple-system, "Segoe UI", "DejaVu Sans", sans-serif;
+  --font-numeric: "Nunito", system-ui, "DejaVu Sans", sans-serif;
+  --font-display: "Fraunces", Georgia, "DejaVu Serif", serif;
+
+  --r-sm: 8px;
+  --r-md: 8px;
+  --r-xl: 14px;
+
+  --stroke-card: 2px;
+  --edge-card: var(--c-border);
+  --shadow-card: none;
+  --shadow-control: 0 3px 0 0 var(--c-border-strong);
+  --ground-texture: none;
+  --ground-texture-size: auto;
+}
+
+/* The kiosk never animates for delight, only for feedback; honour the setting
+ * anyway so a screenshot/regression harness can freeze the wall. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-tap: 0ms;
+    --dur-settle: 0ms;
+  }
+}

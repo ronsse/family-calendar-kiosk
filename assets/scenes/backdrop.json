@@ -1,0 +1,8 @@
+{
+  "_comment": "The figure-free floor (2026-10-12). A STATIC scene: no children are drawn in it and it has no tap targets, so it fits any household — any number of children, or none — and registerBaselineScenes approves it on every database. It reuses the idle band's picture rather than committing a second copy. Static manifests rank oldest at registration, so it is older than every other baseline and anything a parent approves; it shows only when nothing else on the wall is usable. The rail does the navigating on a backdrop.",
+  "id": "backdrop",
+  "image": "backgrounds/household.jpg",
+  "aspect": 3.3391,
+  "static": true,
+  "regions": []
+}

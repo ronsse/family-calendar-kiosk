@@ -1,0 +1,7 @@
+[Unit]
+Description=Put the wall's screen in the state the schedule says (on 06:00-21:00 by default)
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/kiosk.env
+ExecStart=%h/.local/bin/screen-power.sh

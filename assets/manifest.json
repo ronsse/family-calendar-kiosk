@@ -1,0 +1,254 @@
+{
+  "_comment": "The baseline asset set. Ids declared HERE are reconciled on boot \u2014 a changed rel_path is followed, because this file is what the baseline set means. Ids NOT declared here are never touched, which is how a household that authors its own imagery keeps it. Originally, registered into the `asset` table on every boot if absent. The '_default' fallback is what makes resolveAsset total: without it a fresh production database throws on the first icon and the wall is blank on day one. Generated imagery (ADR-0002) lands in the same volume and takes precedence by id; nothing here is ever overwritten.",
+  "assets": [
+    {
+      "id": "ico-fallback",
+      "kind": "icon",
+      "category": "_default",
+      "rel_path": "icons/fallback.png",
+      "fallbackFor": "_default"
+    },
+    {
+      "id": "ico-teeth",
+      "kind": "icon",
+      "category": "hygiene",
+      "rel_path": "icons/teeth.png",
+      "fallbackFor": "hygiene"
+    },
+    {
+      "id": "ico-dress",
+      "kind": "icon",
+      "category": "dressing",
+      "rel_path": "icons/dress.png",
+      "fallbackFor": "dressing"
+    },
+    {
+      "id": "ico-shoes",
+      "kind": "icon",
+      "category": "dressing",
+      "rel_path": "icons/shoes.png"
+    },
+    {
+      "id": "ico-bag",
+      "kind": "icon",
+      "category": "school",
+      "rel_path": "icons/bag.png",
+      "fallbackFor": "school"
+    },
+    {
+      "id": "ico-table",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/table.png",
+      "fallbackFor": "kitchen"
+    },
+    {
+      "id": "ico-pet",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/pet.png"
+    },
+    {
+      "id": "ico-cake",
+      "kind": "icon",
+      "category": "celebration",
+      "rel_path": "icons/cake.png",
+      "fallbackFor": "celebration"
+    },
+    {
+      "id": "ico-calendar",
+      "kind": "icon",
+      "category": "calendar",
+      "rel_path": "icons/calendar.png",
+      "fallbackFor": "calendar"
+    },
+    {
+      "id": "ico-sun",
+      "kind": "icon",
+      "category": "routine",
+      "rel_path": "icons/sun.png",
+      "fallbackFor": "routine"
+    },
+    {
+      "id": "ico-moon",
+      "kind": "icon",
+      "category": "routine",
+      "rel_path": "icons/moon.png"
+    },
+    {
+      "id": "ico-sport",
+      "kind": "icon",
+      "category": "sport",
+      "rel_path": "icons/sport.png",
+      "fallbackFor": "sport"
+    },
+    {
+      "id": "ico-dance",
+      "kind": "icon",
+      "category": "dance",
+      "rel_path": "icons/dance.png",
+      "fallbackFor": "dance"
+    },
+    {
+      "id": "ico-medical",
+      "kind": "icon",
+      "category": "medical",
+      "rel_path": "icons/medical.png",
+      "fallbackFor": "medical"
+    },
+    {
+      "id": "ico-travel",
+      "kind": "icon",
+      "category": "travel",
+      "rel_path": "icons/travel.png",
+      "fallbackFor": "travel"
+    },
+    {
+      "id": "ico-outing",
+      "kind": "icon",
+      "category": "outing",
+      "rel_path": "icons/outing.png",
+      "fallbackFor": "outing"
+    },
+    {
+      "id": "ico-music",
+      "kind": "icon",
+      "category": "music",
+      "rel_path": "icons/music.png",
+      "fallbackFor": "music"
+    },
+    {
+      "id": "av-a",
+      "kind": "avatar",
+      "category": "avatar",
+      "rel_path": "avatars/a.jpg",
+      "fallbackFor": "avatar"
+    },
+    {
+      "id": "av-b",
+      "kind": "avatar",
+      "category": "avatar",
+      "rel_path": "avatars/b.jpg"
+    },
+    {
+      "id": "av-c",
+      "kind": "avatar",
+      "category": "avatar",
+      "rel_path": "avatars/c.jpg"
+    },
+    {
+      "id": "ico-settable",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/settable.png"
+    },
+    {
+      "id": "ico-cleartable",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/cleartable.png"
+    },
+    {
+      "id": "ico-dishwasher",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/dishwasher.png"
+    },
+    {
+      "id": "ico-trash",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/trash.png"
+    },
+    {
+      "id": "ico-recycling",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/recycling.png"
+    },
+    {
+      "id": "ico-fish",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/fish.png"
+    },
+    {
+      "id": "ico-lunchbox",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/lunchbox.png"
+    },
+    {
+      "id": "ico-snack",
+      "kind": "icon",
+      "category": "kitchen",
+      "rel_path": "icons/snack.png"
+    },
+    {
+      "id": "ico-blanket",
+      "kind": "icon",
+      "category": "routine",
+      "rel_path": "icons/blanket.png"
+    },
+    {
+      "id": "ico-leash",
+      "kind": "icon",
+      "category": "pet",
+      "rel_path": "icons/leash.png"
+    },
+    {
+      "id": "ico-scoop",
+      "kind": "icon",
+      "category": "pet",
+      "rel_path": "icons/scoop.png"
+    },
+    {
+      "id": "ico-wateringcan",
+      "kind": "icon",
+      "category": "garden",
+      "rel_path": "icons/wateringcan.png"
+    },
+    {
+      "id": "ico-broom",
+      "kind": "icon",
+      "category": "tidy",
+      "rel_path": "icons/broom.png"
+    },
+    {
+      "id": "ico-vacuum",
+      "kind": "icon",
+      "category": "tidy",
+      "rel_path": "icons/vacuum.png"
+    },
+    {
+      "id": "ico-bed",
+      "kind": "icon",
+      "category": "tidy",
+      "rel_path": "icons/bed.png"
+    },
+    {
+      "id": "ico-toybox",
+      "kind": "icon",
+      "category": "tidy",
+      "rel_path": "icons/toybox.png"
+    },
+    {
+      "id": "ico-fetch",
+      "kind": "icon",
+      "category": "pet",
+      "rel_path": "icons/fetch.png"
+    },
+    {
+      "id": "ico-dogbrush",
+      "kind": "icon",
+      "category": "pet",
+      "rel_path": "icons/dogbrush.png"
+    },
+    {
+      "id": "ico-dogear",
+      "kind": "icon",
+      "category": "pet",
+      "rel_path": "icons/dogear.png"
+    }
+  ]
+}

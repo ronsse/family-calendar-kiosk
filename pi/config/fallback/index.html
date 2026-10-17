@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Family calendar</title>
+<!-- Follows the gate's 302 the moment the wall app answers again. The watchdog restart is
+     the backstop; this is the fast path and costs nothing while we are down. -->
+<meta http-equiv="refresh" content="30">
+<style>
+  /* No webfonts anywhere: this page's whole job is to work with no network. */
+  :root {
+    --bg:   #10151b;
+    --fg:   #f2f5f8;
+    --dim:  #9fb0c0;
+    --chip: #1d2732;
+    --accent: #4aa8ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, "DejaVu Sans", sans-serif;
+    overflow: hidden;
+  }
+  /* 225 nits behind anti-glare etched glass, read from ~10 ft: nothing below
+     22px, no hairline strokes, no mid-grey on dark. */
+  body { display: grid; grid-template-rows: 1fr auto; }
+
+  #shot-wrap { position: relative; overflow: hidden; display: none; }
+  #shot { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+  /* The snapshot is a moment in the past. Say so plainly rather than letting
+     someone trust a stale time as live. */
+  #stale {
+    position: absolute; top: 24px; right: 24px;
+    background: var(--chip); color: var(--fg);
+    padding: 14px 22px; border-radius: 10px;
+    font-size: 26px; font-weight: 600;
+    border: 3px solid var(--accent);
+  }
+
+  #noshot { display: grid; place-items: center; text-align: center; padding: 40px; }
+  #bigclock { font-size: 160px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  #bigdate  { font-size: 40px; font-weight: 600; color: var(--dim); margin-top: 18px; }
+  #reassure { font-size: 34px; font-weight: 600; margin-top: 48px; max-width: 22ch; }
+
+  footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 32px; background: var(--chip);
+    font-size: 28px; font-weight: 600;
+  }
+  #now { font-variant-numeric: tabular-nums; }
+  #status { color: var(--dim); }
+  .dot {
+    display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); margin-right: 12px; vertical-align: -2px;
+  }
+</style>
+</head>
+<body data-has-snapshot="__HAS_SNAPSHOT__">
+
+  <div id="shot-wrap">
+    <img id="shot" alt="Last saved view of the family dashboard">
+    <div id="stale">Last saved · __SAVED_AT__</div>
+  </div>
+
+  <div id="noshot">
+    <div>
+      <div id="bigclock">--:--</div>
+      <div id="bigdate"></div>
+      <div id="reassure">Dashboard will come back on its own.</div>
+    </div>
+  </div>
+
+  <footer>
+    <span id="now"></span>
+    <span id="status"><span class="dot"></span>Reconnecting…</span>
+  </footer>
+
+<script>
+  // Which half of the page is live depends on whether a snapshot exists. The
+  // gate stamps that in; no network call is made from this page.
+  var hasShot = document.body.dataset.hasSnapshot === 'true';
+  if (hasShot) {
+    document.getElementById('shot-wrap').style.display = 'block';
+    document.getElementById('noshot').style.display = 'none';
+    // Cache-bust so a refresh picks up a newer capture.
+    document.getElementById('shot').src = '/last-good.png?t=' + Date.now();
+  }
+
+  // The clock is the one thing on this page guaranteed to be correct, which is
+  // why it is here at all: it proves the display is alive rather than frozen.
+  function tick() {
+    var d = new Date();
+    // hour12 is pinned, not left to the locale. Chromium on this Pi runs en-GB,
+    // so the default rendered a 24h clock next to the gate's 12h "Last saved"
+    // chip -- two different formats on the same screen. The chip is generated in
+    // Python (%-I:%M %p); this must agree with it.
+    var t = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+    var day = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    document.getElementById('now').textContent = t;
+    var big = document.getElementById('bigclock');
+    if (big) { big.textContent = t; }
+    var bd = document.getElementById('bigdate');
+    if (bd) { bd.textContent = day; }
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>

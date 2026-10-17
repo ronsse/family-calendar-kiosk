@@ -1,0 +1,59 @@
+[
+  {
+    "summary": "No end supplied",
+    "uid": "evt-noend-3001",
+    "start": { "date": "2026-04-01" }
+  },
+  {
+    "summary": "Inclusive end",
+    "uid": "evt-inclusive-3002",
+    "start": { "date": "2026-04-02" },
+    "end": { "date": "2026-04-02" }
+  },
+  {
+    "summary": "Zero length",
+    "uid": "evt-zero-3003",
+    "start": { "dateTime": "2026-04-03T08:00:00-06:00" },
+    "end": { "dateTime": "2026-04-03T08:00:00-06:00" }
+  },
+  {
+    "summary": "",
+    "uid": "evt-untitled-3004",
+    "start": { "dateTime": "2026-04-04T08:00:00-06:00" },
+    "end": { "dateTime": "2026-04-04T09:00:00-06:00" }
+  },
+  {
+    "summary": "Platform sends no uid",
+    "start": { "dateTime": "2026-04-05T08:00:00-06:00" },
+    "end": { "dateTime": "2026-04-05T09:00:00-06:00" }
+  },
+  {
+    "summary": "Platform sends no uid",
+    "start": { "dateTime": "2026-04-05T08:00:00-06:00" },
+    "end": { "dateTime": "2026-04-05T09:00:00-06:00" }
+  },
+  {
+    "summary": "Flattened wire form",
+    "uid": "evt-flat-3005",
+    "start": "2026-04-06",
+    "end": "2026-04-07"
+  },
+  {
+    "summary": "Series without recurrence ids",
+    "uid": "evt-series-3006",
+    "start": { "dateTime": "2026-04-07T16:00:00-06:00" },
+    "end": { "dateTime": "2026-04-07T17:00:00-06:00" }
+  },
+  {
+    "summary": "Series without recurrence ids",
+    "uid": "evt-series-3006",
+    "start": { "dateTime": "2026-04-14T16:00:00-06:00" },
+    "end": { "dateTime": "2026-04-14T17:00:00-06:00" }
+  },
+  {
+    "summary": "Series without recurrence ids",
+    "uid": "evt-series-3006",
+    "start": { "dateTime": "2026-04-14T16:00:00-06:00" },
+    "end": { "dateTime": "2026-04-14T17:00:00-06:00" }
+  }
+]

@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build the frontend
+        run: npm run build
+
+      - name: Scene tool self-tests
+        run: |
+          npm run verify:prompts
+          npm run verify:activities
+          npm run verify:styles
+          npm run verify:context
+          npm run verify:spoilers
+
+      - name: Release gate (committed patterns, image allowlist, household paths)
+        run: npm run verify:release

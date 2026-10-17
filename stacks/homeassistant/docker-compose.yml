@@ -1,0 +1,47 @@
+# Home Assistant — integration + state layer for the wall calendar (ADR-0001).
+#
+# Deploy:  cd ~/projects/family-calendar/stacks/homeassistant && docker compose up -d
+# Logs:    docker compose logs -f
+# Reset:   docker compose down && rm -rf config/.storage   (nukes onboarding + auth)
+#
+# Networking: HOST mode, changed 2026-08-23. It was a published port on a shared docker bridge,
+# which was fine until the wall needed `trusted_networks` auth. Docker runs with
+# EnableUserlandProxy=true, so docker-proxy rewrote the source address and HA saw EVERY client
+# as the bridge gateway 172.21.0.1 — verified by reading /proc/net/tcp inside the container.
+# That makes trusted_networks either useless (scoped to the real client IP, never matches) or
+# dangerous (scoped to 172.21.0.1, which auto-logs-in anyone who can reach HA). Host mode is
+# the fix: HA sees the Pi's real tailnet address and the allowlist can be a single /32.
+# Two side effects, both wanted: ufw now actually governs 8123 (Docker's published ports
+# bypass ufw's chains; a host-bound socket does not), and mDNS/SSDP discovery becomes
+# available for the Phase 3 ESPHome work this file already anticipated.
+# Still do NOT pin the LAN IP anywhere: the server's DHCP address has already drifted once.
+#
+# NOT behind the public gateway. A wall display has no remote-access requirement, and this
+# holds the household's full schedule. LAN + tailnet only.
+
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    environment:
+      TZ: America/Denver
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+      # dbus/udev are still omitted on purpose: no local device discovery is needed for
+      # calendars + tasks. Host networking has since been adopted for a different reason
+      # (see the networking note above), so if Phase 3 ESPHome ever needs discovery, only
+      # dbus/udev remain to add — manual IP config works without either.
+    # No `ports:` — host mode publishes nothing; HA binds 8123 on the host directly.
+    # No `networks:` — leaving the shared bridge is what restores real client addresses.
+    # A monitor that lived on that bridge has to reach HA at the bridge gateway instead.
+    network_mode: host
+    healthcheck:
+      # HA ships no curl; python3 is always present in the image.
+      test: ["CMD", "python3", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8123/manifest.json', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s

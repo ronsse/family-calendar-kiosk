@@ -1,0 +1,17 @@
+# Theme for the wall panel only. Applied per-view in wall.yaml (`theme: wall`), NOT set
+# globally, so it cannot follow the operator onto a laptop.
+#
+# The sidebar is the target. On a 1920px panel it costs ~510px (27% of the screen) and,
+# worse, it puts Settings and the dashboard editor within reach of anyone at the glass.
+# PRD §4 wants guardrails that are architectural; a narrower drawer is cosmetic, but it
+# removes the affordance while the real fix (a non-admin wall user, ROADMAP M1) lands.
+wall:
+  app-drawer-width: "0px"
+  # High contrast for 225 nits behind anti-glare etched glass. Mid-greys that look
+  # subtle on a laptop disappear on the wall.
+  primary-text-color: "#0b0f14"
+  secondary-text-color: "#3d4a57"
+  primary-background-color: "#ffffff"
+  card-background-color: "#ffffff"
+  ha-card-border-width: "0px"
+  ha-card-box-shadow: "none"

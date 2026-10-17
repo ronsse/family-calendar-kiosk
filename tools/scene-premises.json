@@ -1,0 +1,172 @@
+{
+  "_comment": [
+    "WHAT KIND OF PICTURE this is. The fifth axis, added 2026-09-13, after the household asked",
+    "for pictures that are not all the same kind of picture: 'a Where's Waldo style... a",
+    "photorealistic image but of an unrealistic thing... riding unicorns or Pegasus... wearing a",
+    "Spiderman suit and swinging from a building.' Setting says WHERE, style says HOW IT IS",
+    "DRAWN, camera says WHERE YOU STAND, activities say WHAT THEY DO. None of those can say",
+    "'the children are giants' or 'this is a cutaway of a house' — that is a different premise",
+    "for the whole picture, and it changes several of the other axes at once.",
+    "",
+    "A premise is applied by gen-scene.py `--premise <id>` and does up to five things: adds a",
+    "PREMISE section right after SCENE; replaces the LAYOUT section; replaces the crowd",
+    "sentence; replaces the activity pool; restricts the style families it may be drawn in;",
+    "and `solo_only` keeps the shared activities out (a seek-and-find with two children carrying",
+    "one basket is a huddle, and a cutaway must never put two in one room — measured 2026-09-13).",
+    "`plain` does none of them and is what every scene before this file was. Anything a",
+    "premise does not override is inherited, so a premise is a small file and the identity",
+    "contract (count, height order, hair — THE THREE CHILDREN) is never touched by one.",
+    "",
+    "THE MECHANIC SETS THE LIMITS, not taste. Three children find themselves in this picture",
+    "and tap themselves, so every premise has to keep: (1) each child at least 1.5 inches tall",
+    "on the glass — scene-regions.py refuses smaller, which is why a true Waldo-grade picture",
+    "with the children a tenth of the frame is not in this file and will not be; (2) hair",
+    "visible — no mask, no helmet, no hood, which is why the superhero has a cape and no mask",
+    "and the astronaut carries the helmet; (3) faces to the viewer; (4) clear ground between",
+    "the three — anything that seats them together (three on one dragon) fights the tap gutter;",
+    "(5) whatever a child rides or drives, she is ON it in the open, never inside a cab or",
+    "behind glass — a child inside a monster truck is a windscreen, not a tap target.",
+    "",
+    "NO NAMED CHARACTERS OR BRANDS, same reasoning as scene-settings.json's fantasy settings:",
+    "gpt-image-2 refused named characters on 92% of attempts and nano-banana-2 on 42% in an",
+    "August 2026 study, so a named suit is a coin-flip on one model and a refusal on the other;",
+    "and the costume would be competing with the child for the viewer's attention on a screen",
+    "whose one job is that she finds herself. 'A red-and-blue superhero suit with a cape' is",
+    "the whole idea without the trademark.",
+    "",
+    "NOTHING HOUSEHOLD-SPECIFIC GOES IN HERE. Sent verbatim to a hosted model; prompt_guard reads",
+    "the assembled prompt and will refuse anyway."
+  ],
+  "premises": [
+    {
+      "id": "plain",
+      "label": "An ordinary scene",
+      "wall": "What every picture before 2026-09-13 was. The default when no premise is given, and the one the weekly run uses until the household chooses otherwise.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": ""
+    },
+    {
+      "id": "busy-town",
+      "cast": [3],
+      "label": "Seek-and-find crowd",
+      "wall": "The Wimmelbuch / seek-and-find treatment. REWRITTEN 2026-09-24 after the first attempt put a second braided figure in the crowd and the finder tapped her instead of the eldest. The old rule was NEGATIVE — 'no other child shares hair colour and length with one of ours' — which asks a model to hold three descriptions in mind while drawing forty figures and check each one against all three. It does not, and a near-miss is invisible until a verifier taps the wrong girl. The household's fix is positive and structural: EVERY other figure's head is covered. Hair then belongs to the three children by construction rather than by avoidance, there is nothing to compare and nothing to get wrong, and the hats are a gift to the picture — forty different heads in forty different coverings is exactly the visual density this premise wants. It also hands the finder an unambiguous search with no change to the finder: the only bare heads in the frame are the three it is looking for. FLAT SCALE, added the same day: this premise and the find-difficulty bands are in direct contradiction — the bands put one child near the front and one well back, and the whole point of a busy-picture is that NOBODY is nearer or larger than anybody else. The premise wins, because in a seek-and-find everyone is equally hidden and that IS the difficulty. `flat_scale` drops the placement clause from the prompt and drops the per-child height floors in the finder back to the single `MIN_CHILD_HEIGHT_IN`, which is the right floor when every figure is drawn the same size. Without the second half the youngest is refused for being small in a picture where small is the instruction — measured 2026-09-24, he came out 1.50in against his own 1.80in floor.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "camera": "high-angle",
+      "brief": "This is a seek-and-find picture in the tradition of the big wordless busy-picture books: the whole place teems with dozens of small figures, all drawn at ONE consistent scale from a raised viewpoint, and the three children are hidden in plain sight among everyone else. There is no foreground group: nobody is nearer the camera or larger than anybody else.\n\nEVERY CORNER IS DOING SOMETHING. Fill it with small complete stories a child can find and laugh at — someone chasing a hat down the street, a dog running off with a sausage, a ladder wobbling with a painter on it, a cat watching a fishmonger, someone asleep in a window box, a juggler dropping everything, a queue where one person is clearly cheating, a spilled basket of apples rolling downhill with three people after them. Nothing violent and nobody hurt: the joke is always that a small thing has gone charmingly wrong.",
+      "layout": "The three children are small — each is about a fifth of the picture's height, no taller than the grown-ups beside them, and they stand in the middle of the crowd, not in front of it. They are far apart from one another: one on the left, one in the middle and one on the right, each doing her own thing with clear ground on every side and nothing in front of her. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The place is packed edge to edge with life, forty or more figures at the same scale as the three children: {crowd}.\n\nEVERY SINGLE PERSON IN THE CROWD HAS THEIR HEAD COVERED — every adult and every other child, without exception. Give them all different coverings and make them part of the fun: flat caps, sun hats, woolly hats, hoods up, bike helmets, hard hats, chef's hats, headscarves, bonnets, party hats, a bucket, a newspaper folded into a hat. Not one of them shows their hair.",
+      "nearest": "THE THREE CHILDREN ARE THE ONLY BARE HEADS IN THE WHOLE PICTURE. Their hair is uncovered and plainly visible — no hat, no hood, no helmet, nothing over it — and every other figure in the frame, adult or child, has theirs covered. That difference is the entire game: a child finds herself by looking for the only hair of her colour in the scene.",
+      "solo_only": true,
+      "flat_scale": true
+    },
+    {
+      "id": "cutaway",
+      "cast": [2, 3, 4, 5],
+      "label": "A cutaway house",
+      "wall": "A dollhouse cross-section: the front wall gone, every room a bright little stage, one child per room. The best fit of all of these for the tap mechanic — a room is a natural cell with walls for gutters — and a genre the children already know from their picture books. The building comes from this premise, not from the week's setting; the setting stays around and behind it as the view out of the windows and the garden in front.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "camera": "eye-level",
+      "brief": "This is a cutaway picture: {building}, seen straight on with its whole front wall removed, so every room inside is visible at once like a dollhouse — each room a bright, fully furnished little stage with its own things going on, stacked and side by side, with stairs and doorways joining them. The building stands in the middle of the picture and the place described above is what surrounds it and shows through its windows.",
+      "layout": "{The_children} are in {count} DIFFERENT rooms, each child alone in her room and each room clearly separated from the next by a wall or a floor. Each child is at least a quarter of the picture's height tall and faces the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The other rooms, the stairs, the roof and the garden are full of life: {crowd}.",
+      "buildings": [
+        "a tall, narrow, slightly crooked house of five or six rooms with an attic and a cellar",
+        "a lighthouse with a spiral stair and round rooms stacked to the lamp at the top",
+        "a treehouse of many platforms and rope bridges built through one enormous tree",
+        "an old sailing ship, hull and decks opened up, with cabins, a galley and a crow's nest",
+        "a castle tower with a great hall, a kitchen, a library and a dungeon at the bottom",
+        "a hollow giant tree fitted out with rooms, ladders and round windows",
+        "a big red barn with a hayloft, stalls and a workshop"
+      ],
+      "solo_only": true
+    },
+    {
+      "id": "giants",
+      "cast": [2, 3, 4, 5],
+      "label": "Three giants",
+      "wall": "The three children are giants striding through a tiny town — taller than the houses, careful where they step. Huge tap targets, hair impossible to hide, and the crowd becomes a miniature world at their feet. Works in any family, and it is the cheapest premise for the finder: three big figures and nothing in front of them.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "{The_children} are GIANTS. They are taller than the houses and the trees, and they move carefully through a tiny version of the place described above, whose people, animals and vehicles come up to their ankles and look up at them in delight.",
+      "layout": "Each of the {count} fills most of the picture's height, standing on the ground among the tiny buildings, spread across the picture with clear sky between one and the next — never overlapping and never in a huddle. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "At their feet the tiny place is busy and full of life: {crowd}; everything and everyone in it small enough to stand in a child's palm.",
+      "nearest": "They are the only {count} children at giant scale; any tiny children in the town below are the size of toys."
+    },
+    {
+      "id": "tiny",
+      "cast": [2, 3, 4, 5],
+      "label": "Mouse-sized",
+      "wall": "The opposite of giants: the children are the size of mice, so a daisy is a tree, a beetle is a pony and a puddle is a lake. The weekly setting is kept but seen from ankle height, which quietly gives every setting a second life. The finder's floor still applies — they are small IN THE STORY, not in the frame.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "camera": "low-angle",
+      "brief": "{The_children} are TINY — no bigger than mice — and the place described above is seen from their height: grass blades tower like trees, a fallen leaf is a boat, a pebble is a boulder, an ordinary beetle is the size of a pony, and everyday things loom enormous and wonderful around them.",
+      "layout": "Although tiny in the story, {the_children} are LARGE in the picture — each at least a quarter of the picture's height — because the picture is taken from down at their own scale. They are spread across the scene with clear ground between them, never a huddle. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "Around them, at their own tiny scale, the ground is busy: ants carrying crumbs, a ladybird, a snail, a grasshopper, a dandelion clock, spilled seeds, a dropped button, a lost marble; and far above and out of focus, the ordinary world of {crowd}.",
+      "activities": [
+        {
+          "do": "riding a friendly beetle like a pony",
+          "family": "riding"
+        },
+        {
+          "do": "riding on the back of a bumblebee just above the flowers",
+          "family": "riding"
+        },
+        {
+          "do": "sailing a leaf boat across a puddle with a twig for a mast",
+          "family": "boat"
+        },
+        {
+          "do": "climbing a dandelion stalk to blow its seeds",
+          "family": "climb"
+        },
+        {
+          "do": "climbing a mushroom to sit on its cap",
+          "family": "climb"
+        },
+        {
+          "do": "sliding down a long blade of grass",
+          "family": "play"
+        },
+        {
+          "do": "bouncing on a mushroom cap like a trampoline",
+          "family": "play"
+        },
+        {
+          "do": "rolling a marble much bigger than a football",
+          "family": "play"
+        },
+        {
+          "do": "sheltering under a mushroom from a single enormous raindrop",
+          "family": "wonder"
+        },
+        {
+          "do": "swinging on a spider's thread like a rope swing",
+          "family": "wonder"
+        },
+        {
+          "do": "sharing a strawberry the size of a house with a mouse",
+          "family": "eat"
+        }
+      ]
+    }
+  ]
+}

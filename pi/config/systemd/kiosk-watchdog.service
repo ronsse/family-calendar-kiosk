@@ -1,0 +1,8 @@
+[Unit]
+Description=Reload the wall kiosk when the dashboard becomes reachable
+After=kiosk.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/kiosk.env
+ExecStart=%h/.local/bin/kiosk-watchdog.sh

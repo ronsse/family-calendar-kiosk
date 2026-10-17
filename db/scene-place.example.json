@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy to db/scene-place.json (gitignored). A tenth of a degree: enough for a forecast, too coarse to name a street. timezone is an IANA name.",
+  "lat": 41.9,
+  "lon": -87.6,
+  "timezone": "America/Denver"
+}

@@ -1,0 +1,17 @@
+# labwc autostart — runs once labwc has brought a Wayland session up.
+
+# Force every output on at session start. screen-power.timer turns it off again within a
+# minute if this is the middle of the night. Screen power on Wayland is wlopm / wlr-randr; xset and DPMS
+# are X11-era and silently do nothing here.
+wlopm --on '*' || true
+
+# Hand the systemd user manager the session environment. Without this the kiosk unit
+# starts with no WAYLAND_DISPLAY and Chromium exits unable to find a compositor.
+systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR XDG_SESSION_TYPE
+
+# systemd owns the browser from here — not a shell loop, not a bare autostart line.
+# Restart-on-crash is an acceptance criterion: `pkill chromium` must self-heal.
+systemctl --user start kiosk.service
+
+# Touch wakes the scheduled-dark screen. Needs WAYLAND_DISPLAY, hence here and after the import.
+systemctl --user start screen-idle.service

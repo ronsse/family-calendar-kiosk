@@ -1,0 +1,64 @@
+# secrets — never commit; use op run --env-file
+.env
+op.env
+stacks/homeassistant/config/secrets.yaml
+
+# Home Assistant runtime state (the container writes these into ./config)
+stacks/homeassistant/config/.storage/
+stacks/homeassistant/config/.cache/
+stacks/homeassistant/config/.cloud/
+stacks/homeassistant/config/home-assistant_v2.db*
+stacks/homeassistant/config/home-assistant.log*
+stacks/homeassistant/config/deps/
+# HA custom integrations. NOT OURS AND NOT OUR LICENCE: ChoreOps is GPL-3.0 and Donetick is
+# AGPLv3, and both are viral. CLAUDE.md permits reading them to understand the domain model and
+# forbids their code entering this repo — but the HA config tree lives inside this repo, so
+# without this line a manual install lands GPL sources in `git status` and one `git add -A`
+# commits them. Read them where they are installed; never vendor them here.
+stacks/homeassistant/config/custom_components/
+stacks/homeassistant/config/.HA_VERSION
+stacks/homeassistant/config/.ha_run.lock
+# HA ships these and regenerates them on start — not our config
+stacks/homeassistant/config/blueprints/
+stacks/homeassistant/config/tts/
+stacks/homeassistant/config/backups/
+stacks/homeassistant/config/*.db-shm
+stacks/homeassistant/config/*.db-wal
+node_modules/
+dev.db*
+*.db-shm
+*.db-wal
+dist/
+
+# Python bytecode cache. pi/ is rsynced verbatim to the Raspberry Pi by
+# pi/scripts/deploy.sh, so a host-compiled .pyc would ship a CPython-3.12 artifact
+# built on the server into the kiosk's bin directory — dead weight at best, and at worst
+# a stale file sitting next to kiosk-gate.py that reads like the running code.
+__pycache__/
+*.pyc
+
+# The real household roster, and the real calendar wiring. Placeholder-free, and neither
+# belongs in git (build-plan.md §3.1 redaction rule): one carries the children's names and
+# birthdates, the other carries an adult's name in a calendar entity id. The committed
+# templates are db/household.example.sql and db/calendars.example.sql.
+db/household.sql
+db/calendars.sql
+# The real chore list. The committed template is db/chores.example.json.
+db/chores.json
+# The real household settings (zone, pets, scene budget). Template: db/household.example.json
+db/household.json
+
+# fal.ai spend ledger — the household's, not the repo's (tools/fal_api.py)
+db/fal-ledger.jsonl
+# The real cast sheet in words: ages, heights, hair. Committed template: db/cast.example.json
+db/cast.json
+# Where the wall is (a coarse grid point) and what each week was told — both household.
+db/scene-place.json
+db/scene-context/
+db/scene-activities/
+tools/op.env
+
+# Release prep: private, never published
+local/
+docs/local/
+CLAUDE.local.md

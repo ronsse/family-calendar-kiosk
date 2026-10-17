@@ -1,0 +1,13 @@
+[Unit]
+Description=Poll the dashboard so a stranded kiosk recovers unattended
+
+[Timer]
+# 45s after boot, then every 60s. A minute of a stale screen is within the PRD's
+# tolerance ("occasionally stale is fine"); a permanently stranded error page is not.
+OnBootSec=45s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,354 @@
+{
+  "_comment": [
+    "WHERE a scene happens. The third data table, alongside scene-styles.json (how it is drawn)",
+    "and scene-activities.json (what the children are doing), and split out for the same reason:",
+    "the weekly run must be able to produce a different picture every week without anybody",
+    "editing Python.",
+    "",
+    "`season` is a list of months (1-12) the setting suits. The weekly picker keeps only the",
+    "settings that match the current month, so a snowy hill does not turn up in July. Every",
+    "setting must belong to at least one month and the union must cover all twelve, or some week",
+    "of the year has nothing to draw; tools/scene-week.py checks that and refuses rather than",
+    "quietly falling back to a default nobody chose.",
+    "",
+    "`crowd` is the second half of the prompt and it is what makes a search-and-find picture one",
+    "at all: the mechanic is finding yourself AMONG many figures, so a setting with three people",
+    "in it is a portrait, not a game. Keep these dense.",
+    "",
+    "NOTHING HOUSEHOLD-SPECIFIC GOES IN HERE. These strings are sent verbatim to a hosted model.",
+    "No name, no age, no address, no school, no real place the family goes — build-plan §3.1, and",
+    "prompt_guard.enforce reads the assembled prompt and will refuse anyway. A setting is a GENRE",
+    "of place ('a mountain lake in late summer'), never this family's actual weekend.",
+    "",
+    "FOUR FANTASY SETTINGS were added 2026-09-10, asked for by name: 'there's, like, a fantasy",
+    "scene, let's display like a night scene, a frozen theme... could do another one that's Narnia",
+    "themed, because [the eldest]'s been really into that.'",
+    "",
+    "THEY ARE THEMES, NOT TITLES, and that is deliberate rather than timid. Naming Elsa and Anna,",
+    "or Narnia, does three things wrong at once. They are trademarked characters, so a hosted image",
+    "model either refuses them or drifts towards a half-remembered likeness; the household's own",
+    "children would then be competing with somebody else's characters for the viewer's attention;",
+    "and this picture is NAVIGATION — a child finds herself in it and taps herself — so a costume",
+    "that makes her look like a film character is working directly against the one job the image",
+    "has. `ice-palace` is the ice palace and `lamppost-wood` is the snowy wood with the lamp-post",
+    "and the castle on the hill. Everything that made the child ask for them is in the setting.",
+    "The children in them are still the children.",
+    "`tags` is the activity filter's vocabulary (scene-activities.json `settings`: beach, forest, lake, meadow, mountain, park, river). An empty list means 'no outdoor kind' — activities tagged to a place are skipped and the untagged ones remain. Added 2026-09-13 when a sledge turned up on green hills: gen-scene had the filter and scene-week never fed it."
+  ],
+  "settings": [
+    {
+      "id": "autumn-forest",
+      "season": [
+        9,
+        10,
+        11
+      ],
+      "setting": "a mixed forest of birch and maple at the peak of autumn colour, a leaf-covered path winding through it, a small wooden footbridge over a stream, low afternoon sun through the canopy",
+      "crowd": "a fox, a deer at the treeline, squirrels with acorns, mushrooms on a fallen log, birds, a woodpile, hikers with backpacks, a family on a rug",
+      "tags": [
+        "forest"
+      ]
+    },
+    {
+      "id": "harvest-market",
+      "season": [
+        9,
+        10,
+        11
+      ],
+      "setting": "an outdoor autumn market on a village green, striped awnings over stalls, hay bales and stacked pumpkins, bunting between the lamp posts, an overcast bright sky",
+      "crowd": "stallholders, a cider press, crates of apples, a dog under a table, pigeons, a busker with a fiddle, children with balloons, a cat asleep on a sack",
+      "tags": [
+        "town",
+        "park"
+      ]
+    },
+    {
+      "id": "snowy-hill",
+      "season": [
+        12,
+        1,
+        2
+      ],
+      "setting": "a long snowy hill above a village at dusk, sledge tracks cut into the slope, bare trees and a frozen pond at the bottom, warm windows lit in the houses below",
+      "crowd": "sledges and toboggans, a snowman, a snowball fight, a robin on a fence post, ice skaters on the pond, a dog leaping through snow, someone carrying firewood",
+      "tags": [
+        "mountain",
+        "snow"
+      ]
+    },
+    {
+      "id": "winter-workshop",
+      "season": [
+        12,
+        1,
+        2
+      ],
+      "setting": "a big warm workshop on a winter evening, tall windows with snow piling on the sills, workbenches and shelves of tools and jars, a wood stove with a kettle, strings of small lights",
+      "crowd": "half-built wooden toys, a cat on a stool, spilled nails and shavings, a birdhouse, a ladder, someone at a lathe, mugs of cocoa, a sleeping dog by the stove",
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "spring-meadow",
+      "season": [
+        3,
+        4,
+        5
+      ],
+      "setting": "a wide wildflower meadow in late spring, a stream with stepping stones, a gnarled tree with a rope swing, distant green hills and a big cloudy sky",
+      "crowd": "butterflies, rabbits, lambs, a kite in the air, a picnic blanket, a beekeeper's hives, ducks on the stream, a bicycle laid in the grass",
+      "tags": [
+        "meadow",
+        "river"
+      ]
+    },
+    {
+      "id": "rainy-market-street",
+      "season": [
+        3,
+        4,
+        5
+      ],
+      "setting": "a cobbled market street in spring rain, puddles reflecting shopfronts, striped awnings dripping, a flower stall, a bakery window fogged from inside",
+      "crowd": "umbrellas of many colours, a dog shaking itself dry, a cyclist, pigeons under an awning, a cat in a window, crates of tulips, someone jumping a puddle",
+      "tags": [
+        "town"
+      ]
+    },
+    {
+      "id": "lake-summer",
+      "season": [
+        6,
+        7,
+        8
+      ],
+      "setting": "a mountain lake on a hot clear afternoon, a wooden jetty, rowing boats tied up, pine forest coming down to a pebble shore, mountains behind",
+      "crowd": "swimmers, a canoe, a dog shaking off water, dragonflies, a heron, towels and sandcastles, a family unpacking a picnic, ducks with ducklings",
+      "tags": [
+        "lake",
+        "mountain"
+      ]
+    },
+    {
+      "id": "summer-fair",
+      "season": [
+        6,
+        7,
+        8
+      ],
+      "setting": "a small travelling funfair in a field on a summer evening, a carousel and a helter-skelter, strings of bulbs between poles, long golden light and long shadows",
+      "crowd": "a ticket booth, candyfloss, a coconut shy, a queue for the carousel, a dog on a lead, gulls, a hot-air balloon inflating in the next field, a lost shoe",
+      "tags": [
+        "park"
+      ]
+    },
+    {
+      "id": "night-camp",
+      "season": [
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "setting": "a campsite in a clearing under a huge starry sky, tents with lanterns glowing inside them, a campfire ringed with stones, dark pines all around",
+      "crowd": "marshmallows on sticks, an owl, moths at a lantern, a telescope, sleeping bags, a hedgehog at the edge of the firelight, a guitar, a dog curled by the fire",
+      "tags": [
+        "forest"
+      ]
+    },
+    {
+      "id": "big-library",
+      "season": [
+        1,
+        2,
+        3,
+        10,
+        11,
+        12
+      ],
+      "setting": "an enormous old library with balconies and spiral staircases, ladders on rails, a domed glass ceiling, shafts of dusty light, reading nooks in the window bays",
+      "crowd": "towering book stacks, a cat asleep on a desk, a globe, a mouse behind a shelf, people reading in armchairs, a trolley of books, a paper aeroplane mid-flight",
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "book-fair",
+      "season": [
+        10,
+        3
+      ],
+      "setting": "a school library turned into a book fair for the week, long folding tables piled with brightly coloured picture books and chapter books, tall spinning wire racks of paperbacks, cheerful hand-painted paper banners of stars and rockets, a reading tent made from a big cardboard castle, bean bags on a rug, warm afternoon light through tall classroom windows",
+      "crowd": "parents with tote bags, a teacher at a little table with a cash box, a basket of bookmarks and pencils with fluffy toppers, a cardboard dinosaur standing guard, a stack of posters, a class lining up at the door, a cart of books being wheeled in, a dog waiting just outside the door",
+      "tags": [
+        "indoor"
+      ]
+    },
+    {
+      "id": "halloween-book-fair",
+      "_comment": "Asked for 2026-10-04 for the week of the school book fair, with each child's own costume choice. Season [] on purpose: never drawn by the timer (the costumes are this year's), only by --setting.",
+      "season": [],
+      "setting": "a school library turned into a Halloween book fair, long folding tables piled with brightly coloured picture books and chapter books, tall spinning wire racks of paperbacks, strings of orange and purple paper bats and paper pumpkin garlands across the shelves, carved jack-o'-lanterns grinning on the end of each table, a reading tent made from a big cardboard castle draped with cotton-wool cobwebs, bean bags on a rug, warm late-afternoon light through tall classroom windows",
+      "crowd": "other children in Halloween costumes — a little dinosaur, a pirate, a bumblebee, a ghost made from a sheet — parents with tote bags, a teacher in a witch's hat at a little table with a cash box, a bowl of wrapped sweets, a basket of bookmarks and pencils with fluffy toppers, a cardboard skeleton reading a book, a cart of books being wheeled in, a dog waiting just outside the door",
+      "tags": [
+        "indoor"
+      ],
+      "wardrobe": "Halloween costumes, a different one each. Child 1 is dressed as a clever young witch from a boarding-school story — a long black school robe open over a grey knitted jumper, white collared shirt, a red-and-gold striped tie and a grey pleated skirt, a thin wooden wand in one hand and a tall stack of heavy books hugged in the other arm; no hat; her own long wavy hair loose exactly as it always is. Child 2 is dressed as a big fluffy ginger cat — a soft orange-ginger furry costume with darker ginger stripes, a fat bottle-brush tail, and a headband of pointed ginger cat ears worn on top of her own loose long hair, whiskers and a little pink nose drawn on her cheeks in face paint; no hood and no mask. Child 3 is dressed as a wizard king — a small shiny gold crown sitting on top of his blond fringe, a long royal-purple velvet cape with a white fluffy trim and little gold stars sewn on it, and a wooden wand with a gold star on its tip held up high."
+    },
+    {
+      "id": "ice-palace",
+      "season": [
+        11,
+        12,
+        1,
+        2
+      ],
+      "setting": "the courtyard of a palace carved entirely from ice and snow, tall translucent blue-white towers and arches rising around it, frost patterns across every surface, a frozen fountain in the middle, snow falling gently, the low winter sun striking through the ice and throwing pale blue and pink light across the ground",
+      "crowd": "skaters on the frozen fountain pool, a reindeer in harness, small snow-figures with carrot noses, a woman selling hot drinks from a cart, lanterns on posts, a robin on a frost-covered branch, children dragging sledges, a cat asleep on a warm stone",
+      "tags": [
+        "snow"
+      ],
+      "wardrobe": "fur-trimmed winter capes and embroidered boots in jewel colours, as if they were guests at the palace rather than visitors to it."
+    },
+    {
+      "id": "lamppost-wood",
+      "season": [
+        11,
+        12,
+        1,
+        2
+      ],
+      "setting": "a snowy wood of tall dark firs at dusk, deep untouched snow between the trunks, a single old iron lamp-post standing improbably in the middle of it with its lamp lit and warm, a line of footprints leading past it, and far off between the trees the lit windows of a stone castle on a hill",
+      "crowd": "a fawn with an umbrella, a beaver by a frozen stream, a badger at a burrow, a sleigh track through the snow, birds in the firs, a fox, a stone bench half buried, distant figures on the path to the castle",
+      "tags": [
+        "forest",
+        "snow"
+      ],
+      "wardrobe": "heavy winter coats over old-fashioned 1940s school clothes — a knitted jumper, a pleated skirt, short trousers and long socks — with woollen hats, mittens and scarves in different colours, sturdy lace-up boots, and one of them wrapped in a grown-up's fur coat far too big for her.",
+      "story": {
+        "_note": "CHRONOLOGICAL reading order: each moment's `through` is the point in the series by which a reader has met it (a float, so 1.5 means book one finished and book two started). read_through is how far THIS household has read, and it is household data, so the committed value is the lowest that keeps the spoiler selftest meaningful. Set yours in your own copy; the later moments are already here and inert until it passes them.",
+        "read_through": 1,
+        "moments": [
+          {
+            "through": 1,
+            "do": "stepping into a still green wood full of little round pools, a yellow ring in one hand"
+          },
+          {
+            "through": 1,
+            "do": "watching grass and trees rise out of bare earth as a great lion sings"
+          },
+          {
+            "through": 1,
+            "do": "riding a winged horse above brand-new mountains"
+          },
+          {
+            "through": 1.5,
+            "do": "pushing through a wardrobe full of long fur coats out into falling snow"
+          },
+          {
+            "through": 1.5,
+            "do": "standing in deep snow beside a lit iron lamp-post, an umbrella and brown paper parcels dropped nearby"
+          },
+          {
+            "through": 1.5,
+            "do": "having tea and toast by the fire in a little cave-house with a goat-legged faun"
+          },
+          {
+            "through": 2,
+            "do": "riding on the warm back of an enormous lion across snow that is turning to spring"
+          },
+          {
+            "through": 1.5,
+            "do": "hiding behind a snowbank as a sledge pulled by reindeer goes past, driven by a woman all in white"
+          },
+          {
+            "through": 2,
+            "do": "being crowned on four thrones in a castle hall above the sea"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lantern-night-market",
+      "season": [
+        3,
+        4,
+        5,
+        9,
+        10,
+        11
+      ],
+      "setting": "a market street after dark, hundreds of paper lanterns strung overhead in warm reds and golds, market stalls glowing under them, wet cobblestones reflecting all of it back, deep blue night above the rooftops",
+      "crowd": "stalls of fruit and noodles and toys, a puppet show with a small audience, a juggler, a cat under a stall, a man carrying a stack of baskets, a fiddler, paper fish on poles, a dog begging by a food stall",
+      "tags": [
+        "town"
+      ]
+    },
+    {
+      "id": "castle-village",
+      "season": [
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "setting": "a village of steep-roofed houses climbing a green hillside up to a castle with round towers and bright pennants, a cobbled lane winding up between the houses, window boxes and washing lines, and a wide green valley falling away below",
+      "crowd": "a baker at an open window, a blacksmith at a forge, geese in the lane, a cart pulled by a donkey, a knight leading a horse, children with a kite, cats on the rooftops, a well with a bucket, banners on the tower",
+      "tags": [
+        "town",
+        "meadow"
+      ],
+      "wardrobe": "simple medieval clothes — a linen tunic, a laced bodice over a shift, a hooded cloak — in different plain dyed colours, with leather belts."
+    },
+    {
+      "id": "dragon-shore",
+      "season": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "setting": "a quiet cove by the sea in the autumn mist, a huge friendly green dragon with soft scales and gentle eyes lying curled on the sand like a hill, his tail in the shallows, the dark mouth of a sea cave behind him, a little wooden boat with a bright sail drawn up on the beach, tall cliffs going up into the fog and the sun coming through it in pale shafts",
+      "crowd": "gulls on the rocks, a crab at the waterline, a rowing boat further out, a rope swing from a leaning tree, a string of flags on the boat's mast, starfish in a pool, a lighthouse dim on the headland, footprints along the wet sand",
+      "tags": [
+        "beach"
+      ],
+      "wardrobe": "seaside adventuring clothes — a striped jersey, an oilskin coat, rolled-up trousers, a red neckerchief, a paper sailor's hat, bare feet or buckled boots — as if they had sailed here in the little boat themselves."
+    },
+    {
+      "id": "alpine-lake",
+      "season": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "setting": "a still turquoise lake high in the mountains in the early morning, granite peaks with snow left in the gullies standing all around it and reflected perfectly in the flat water, dark pines coming right down to a stony shore, an old wooden jetty going out over the shallows, boulders and alpine flowers in the grass, and mist lifting off the surface where the sun reaches it",
+      "crowd": "an old fisherman in waders further along the shore, a canoe out on the water, a marmot up on a boulder, an eagle turning high over the peaks, a small tent among the pines, a trout jumping, a stack of creels and rods on the jetty, a heron standing in the shallows",
+      "tags": [
+        "lake",
+        "mountain"
+      ],
+      "wardrobe": "outdoor fishing clothes — a padded gilet with too many pockets, rolled-down waders, a thick wool jumper, a wide-brimmed hat pushed well back off the face — each in a different colour."
+    },
+    {
+      "id": "swim-pool",
+      "_comment": "Asked for 2026-10-12, the day the household went swimming (BACKLOG 4.11, option 2). Season [] on purpose and enforced by check_tables: a swimwear picture is only ever drawn because an adult forced it with --setting, never by the timer. `swimwear` swaps the clothing clause in gen-scene AND the clothed check in scene-regions; the check still demands a covered top and covered bottoms.",
+      "season": [],
+      "setting": "a big bright indoor swimming pool, turquoise water with lane ropes of red and white floats, a shallow end with wide steps going down into it, a curly yellow water slide splashing into the far corner, tall windows along one wall with daylight pouring across the water, white tiles, rippling reflections on the ceiling",
+      "crowd": "a lifeguard on a tall white chair with a whistle, swimmers doing lengths in the lanes, a parent in the shallow end with a toddler in armbands, a stack of foam kickboards by the wall, a big round clock, a swimming lesson of small children holding the side, rows of bleachers with towels and bags on them",
+      "tags": [
+        "pool"
+      ],
+      "swimwear": true,
+      "wardrobe": "swimming clothes. Each child wears a swim shirt (a rash guard, short- or long-sleeved) on top and swim shorts or swimsuit bottoms below, in bright colours, a different combination each. Each child's hair keeps exactly its own colour, length and style — no swim caps, and no goggles over the face."
+    }
+  ]
+}

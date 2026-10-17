@@ -1,0 +1,32 @@
+[Unit]
+Description=Family calendar wall kiosk (Chromium on labwc)
+# Deliberately NOT PartOf=graphical-session.target. PartOf= propagates stop/restart
+# from the target, and a stop-by-dependency is "intentional" as far as systemd is
+# concerned — Restart=always does NOT bring the unit back from it. Nothing starts
+# that target today, so it would be inert until someone enables labwc's session
+# snippet, at which point the wall could go dark and stay dark. labwc's autostart
+# is the single trigger; keep it that way.
+After=graphical-session.target
+# Retry forever. systemd's default rate limit (5 starts / 10s -> failed) is exactly
+# wrong here: if the panel is powered off, or the wall app is mid-restart, the unit would give
+# up permanently and the wall would stay dark until a human noticed. PRD §4,
+# "never blank at 6:00 AM", outranks tidy restart semantics.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/kiosk.env
+Environment=KIOSK_PROFILE_DIR=%h/.config/chromium-kiosk
+ExecStartPre=%h/.local/bin/kiosk-preflight.sh
+ExecStart=%h/.local/bin/kiosk-run.sh
+Restart=always
+RestartSec=3
+# A hung browser often ignores SIGTERM. Without this, `systemctl restart`
+# waits the default 90s before SIGKILL — a detected hang still blanks the
+# wall for a minute and a half. 12s is long enough for a healthy Chromium
+# to flush, short enough that a freeze is not a school-morning event.
+TimeoutStopSec=12
+
+# No [Install] section on purpose. graphical-session.target sets RefuseManualStart,
+# so it cannot pull this unit in on a Lite install with no display manager. labwc's
+# autostart is the single trigger — one mechanism, one place to look when it breaks.

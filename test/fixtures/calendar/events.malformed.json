@@ -1,0 +1,64 @@
+{
+  "_comment": "One case per key. Each value is a whole recorded response body. Every one of these MUST make fetchEvents throw rather than return a shorter list (H3 finding #7).",
+
+  "notAnArray": { "summary": "an object where a list belongs" },
+
+  "entryNotAnObject": ["just a string"],
+
+  "noStart": [{ "summary": "Missing start", "uid": "bad-0001", "end": { "date": "2026-05-02" } }],
+
+  "timedWithoutEnd": [
+    {
+      "summary": "Missing end",
+      "uid": "bad-0002",
+      "start": { "dateTime": "2026-05-03T08:00:00-06:00" }
+    }
+  ],
+
+  "reversedInterval": [
+    {
+      "summary": "Ends before it starts",
+      "uid": "bad-0003",
+      "start": { "dateTime": "2026-05-04T15:00:00-06:00" },
+      "end": { "dateTime": "2026-05-04T09:00:00-06:00" }
+    }
+  ],
+
+  "mixedForms": [
+    {
+      "summary": "All-day start, timed end",
+      "uid": "bad-0004",
+      "start": { "date": "2026-05-05" },
+      "end": { "dateTime": "2026-05-06T00:00:00-06:00" }
+    }
+  ],
+
+  "unanchoredDateTime": [
+    {
+      "summary": "No UTC offset",
+      "uid": "bad-0005",
+      "start": { "dateTime": "2026-05-07T08:00:00" },
+      "end": { "dateTime": "2026-05-07T09:00:00" }
+    }
+  ],
+
+  "bothDateAndDateTime": [
+    {
+      "summary": "Two forms in one slot",
+      "uid": "bad-0006",
+      "start": { "date": "2026-05-08", "dateTime": "2026-05-08T08:00:00-06:00" },
+      "end": { "date": "2026-05-09" }
+    }
+  ],
+
+  "entryStartIsANumber": [{ "summary": "Nonsense start", "uid": "bad-0007", "start": 1234 }],
+
+  "unparseableDate": [
+    {
+      "summary": "Not a calendar date",
+      "uid": "bad-0008",
+      "start": { "date": "2026-13-45" },
+      "end": { "date": "2026-13-46" }
+    }
+  ]
+}

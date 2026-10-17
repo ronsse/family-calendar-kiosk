@@ -1,0 +1,5 @@
+# Rendered mockups and their fonts are big and live outside the repo
+# ($WALL_DATA_ROOT/design-review/). The README, tokens and generators are the record.
+*.png
+*.jpg
+*/fonts/

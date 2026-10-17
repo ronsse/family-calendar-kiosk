@@ -1,0 +1,9 @@
+[Unit]
+Description=Capture last-known-good view of the wall dashboard
+After=kiosk.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=-%h/.config/kiosk.env
+Environment=KIOSK_SHARE_DIR=%h/.local/share/kiosk
+ExecStart=%h/.local/bin/kiosk-snapshot.sh

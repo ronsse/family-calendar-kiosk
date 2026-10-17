@@ -1,0 +1,56 @@
+{
+  "_comment": "Regions found by tools/scene-regions.py, not authored by hand. Activities and placement are dynamic from 2026-09-02, so they cannot be measured once and reused. Every check in that script passed, including the one that matters most: each box was cropped and matched back against its reference portrait.",
+  "id": "spring-meadow-house",
+  "image": "scenes/spring-meadow-house.jpg",
+  "aspect": 1.7778,
+  "regions": [
+    {
+      "slot": 1,
+      "find": "black bob with fringe, pink t-shirt and blue trousers",
+      "x": 0.156,
+      "y": 0.3,
+      "w": 0.17,
+      "h": 0.638,
+      "head": {
+        "x": 0.156,
+        "y": 0.3,
+        "w": 0.135,
+        "h": 0.196
+      }
+    },
+    {
+      "slot": 2,
+      "find": "red curly hair in a ponytail, pink t-shirt and blue trousers",
+      "x": 0.437,
+      "y": 0.298,
+      "w": 0.112,
+      "h": 0.35,
+      "head": {
+        "x": 0.437,
+        "y": 0.298,
+        "w": 0.117,
+        "h": 0.126
+      }
+    },
+    {
+      "slot": 0,
+      "find": "short dark-brown spiky hair, yellow t-shirt and blue shorts",
+      "x": 0.729,
+      "y": 0.24,
+      "w": 0.141,
+      "h": 0.368,
+      "head": {
+        "x": 0.729,
+        "y": 0.24,
+        "w": 0.12,
+        "h": 0.12
+      }
+    }
+  ],
+  "dog": {
+    "x": 0.857,
+    "y": 0.7,
+    "w": 0.103,
+    "h": 0.2
+  }
+}

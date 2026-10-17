@@ -1,0 +1,42 @@
+[
+  {
+    "summary": "Practice",
+    "description": "",
+    "location": "",
+    "uid": "evt-practice-0001",
+    "start": { "dateTime": "2026-02-10T14:00:00-07:00" },
+    "end": { "dateTime": "2026-02-10T15:00:00-07:00" }
+  },
+  {
+    "summary": "Class photo",
+    "description": "",
+    "location": "",
+    "uid": "evt-photo-0002",
+    "start": { "date": "2026-02-12" },
+    "end": { "date": "2026-02-13" }
+  },
+  {
+    "summary": "Trip",
+    "description": "",
+    "location": "",
+    "uid": "evt-trip-0003",
+    "start": { "date": "2026-03-16" },
+    "end": { "date": "2026-03-20" }
+  },
+  {
+    "summary": "Swim lesson",
+    "description": "",
+    "location": "",
+    "uid": "evt-swim-0004",
+    "start": { "dateTime": "2026-07-14T09:30:00-06:00" },
+    "end": { "dateTime": "2026-07-14T10:15:00-06:00" }
+  },
+  {
+    "summary": "Late pickup",
+    "description": "",
+    "location": "",
+    "uid": "evt-pickup-0005",
+    "start": { "dateTime": "2026-02-09T17:00:00-07:00" },
+    "end": { "dateTime": "2026-02-10T17:00:00-07:00" }
+  }
+]

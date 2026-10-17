@@ -1,0 +1,18 @@
+[Unit]
+Description=Local fallback origin for the wall kiosk
+# Retry forever, same reasoning as kiosk.service. A dead gate is the ORIGINAL
+# failure wearing a different URL: Chromium would paint "this site can't be
+# reached" for 127.0.0.1 instead of for homeserver.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/kiosk.env
+Environment=KIOSK_SHARE_DIR=%h/.local/share/kiosk
+Environment=KIOSK_FALLBACK_HTML=%h/.local/share/kiosk/fallback/index.html
+ExecStart=/usr/bin/python3 %h/.local/bin/kiosk-gate.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

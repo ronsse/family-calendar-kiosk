@@ -1,0 +1,50 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# --- Wall-kiosk auth (2026-08-23) -------------------------------------------------------
+# The wall has NO KEYBOARD. Without this, an expired session or a wiped Chromium
+# profile leaves the family at a login form, and "the Pi is disposable" is fiction
+# because a reflash cannot log itself in.
+#
+# Scoped to the Pi's Tailscale address as a single /32, deliberately not a subnet:
+# the LAN /24 would auto-login every guest phone, and 100.64.0.0/10 would
+# auto-login every other tailnet device. Only the wall belongs here.
+#
+# Works only because HA is network_mode: host. On the docker bridge, docker-proxy
+# rewrote every client to 172.21.0.1 and this allowlist would have been inert.
+#
+# `type: homeassistant` must stay FIRST: declaring auth_providers replaces the
+# default set, and dropping it would remove password login for everyone.
+homeassistant:
+  auth_providers:
+    # ORDER MATTERS. login_flow.py iterates hass.auth.auth_providers, which is
+    # list(self._providers.values()) -- insertion-ordered from this file -- and the
+    # frontend renders the FIRST entry's form, demoting the rest to "Or log in with".
+    # With homeassistant first the wall got a password box it has no keyboard for,
+    # because allow_bypass_login lives INSIDE the trusted_networks flow and that flow
+    # was never started. Keep trusted_networks first.
+    - type: trusted_networks
+      trusted_networks:
+        - 100.64.0.3/32        # the wall panel's tailnet address
+      allow_bypass_login: true
+    # Password login stays available for every other device. HA only advertises
+    # trusted_networks to clients inside the allowlist, so other devices see only this.
+    - type: homeassistant
+
+# --- Wall display ------------------------------------------------------------------------
+# The YAML-mode `wall-display` dashboard that used to live here was discarded with Lovelace
+# (ADR-0004): the wall renders the custom app, and HA is only a calendar source.
+lovelace:
+  mode: storage          # keep the default UI-editable dashboard as-is
+
+# Clock and date for the wall header. Built-in platform, no HACS.
+sensor:
+  - platform: time_date
+    display_options:
+      - time
+      - date
