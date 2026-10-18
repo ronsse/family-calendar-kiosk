@@ -334,6 +334,10 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   **It trims VERTICALLY too since 2026-10-18**: a small child far back stands ABOVE a near
   one, and sideways-only refused `2026w43-autumn-forest-nb2` for an 8px stacked gap. The upper
   box's feet go first, never under 48px tall. `npm run verify:finder`.
+  **And a target is at most TWO HEAD WIDTHS wide, centred on the child's head** (same day):
+  the locator boxed a crouching boy together with the squirrel he was feeding, 324px wide.
+  `tighten_to_head` clamps it in code. Do not fix it in the locator's words — telling it to
+  leave out "an animal they are feeding" moved his head box onto the squirrel.
 - **Free image generation is not an option, and as of 2026-09-11 exactly ONE of the two reasons
   survives — the one that matters.** The whole provider picture was re-probed that day:
   - **NVIDIA `black-forest-labs/flux.1-dev` is FREE and WORKING** — 200 in ~5s, five scenes in a

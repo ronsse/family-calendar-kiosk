@@ -312,6 +312,15 @@ never the head), then the top of the lower one, and neither box drops under the 
 floor. The same `MAX_TRIM_PX` cap applies: one child drawn across another is still refused.
 `npm run verify:finder` runs the measured nb2 geometry as a case.
 
+**A tap target is the child, not what the child is doing.** The locator is asked for the
+child alone and does not always comply: the crouching boy in the same picture came back 324px
+wide, squirrel and log included, so a tap on the squirrel opened his screen. Every target is
+now cut to a band two of that child's own head widths wide, centred on his head box from the
+same vision call (`tighten_to_head`). It only ever narrows, never touches height, and a child
+with no head box keeps the locator's box. His target went from 324px to 158px wide. Asking the
+locator in words to leave out "an animal they are feeding" was tried first and made it worse:
+at temperature 0 it put his head box on the squirrel. Nouns in a prompt attract the model.
+
 ## 2.4 Where the activities come from — proposed, and my recommendation
 
 > **Reversed 2026-10-12 — see §2.5.** The household asked for written activities, and the

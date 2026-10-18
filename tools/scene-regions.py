@@ -511,6 +511,42 @@ def to_fractions(box: list[float]) -> tuple[float, float, float, float]:
     return x, y, max(0.0, xmax / 1000.0 - x), max(0.0, ymax / 1000.0 - y)
 
 
+HEAD_WIDTHS = 2.0       # the widest a tap target may be, in this child's own head widths
+
+
+def tighten_to_head(regions: list[dict]) -> None:
+    """Cut each target to a band `HEAD_WIDTHS` heads wide, centred on the child's head. In place.
+
+    The locator is asked for a box around the child ALONE and does not always give one: on
+    2026-10-18 the youngest in `2026w43-autumn-forest-nb2`, crouched offering an acorn, came
+    back 324px wide, taking in the squirrel and the log he was reaching towards, with his head
+    at the box's right edge. A target that wide reaches into the middle of the picture, where
+    a tap on the squirrel opens his screen, and it crowds every other child's target into the
+    gutter rules. His head box, from the same call, was 87px wide and on him.
+
+    So the head anchors the target. Two head widths is a child's shoulders with room to spare;
+    an outstretched arm or a held animal is cut, and that is right, because the target only has
+    to be ON the child. It only ever shrinks: the band is intersected with the locator's box, so
+    a box already narrower is unchanged, and a child with no head box keeps the locator's box.
+    Height is untouched, and the height floor is judged before this, on the child as drawn.
+
+    This is CODE on purpose. The same day the locator prompt was given a sentence instead
+    ("nor anything they are holding out, reaching for, feeding or playing with"), and at
+    temperature 0 Gemini answered it by putting the boy's HEAD box on the squirrel and his body
+    box on the log: naming the thing to leave out pointed the model straight at it. Reverted.
+    """
+    for r in regions:
+        head = r.get("head")
+        if not head:
+            continue
+        centre = head["x"] + head["w"] / 2
+        half = HEAD_WIDTHS * head["w"] / 2
+        x0, x1 = max(r["x"], centre - half), min(r["x"] + r["w"], centre + half)
+        if x1 - x0 < r["w"] - 1e-9 and x1 > x0:
+            r["x"], r["w"] = x0, x1 - x0
+            r["tightened"] = True
+
+
 def grow_to_tap_floor(regions: list[dict]) -> None:
     """Expand each box, about its own centre, until it meets the tap floor. In place.
 
@@ -747,6 +783,7 @@ def main(scene_id: str, image: str, dst: str) -> None:
         for r in regions
         if r["h"] * PANEL_HEIGHT_IN < floor_in_for(r["portrait"])
     ]
+    tighten_to_head(regions)
     grow_to_tap_floor(regions)
     fit_gutters(regions)
     problems = bad_boxes + too_far_back + check(regions, n)
@@ -761,6 +798,7 @@ def main(scene_id: str, image: str, dst: str) -> None:
     for r in regions:
         print(f"  slot {r['slot']}  {r['w'] * LOGICAL_W:5.0f}x{r['h'] * LOGICAL_H:5.0f} logical px"
               f"  at ({r['x']:.3f}, {r['y']:.3f})"
+              f"{'  [tightened to the head]' if r.get('tightened') else ''}"
               f"{'  [trimmed to open a gutter]' if r.get('trimmed') or r.get('trimmed_h') else ''}"
               f"  — {r['find']}", file=sys.stderr)
 
@@ -924,7 +962,20 @@ def selftest() -> None:
     fit_gutters(floor)
     assert check(floor) == [], check(floor)
     assert abs(floor[0]["h"] * LOGICAL_H - TAP_FLOOR_PX) < 0.01
-    print("gutter fitting OK (stacked, side by side, overlap, height floor)")
+    # The boy in nb2 as the locator boxed him, squirrel and log included, and his head box.
+    boy = box(0, 470, 324, 794, 486)
+    boy["head"] = {"x": 681 / LOGICAL_W, "y": 324 / LOGICAL_H, "w": 87 / LOGICAL_W, "h": 78 / LOGICAL_H}
+    girl = box(1, 220, 215, 352, 485)
+    girl["head"] = {"x": 225 / LOGICAL_W, "y": 216 / LOGICAL_H, "w": 121 / LOGICAL_W, "h": 92 / LOGICAL_H}
+    bare = box(2, 552, 237, 600, 316)
+    tight = [girl, bare, boy]
+    tighten_to_head(tight)
+    x0, x1 = boy["x"] * LOGICAL_W, (boy["x"] + boy["w"]) * LOGICAL_W
+    assert abs(x0 - 637.5) < 0.01 and abs(x1 - 794) < 0.01, (x0, x1)   # on him, not the squirrel
+    assert abs(boy["h"] * LOGICAL_H - 162) < 0.01, "height is never touched"
+    assert not girl.get("tightened"), "a box already within two heads is left alone"
+    assert abs(bare["w"] * LOGICAL_W - 48) < 0.01, "no head box, no change"
+    print("gutter fitting OK (stacked, side by side, overlap, height floor, head-anchored width)")
 
 
 if __name__ == "__main__":
