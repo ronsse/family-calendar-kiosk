@@ -44,6 +44,8 @@ jobs:
           npm run verify:styles
           npm run verify:context
           npm run verify:spoilers
+          npm run verify:dog
+          npm run verify:finder
 
       - name: Release gate (committed patterns, image allowlist, household paths)
         run: npm run verify:release

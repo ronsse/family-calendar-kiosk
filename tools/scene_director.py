@@ -49,7 +49,7 @@ sys.path.insert(0, str(HERE))
 
 import prompt_guard  # noqa: E402
 
-PROMPT_VERSION = 1
+PROMPT_VERSION = 2   # 2 (2026-10-18): the dog's mood is the director's to choose too
 MODEL = "google/gemini-2.5-flash"
 RECENT_SETTINGS = 6
 SHORTLIST = 3
@@ -153,7 +153,7 @@ def brief_lines(ctx: dict | None, guests: list[dict], cast: dict | None,
 def build_request(*, brief: list[str], settings: list[dict], styles: list[dict],
                   compositions: list[dict], premises: list[dict], places: dict,
                   recent_settings_: list[str], recent_styles: list[str], shortlist: list[str],
-                  month: int, reasons: list[str]) -> str:
+                  month: int, reasons: list[str], dog_moods: list[dict] | None = None) -> str:
     def short(text: str, n: int = 150) -> str:
         text = " ".join(text.split())
         return text if len(text) <= n else text[:n - 1].rsplit(" ", 1)[0] + "…"
@@ -194,11 +194,18 @@ def build_request(*, brief: list[str], settings: list[dict], styles: list[dict],
         "every face fully visible (no hoods, masks or helmets).",
         "- Pick a style that suits the place and the season, a camera that suits the style, and "
         "premise `plain` unless another clearly fits.",
+        *(["- The family dog is in every picture, on his own and never with the children. Choose "
+           "what he is up to (`dog`) from this list, one that fits your setting's places; "
+           "`hiding` is a fine choice for a seek-and-find picture, and something funny suits most "
+           "weeks: " + "; ".join(f"{m['id']} ({' '.join(m['do'].split())}; places: "
+                                 f"{', '.join(m['places'])})" for m in dog_moods)]
+           if dog_moods else []),
         "",
         "Answer exactly this JSON:",
         '{"setting": "<listed id, or null>", "new_setting": null or {"id": "<short-kebab-id>", '
         '"setting": "...", "crowd": "...", "tags": ["..."], "wardrobe": "... or omit"}, '
-        '"style": "<id>", "camera": "<id>", "premise": "<id>", "why": "<one sentence>"}',
+        '"style": "<id>", "camera": "<id>", "premise": "<id>", '
+        + ('"dog": "<mood id>", ' if dog_moods else "") + '"why": "<one sentence>"}',
     ]
     if reasons:
         parts += ["", "Your previous answer was refused because:", *[f"- {r}" for r in reasons],
@@ -303,6 +310,23 @@ def to_setting(answer: dict, settings: list[dict]) -> dict:
     return out
 
 
+def dog_choice(answer: dict, setting: dict, dog_moods: list[dict], month: int,
+               log=sys.stderr) -> str | None:
+    """The dog mood the director chose, if it fits the chosen setting and the season; else None,
+    which scene-week reads as "draw one". A misfit dog is not worth refusing a whole decision
+    over — the picture is still the director's, only his pastime is drawn."""
+    import scene_activities  # noqa: E402
+    import scene_dog  # noqa: E402
+    mid = answer.get("dog")
+    season = scene_activities.SEASON_OF_MONTH[month]
+    fits = {m["id"] for m in scene_dog.fitting(dog_moods, setting.get("tags", []), season)}
+    if mid in fits:
+        return mid
+    print(f"director: dog {mid!r} does not fit {setting['id']} this season; it will be drawn",
+          file=log)
+    return None
+
+
 def fal_director(prompt: str, purpose: str) -> str:
     import fal_api  # noqa: E402  (imported here so the selftest and dry runs need no key)
     return fal_api.text(prompt, purpose, model=MODEL, system_prompt=SYSTEM)
@@ -314,12 +338,16 @@ def decide(run: str, *, ctx: dict | None, settings: list[dict], styles: list[dic
            month: int, names: list[str], ask: Callable[[str, str], str] | None = None,
            where: pathlib.Path | None = None, rng: random.Random | None = None,
            freeze: bool = True, extra_check: Callable[[dict], list[str]] | None = None,
-           log=sys.stderr) -> dict | None:
+           dog_moods: list[dict] | None = None, log=sys.stderr) -> dict | None:
     """The run's decision: {setting (a full entry), style, camera, premise, why, ...}, frozen on
     first success. None means "use the rotation" — the reason has been printed to `log`.
 
     `extra_check(setting)` is the caller's own refusal of a chosen setting (scene-week: an
-    invented place the activity table cannot fill, when the table is what deals activities)."""
+    invented place the activity table cannot fill, when the table is what deals activities).
+
+    With `dog_moods` the director also chooses the dog's mood. The frozen decision then carries
+    a `dog` key: a mood id, or null for "draw one". A decision with NO `dog` key predates the
+    choice and means hiding, which is what its pictures were drawn with."""
     path = path_for(run, where)
     frozen = load_frozen(path)
     if frozen is not None:
@@ -342,7 +370,7 @@ def decide(run: str, *, ctx: dict | None, settings: list[dict], styles: list[dic
         request = build_request(brief=brief, settings=pool, styles=styles, compositions=compositions,
                                 premises=premises, places=places, recent_settings_=recent,
                                 recent_styles=recent_styles, shortlist=shortlist, month=month,
-                                reasons=reasons)
+                                reasons=reasons, dog_moods=dog_moods)
         guard = prompt_guard.check(request)
         if guard.findings or (guard.advisories and not share_titles):
             why = "; ".join(w for _, w in list(guard.findings) + list(guard.advisories))
@@ -371,6 +399,8 @@ def decide(run: str, *, ctx: dict | None, settings: list[dict], styles: list[dic
                    "guests": [g["id"] for g in guests], "model": MODEL,
                    "prompt_version": PROMPT_VERSION, "attempts": attempts,
                    "decided_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")}
+            if dog_moods:
+                out["dog"] = dog_choice(answer, out["setting"], dog_moods, month, log=log)
             if freeze:
                 _freeze(path, out)
             return out
@@ -487,6 +517,25 @@ def selftest() -> None:
         got = decide("2026-W49", ask=ask, where=where, freeze=False, **common())
         check("freeze=False (a dry run) writes nothing", got and not path_for("2026-W49", where).exists())
 
+        moods = [{"id": "hiding", "weight": 3, "do": "hiding", "places": ["forest", "indoor"]},
+                 {"id": "leaf-pile", "weight": 1, "do": "in a pile of leaves", "places": ["forest"],
+                  "seasons": ["autumn"]},
+                 {"id": "snow-nose", "weight": 1, "do": "nose in the snow", "places": ["snow"]}]
+        ask, calls = answers({**good, "setting": "autumn-forest", "dog": "leaf-pile"})
+        got = decide("2026-W51", ask=ask, where=where, dog_moods=moods,
+                     **common(wall_rows=[]))
+        check("the dog's moods are offered", "leaf-pile (in a pile of leaves" in calls[0]
+              and '"dog": "<mood id>"' in calls[0])
+        check("a fitting dog mood is kept", got and got.get("dog") == "leaf-pile")
+        ask, calls = answers({**good, "dog": "snow-nose"})
+        got = decide("2026-W52", ask=ask, where=where, dog_moods=moods, **common())
+        check("a dog mood that does not fit the place is drawn, not refused",
+              got and "dog" in got and got["dog"] is None and len(calls) == 1)
+        ask, calls = answers(good)
+        got = decide("2026-W53", ask=ask, where=where, **common())
+        check("without moods there is no dog key and no dog line", got and "dog" not in got
+              and '"dog"' not in calls[0])
+
         quiet = {**ctx, "titles": False, "events": []}
         ask, calls = answers(good)
         decide("2026-W50", ask=ask, where=where, **common(ctx=quiet, share_titles=False))
@@ -501,7 +550,7 @@ def selftest() -> None:
         for f in failures:
             print("  FAIL " + f)
         raise SystemExit(1)
-    print("scene director OK (21 checks)")
+    print("scene director OK (25 checks)")
 
 
 if __name__ == "__main__":

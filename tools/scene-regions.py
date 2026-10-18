@@ -6,6 +6,8 @@
     python3 tools/scene-regions.py [--provider fal|nous] <id> assets/scenes/<id>.jpg assets/scenes/<id>.json
     python3 tools/scene-regions.py --dog-only   <id> <id>.jpg <id>.json  # patch an existing manifest
     python3 tools/scene-regions.py --heads-only <id> <id>.jpg <id>.json  # ditto, the rail's faces
+    --dog-doing "<text>"        what the dog was drawn doing instead of hiding (scene-week passes
+                                the same words it gave gen-scene; tools/scene-dog.json)
     --guests-file <list.json>   visiting family drawn in on purpose (scene-week writes it): named
                                 to the locator as people who are NOT the portraits
 
@@ -364,9 +366,14 @@ def locate_dog(scene: str, key: str) -> list | None:
     ordinary outcome and is returned as None, never raised.
     """
     breed, size = dog_description()
+    # What the artist was told he is doing (`--dog-doing`, tools/scene-dog.json). Without it he
+    # was asked for hiding, and the finder looks for a dog half behind something.
+    where = (f"He is {DOG_DOING}, on his own, away from the children." if DOG_DOING else
+             "He is partly hidden: peering out of grass, half behind a tree, a rock, a bush or "
+             "a fence.")
     prompt = (
-        f"Hidden somewhere in this picture is {breed}. {size} He is partly hidden: peering out "
-        "of grass, half behind a tree, a rock, a bush or a fence. He is not one of the children "
+        f"{'Somewhere' if DOG_DOING else 'Hidden somewhere'} in this picture is {breed}. "
+        f"{size} {where} He is not one of the children "
         "and not posed with them.\n\n"
         "Find him and give a tight bounding box around the dog alone, including whatever part "
         "of him is visible.\n\n"
@@ -420,6 +427,7 @@ def dog_region(box: list, regions: list[dict]) -> dict | None:
 
 FLAT_SCALE = False   # set by --flat-scale; see `floor_in_for`
 SWIMWEAR = False     # set by --swimwear; changes what "fully clothed" is asked as, never whether
+DOG_DOING = ""       # set by --dog-doing; what the dog was drawn doing, when not hiding
 GUESTS: list = []    # set by --guests-file; visiting family the locator must not box
 
 # The clothed question, two ways. The swimwear form exists for a setting an adult forced with
@@ -537,7 +545,7 @@ def grow_to_tap_floor(regions: list[dict]) -> None:
 
 
 def fit_gutters(regions: list[dict]) -> None:
-    """Open the 16px gutter between two side-by-side targets by TRIMMING them, not refusing.
+    """Open the gutter between two neighbouring targets by TRIMMING them, not refusing.
 
     The same principle as `grow_to_tap_floor`, in the other direction. On 2026-09-12 the finder
     refused the two best pictures of the morning — three children walking abreast, exactly the
@@ -551,31 +559,63 @@ def fit_gutters(regions: list[dict]) -> None:
     household's absolute 64px floor, which is about motor skill and does not move. If the pair
     cannot open the gutter within that, `check` refuses the scene exactly as before.
 
-    Sideways only, and only a little. A shortfall bigger than `MAX_TRIM_PX` is not padding
-    touching padding, it is one figure drawn across another — a child in front of a child — and
-    that is a picture to refuse, not a pair of rectangles to shave into slivers.
+    Only a little. A shortfall bigger than `MAX_TRIM_PX` is not padding touching padding, it is
+    one figure drawn across another — a child in front of a child — and that is a picture to
+    refuse, not a pair of rectangles to shave into slivers.
+
+    VERTICALLY TOO, since 2026-10-18. It was sideways only, which assumed the children stand in
+    a row. A small child in the BACKGROUND stands above a big one in the foreground instead —
+    the composition the household asked for ("I like the option of having kids smaller and in
+    the background") — and `2026w43-autumn-forest-nb2` was refused for an 8px gap between a
+    girl at a leaf hut and the boy below her, which no sideways trim can open because the two
+    boxes overlap across their whole width. So the pair is opened along whichever axis is
+    nearer: a stacked pair gives up the bottom of the upper box first (feet and knees, never
+    the head that tells her apart), then the top of the lower one, and neither goes under
+    `TAP_FLOOR_PX` in height — the floor `check` holds every height to.
     """
-    gutter = GUTTER_PX / LOGICAL_W
-    abs_floor = ABS_TAP_FLOOR_PX / LOGICAL_W
+    abs_floor_w = ABS_TAP_FLOOR_PX / LOGICAL_W
+    floor_h = TAP_FLOOR_PX / LOGICAL_H
     for i, a in enumerate(regions):
         for b in regions[i + 1:]:
-            gap_y = max(a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"]))
-            if gap_y * LOGICAL_H >= GUTTER_PX:
-                continue                       # clear vertically; nothing to open
-            left, right = (a, b) if a["x"] <= b["x"] else (b, a)
-            short = gutter - (right["x"] - (left["x"] + left["w"]))
-            if short <= 0 or short * LOGICAL_W > MAX_TRIM_PX:
-                continue
-            # Take from the wider target first, then split what is left.
-            for r, side in sorted(((left, "right"), (right, "left")), key=lambda t: -t[0]["w"]):
-                give = min(short, max(0.0, r["w"] - abs_floor))
-                if give <= 0:
+            gap_x = max(a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"])) * LOGICAL_W
+            gap_y = max(a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"])) * LOGICAL_H
+            if max(gap_x, gap_y) >= GUTTER_PX:
+                continue                       # already clear on one axis; nothing to open
+            short_x, short_y = GUTTER_PX - gap_x, GUTTER_PX - gap_y
+            for axis in sorted(("x", "y"), key=lambda k: short_x if k == "x" else short_y):
+                short_px = short_x if axis == "x" else short_y
+                if short_px > MAX_TRIM_PX:
                     continue
-                r["w"] -= give
-                if side == "left":
-                    r["x"] += give
-                r["trimmed"] = True
-                short -= give
+                if axis == "x":
+                    # Sideways: from the wider target first, then split what is left.
+                    left, right = (a, b) if a["x"] <= b["x"] else (b, a)
+                    short = short_px / LOGICAL_W
+                    for r, side in sorted(((left, "right"), (right, "left")), key=lambda t: -t[0]["w"]):
+                        give = min(short, max(0.0, r["w"] - abs_floor_w))
+                        if give <= 0:
+                            continue
+                        r["w"] -= give
+                        if side == "left":
+                            r["x"] += give
+                        r["trimmed"] = True
+                        short -= give
+                        if short <= 1e-9:
+                            break
+                else:
+                    # Stacked: the upper box's feet first, then the lower box's top.
+                    upper, lower = (a, b) if a["y"] <= b["y"] else (b, a)
+                    short = short_px / LOGICAL_H
+                    for r, side in ((upper, "bottom"), (lower, "top")):
+                        give = min(short, max(0.0, r["h"] - floor_h))
+                        if give <= 0:
+                            continue
+                        r["h"] -= give
+                        if side == "top":
+                            r["y"] += give
+                        r["trimmed_h"] = True      # height only; the width floor is untouched
+                        short -= give
+                        if short <= 1e-9:
+                            break
                 if short <= 1e-9:
                     break
 
@@ -721,7 +761,7 @@ def main(scene_id: str, image: str, dst: str) -> None:
     for r in regions:
         print(f"  slot {r['slot']}  {r['w'] * LOGICAL_W:5.0f}x{r['h'] * LOGICAL_H:5.0f} logical px"
               f"  at ({r['x']:.3f}, {r['y']:.3f})"
-              f"{'  [trimmed to open a gutter]' if r.get('trimmed') else ''}"
+              f"{'  [trimmed to open a gutter]' if r.get('trimmed') or r.get('trimmed_h') else ''}"
               f"  — {r['find']}", file=sys.stderr)
 
     if problems:
@@ -849,8 +889,49 @@ def dog_only(scene_id: str, image: str, dst: str) -> None:
     print(f"wrote {dst} ({'dog added' if dog else 'no dog'})", file=sys.stderr)
 
 
+def selftest() -> None:
+    """The gutter fitter on measured geometry. No image, no key, no network."""
+    def box(slot, x0, y0, x1, y1):
+        return {"slot": slot, "x": x0 / LOGICAL_W, "y": y0 / LOGICAL_H,
+                "w": (x1 - x0) / LOGICAL_W, "h": (y1 - y0) / LOGICAL_H}
+
+    # 2026w43-autumn-forest-nb2, as the finder measured it: a small girl at the leaf hut stands
+    # 8px above the boy's box below her. Refused for the gutter before; it must pass now.
+    nb2 = [box(1, 140, 300, 260, 480), box(2, 552, 237, 600, 316), box(0, 470, 324, 794, 486)]
+    assert any("gutter" in p or "apart" in p or "gap" in p for p in check([dict(r) for r in nb2])), \
+        "the nb2 pair was supposed to fail before fitting"
+    fit_gutters(nb2)
+    assert check(nb2) == [], check(nb2)
+    girl, boy = nb2[1], nb2[2]
+    assert girl.get("trimmed_h") and not girl.get("trimmed"), "stacked pair trims height, not width"
+    assert abs(girl["h"] * LOGICAL_H - 75) < 0.01, girl["h"] * LOGICAL_H   # 4px off her feet
+    assert abs(boy["y"] * LOGICAL_H - 324) < 0.01, "the lower box keeps its top when the upper can pay"
+
+    # Side by side: unchanged behaviour, sideways trim, wider box first.
+    row = [box(0, 100, 100, 200, 400), box(1, 205, 100, 285, 400), box(2, 600, 100, 700, 400)]
+    fit_gutters(row)
+    assert check(row) == [], check(row)
+    assert row[0].get("trimmed") and not row[0].get("trimmed_h")
+
+    # One child drawn across another is still a refusal on both axes.
+    over = [box(0, 100, 100, 260, 400), box(1, 200, 200, 300, 450), box(2, 600, 100, 700, 400)]
+    fit_gutters(over)
+    assert check(over) != [], "an overlap of 60px is a picture to refuse, not to shave"
+
+    # A stacked pair whose upper box is already at the height floor takes the rest from below.
+    floor = [box(0, 300, 100, 360, 100 + TAP_FLOOR_PX), box(1, 300, 100 + TAP_FLOOR_PX + 6, 400, 400),
+             box(2, 700, 100, 800, 400)]
+    fit_gutters(floor)
+    assert check(floor) == [], check(floor)
+    assert abs(floor[0]["h"] * LOGICAL_H - TAP_FLOOR_PX) < 0.01
+    print("gutter fitting OK (stacked, side by side, overlap, height floor)")
+
+
 if __name__ == "__main__":
     argv = sys.argv[1:]
+    if argv == ["--selftest"]:
+        selftest()
+        raise SystemExit(0)
     entry = main
     while argv and argv[0].startswith("--"):
         flag = argv.pop(0)
@@ -864,6 +945,8 @@ if __name__ == "__main__":
             FLAT_SCALE = True
         elif flag == "--guests-file":
             GUESTS = scene_guests.load_selected(argv.pop(0))
+        elif flag == "--dog-doing":
+            DOG_DOING = " ".join(argv.pop(0).split())
         elif flag == "--provider":
             PROVIDER = argv.pop(0)
             if PROVIDER not in ("fal", "nous"):

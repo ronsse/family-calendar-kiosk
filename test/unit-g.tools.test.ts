@@ -122,6 +122,28 @@ test('(b) the three-child draw digest is the recorded one, so cached pictures ar
   assert.equal(r.stdout.trim(), FIXTURE_DIGEST);
 });
 
+// THE DOG'S MOOD (2026-10-18, tools/scene-dog.json). `hiding` passes no flag, so (a) and (b) above
+// ARE its test; a mood changes the dog's sentence and nothing else, and reaches the dry run.
+test('a dog mood rewrites only the dog sentence; hiding is the fixture', () => {
+  const r = genScene('--print-prompt', EXAMPLE_CAST, ['--dog-doing', 'chasing his own tail in a blur of fur']);
+  assert.equal(r.status, 0, r.stderr);
+  const want = readFileSync(FIXTURE, 'utf8').split('\n');
+  const got = r.stdout.split('\n');
+  assert.equal(got.length, want.length);
+  const changed = got.filter((line, i) => line !== want[i]);
+  assert.equal(changed.length, 1, changed.join('\n'));
+  assert.match(changed[0] as string, /He is chasing his own tail in a blur of fur\. .*away from the children/);
+  assert.doesNotMatch(changed[0] as string, /[Hh]idden/);
+});
+
+test('the week dry run names the dog\'s mood', () => {
+  withTmp((dir) => {
+    const r = sceneWeek({ household: household(dir, {}), args: ['--no-director'] });
+    assert.equal(r.status, 0, r.out);
+    assert.match(r.out, /^dog {5}: [a-z-]+/m);
+  });
+});
+
 test('(c) a cast of one draws one child and no dog, and the week dry-runs', () => {
   withTmp((dir) => {
     const one = castOf(dir, 1, false);

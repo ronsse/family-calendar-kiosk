@@ -24,6 +24,8 @@
     "verify:context": "python3 tools/scene_context.py --selftest",
     "verify:cast": "python3 tools/scene_cast.py --selftest",
     "verify:director": "python3 tools/scene_director.py --selftest && python3 tools/scene_guests.py --selftest",
+    "verify:dog": "python3 tools/scene_dog.py --selftest",
+    "verify:finder": "python3 tools/scene-regions.py --selftest",
     "verify:config": "python3 tools/household_config.py --dump db/household.example.json >/dev/null",
     "verify:release": "tools/release/verify-clean.sh --public",
     "screenshots": "node tools/release/capture-screenshots.mjs"

@@ -282,6 +282,36 @@ visit. Present guests join the picture by description (a grown-up, an older chil
 against the children's landmarks), never by name, and the finder is told about them as decoys
 so it does not tap a cousin. A run with no guests produces a prompt byte-identical to before.
 
+### 2.3b What the dog is up to, and children further back (2026-10-18)
+
+**The dog has moods.** He used to be hiding in every picture. The household's ask: *"not just
+hiding in every picture, which is funny for some pictures... have him playing on his own, if
+anything, or doing something funny."* `tools/scene-dog.json` lists what he may be doing:
+chasing his tail, a stick too big for him, flat on his back in a leaf pile, shaking off after
+a swim, sneaking a sandwich, asleep in the sun, sitting in a suitcase, and more. Each mood
+names its `places` (the same closed vocabulary as the activities) and may name `seasons`.
+`hiding` is still one of them and stays the most likely. He is always **on his own** and
+never posed with the children; that was asked for, and his tap target is dropped near a
+child's anyway.
+
+The director chooses the mood with the rest of the picture. A choice that does not fit the
+place or season is dropped and drawn instead; the decision is not refused over it. Without a
+director, a seeded weighted draw picks one, salted apart from the activity seed. The dry run
+prints `dog     :`. `hiding` sends no `--dog-doing` flag at all, so its prompt is byte-identical
+to every earlier picture and cached pictures are reused. A director decision frozen before
+this existed has no `dog` key and means hiding, for the same reason. The finder is told what
+he is doing so it looks for a dog doing that, not a hidden one. `npm run verify:dog`.
+
+**Stacked children are fitted, not refused.** `fit_gutters` used to open the gap between two
+tap targets only sideways, which assumes the children stand in a row. A small child further
+back stands *above* a near one instead. That is a composition the household likes (*"I like
+the option of having kids smaller and in the background"*), and `2026w43-autumn-forest-nb2`
+was refused for an 8px vertical gap that no sideways trim could open. Now the pair opens
+along whichever axis is closer. A stacked pair loses the bottom of the upper box first (feet,
+never the head), then the top of the lower one, and neither box drops under the 48px height
+floor. The same `MAX_TRIM_PX` cap applies: one child drawn across another is still refused.
+`npm run verify:finder` runs the measured nb2 geometry as a case.
+
 ## 2.4 Where the activities come from — proposed, and my recommendation
 
 > **Reversed 2026-10-12 — see §2.5.** The household asked for written activities, and the

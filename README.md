@@ -12,7 +12,7 @@ The picture is shaped by your week. Twice a week, on Sunday and Wednesday nights
 
 <img src="docs/images/wall-picture.png" width="640" alt="The idle wall: a full-screen illustrated scene with three children and a hidden dog">
 
-Each week the wall shows a new illustrated scene of your children, and each child finds themselves in it and taps their own figure to open their own screen. The dog is hidden somewhere in the picture too.
+Each week the wall shows a new illustrated scene of your children, and each child finds themselves in it and taps their own figure to open their own screen. The dog is in the picture too: sometimes hiding, sometimes busy with something funny of his own.
 
 ### A different picture every week
 

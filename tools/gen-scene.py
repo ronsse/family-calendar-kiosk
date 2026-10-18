@@ -20,6 +20,9 @@
     --guests-file <list.json>    (visiting family who are in the picture too — written per run by
                                   scene-week from db/guests.json and the calendar; absent or
                                   empty leaves the prompt byte-identical — tools/scene_guests.py)
+    --dog-doing "<what he is up to>" (the dog busy with something of his own instead of hiding —
+                                  tools/scene-dog.json via scene-week; absent is the original
+                                  hiding clause, byte for byte)
     --activities-file <set.json> (what the children are doing, WRITTEN for this scene by
                                   tools/scene_activity_writer.py and frozen in
                                   db/scene-activities/; replaces the table pick, re-validated
@@ -581,16 +584,28 @@ def clothed_v2(wardrobe: str, swimwear: bool = False, n: int = 3) -> str:
         "eyes, nothing covering the hair that tells them apart."
     )
 
-def dog_v2(cast: dict) -> str:
+def dog_v2(cast: dict, doing: str = "") -> str:
     """The dog clause, built from `db/cast.json` through `scene_cast.dog_lines`.
 
     It was a module constant carrying its own copy of both his appearance and his size, and the
     size half said "about a tenth of the picture's height" — a fact about the frame, which gave
     the picture no scale anchor at all. See `dog_lines`; he is measured against the children now.
+
+    `doing` (2026-10-18, `--dog-doing`, from tools/scene-dog.json) has him busy with something
+    of his own instead of hiding: *"not just hiding in every picture... playing on his own, or
+    doing something funny."* Still on his own and never posed with the children — his tap
+    target is dropped when it comes near theirs. Empty is the original hiding clause, byte for
+    byte, so every picture drawn before the table keeps its digest.
     """
     breed, size = dog_lines(cast)
     if not breed:
         return ""  # no dog in this household; `everyone` drops the empty clause
+    if doing:
+        return (
+            f"Somewhere in the picture, off on his own, is {breed}. {size} He is {doing}. He is "
+            "busy with his own fun, away from the children and not posed with them, never in "
+            "the centre and never the biggest thing in the scene, and he is fully visible."
+        )
     return (
         f"Hidden somewhere in the picture is {breed}. {size} He is hiding — peering out of long "
         "grass, half behind a tree trunk, a rock, a bush or a fence — never in the centre, never "
@@ -626,6 +641,7 @@ def build_prompt_v2(
     placement: str = "",
     swimwear: bool = False,
     guests: list | None = None,
+    dog_doing: str = "",
 ) -> str:
     premise = premise or {}
     context = context or {}
@@ -681,7 +697,7 @@ def build_prompt_v2(
     # a person composed for the picture (docs/scene-pipeline.md §2.3).
     scene = "\n".join(p for p in (frame, setting, context.get("weather_line", "")) if p)
     everyone = "\n".join(
-        p for p in (crowd_clause, context.get("props_line", ""), clothed_v2(wardrobe, swimwear, n), dog_v2(cast)) if p
+        p for p in (crowd_clause, context.get("props_line", ""), clothed_v2(wardrobe, swimwear, n), dog_v2(cast, dog_doing)) if p
     )
     rules = "\n".join(p for p in (RULES_V2, fill_children(premise.get("rules", ""), n)) if p)
     hints = [h for h in context.get("hints", []) if h.strip()]
@@ -750,6 +766,7 @@ def build_prompt(
     placement: str = "",
     swimwear: bool = False,
     guests: list | None = None,
+    dog_doing: str = "",
 ) -> str:
     """The whole prompt, assembled once so every provider sends identical words.
 
@@ -766,8 +783,10 @@ def build_prompt(
         return build_prompt_v2(
             setting, crowd, style, composition, activities, use_refs, cast, wardrobe=wardrobe,
             placement=placement, swimwear=swimwear,
-            premise=premise, context=context, guests=guests,
+            premise=premise, context=context, guests=guests, dog_doing=dog_doing,
         )
+    if dog_doing:
+        raise SystemExit("--dog-doing is a prompt-version-2 feature; version 1 is the control")
     if guests:
         raise SystemExit("--guests-file is a prompt-version-2 feature; version 1 is the control")
     if premise and premise["id"] != "plain":
@@ -825,11 +844,12 @@ def generate(
     premise: dict | None = None,
     context: dict | None = None,
     guests: list | None = None,
+    dog_doing: str = "",
 ) -> bytes:
     prompt = build_prompt(
         setting, crowd, style_id, activities, use_refs, composition_id, version,
         premise=premise, context=context, wardrobe=wardrobe, placement=placement,
-        guests=guests,
+        guests=guests, dog_doing=dog_doing,
     )
 
     # Both guards, on this side of the socket, for the reason gen-icon.py gives: a second
@@ -1001,7 +1021,7 @@ if __name__ == "__main__":
     composition_id, model, version, print_only = "eye-level", None, 2, False
     premise_id, context_path, wardrobe, moment = "plain", None, "", ""
     reuse_if_same, swimwear, print_digest = False, False, False
-    activities_file, guests_file = None, None
+    activities_file, guests_file, dog_doing = None, None, ""
     while argv and argv[0].startswith("--"):
         flag = argv.pop(0)
         if flag == "--style":
@@ -1042,6 +1062,8 @@ if __name__ == "__main__":
             activities_file = argv.pop(0)
         elif flag == "--guests-file":
             guests_file = argv.pop(0)
+        elif flag == "--dog-doing":
+            dog_doing = " ".join(argv.pop(0).split())
         else:
             raise SystemExit(f"unknown flag {flag}\n{__doc__}")
     if len(argv) != 3:
@@ -1119,7 +1141,7 @@ if __name__ == "__main__":
     prompt = build_prompt(
         setting, crowd, style_id, activities, use_refs, composition_id=composition_id,
         version=version, premise=premise, context=context, wardrobe=wardrobe,
-        placement=placement, swimwear=swimwear, guests=guests,
+        placement=placement, swimwear=swimwear, guests=guests, dog_doing=dog_doing,
     )
     if print_only:
         enforce(prompt)
@@ -1144,7 +1166,7 @@ if __name__ == "__main__":
             generate(
                 setting, crowd, style_id, activities, os.environ["NOUS_API_KEY"], use_refs,
                 composition_id=composition_id, version=version, premise=premise,
-                context=context, guests=guests,
+                context=context, guests=guests, dog_doing=dog_doing,
             ),
             dst,
         )

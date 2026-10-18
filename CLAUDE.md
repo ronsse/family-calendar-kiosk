@@ -328,9 +328,12 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   Before adding any rule to the prompt, read it as a list of nouns: each one may get drawn.
 - **The finder locates and FITS tap targets; it is not a taste gate.** The morning's only two
   refusals were a 1px and a 5px gutter between targets it had itself grown to 96px, on the two
-  best pictures of the day. `fit_gutters` trims sideways (never under the 64px absolute floor,
-  never more than 32px a pair) and refuses beyond that; three of the next four good scenes
+  best pictures of the day. `fit_gutters` trims (never under the absolute floor, never more
+  than `MAX_TRIM_PX` a pair) and refuses beyond that; three of the next four good scenes
   needed it. Taste is the approver's, choosing between two candidates behind the PIN.
+  **It trims VERTICALLY too since 2026-10-18**: a small child far back stands ABOVE a near
+  one, and sideways-only refused `2026w43-autumn-forest-nb2` for an 8px stacked gap. The upper
+  box's feet go first, never under 48px tall. `npm run verify:finder`.
 - **Free image generation is not an option, and as of 2026-09-11 exactly ONE of the two reasons
   survives — the one that matters.** The whole provider picture was re-probed that day:
   - **NVIDIA `black-forest-labs/flux.1-dev` is FREE and WORKING** — 200 in ~5s, five scenes in a
@@ -606,8 +609,12 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   coverage after the same sweep: campsite, autumn-forest, trailer-camp and all three generated
   scenes 3/3; **mountain-meadow 1/3**, where the validator refused two boxes for being the body
   again — which is the validator doing its job, and those two children keep their cartoons.
-- **The dog is the Easter egg, and he is never a reason to refuse a scene.** The dog is hidden in
-  every generated picture; `tools/scene-regions.py` looks for him AFTER the children pass and
+- **The dog is the Easter egg, and he is never a reason to refuse a scene.** The dog is in
+  every generated picture, but since 2026-10-18 he is not always HIDING: `tools/scene-dog.json`
+  gives him moods (tail-chase, leaf pile, snack thief…), chosen by the director or a seeded
+  draw, always on his own and never posed with the children. `hiding` passes no `--dog-doing`
+  and is byte-identical to the old prompt, and a frozen director decision with no `dog` key
+  means hiding, so a retry of an old run reuses its pictures; `tools/scene-regions.py` looks for him AFTER the children pass and
   writes an optional top-level `dog` box into the manifest (`WallScene.dog`, null when absent
   or when his box would sit within 16px of a child's target — the children come first). Tap
   him on the wall and `DogSheet` opens, and **every word on it is his** (2026-09-15 pivot).

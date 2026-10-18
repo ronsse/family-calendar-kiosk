@@ -87,6 +87,7 @@ import scene_memory  # noqa: E402  (which styles the wall has shown lately)
 import scene_story  # noqa: E402  (a sibling module: THIS WEEK's weather, props and notes)
 import scene_director  # noqa: E402  (a text model chooses the run's picture; rotation is its fallback)
 import scene_guests  # noqa: E402  (visiting family, from db/guests.json and the calendar)
+import scene_dog  # noqa: E402  (what the dog is up to: hiding, or busy with his own fun)
 import household_config  # noqa: E402  (db/household.json: the household's scene preferences)
 from scene_cast import cast_fits, fill_children, load_cast  # noqa: E402
 
@@ -235,6 +236,11 @@ def check_tables(children: int = 3, written: bool = False) -> None:
     for warning in scene_activities.check(SETTINGS, children=children, written=written):
         print(f"warning: {warning} (the activity writer fills it; the table is only its "
               "fallback)", file=sys.stderr)
+    # The dog's moods use the same closed `places` vocabulary; an unknown place would make a
+    # mood silently undrawable, which is the signature bug in a table.
+    dog_problems = scene_dog.problems(scene_dog.load(), scene_dog.places_known())
+    if dog_problems:
+        raise SystemExit("scene-dog.json:\n  - " + "\n  - ".join(dog_problems))
     # A COUNT WRITTEN AS A WORD is a cast of three hardcoded into a prompt. Refused here rather
     # than found in a picture of two children described as three.
     counted = sorted({f"{name}: {e.get('id') or e.get('do', '')[:40]!r} says {m.group(0)!r}"
@@ -382,7 +388,7 @@ def ask_director(run_id: str, ctx: dict | None, guests: list[dict], cfg: dict, m
         premises=PREMISES, places=table.get("places") or {}, wall_rows=wall_rows,
         recent_styles=recent, guests=guests, cast=load_cast(),
         share_titles=bool(cfg.get("shareTitles")), month=monday.month, names=names,
-        freeze=freeze, extra_check=fillable)
+        freeze=freeze, extra_check=fillable, dog_moods=scene_dog.load())
 
 
 def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
@@ -594,6 +600,21 @@ def main() -> int:
     # An explicitly requested moment wins over the story table: a person who typed what
     # they want has already made the choice the table exists to make.
     moment = args.moment or scene_story.pick(setting, random.Random(seed))
+    # WHAT THE DOG IS UP TO (2026-10-18): "not just hiding in every picture... playing on his
+    # own, or doing something funny." The director's choice wins; a decision frozen before the
+    # director could choose has no `dog` key and means hiding, so a retry of an earlier run
+    # draws the prompt it already paid for. Otherwise a seeded draw from the moods that fit
+    # the setting's places — salted, so the dog's draw does not move the moment's.
+    dog_moods = scene_dog.load()
+    if director is not None and "dog" not in director:
+        dog_mood = scene_dog.by_id(dog_moods, scene_dog.HIDING)    # frozen before the choice
+    elif director is not None and scene_dog.by_id(dog_moods, director["dog"]):
+        dog_mood = scene_dog.by_id(dog_moods, director["dog"])
+    else:
+        dog_mood = scene_dog.draw(dog_moods, setting.get("tags", []),
+                                  random.Random(seed ^ zlib.crc32(b"dog")),
+                                  scene_activities.SEASON_OF_MONTH[monday.month])
+    dog_doing = scene_dog.doing(dog_mood)
 
     print(f"run     : {run_id}  ({ctx['from']}..{ctx['to']})" if ctx and ctx.get("from")
           else f"run     : {run_id}")
@@ -615,6 +636,7 @@ def main() -> int:
         for note in ctx["notes"]:
             print(f"          {note}")
     print("guests  : " + (", ".join(g["id"] for g in guests) if guests else "none"))
+    print(f"dog     : {dog_mood['id']}" + (f"  ({dog_doing})" if dog_doing else ""))
 
     # WHAT THEY ARE DOING. A story moment and a premise's own list win, as they do in gen-scene;
     # otherwise `scenes.activities` says whether a text model writes a set for this scene or the
@@ -745,7 +767,7 @@ def main() -> int:
         verdict = offer(scene_id, model, style, setting, composition, monday, out, env, args,
                         premise_id=args.premise, context_path=context_path, seed=seed,
                         moment=moment or "", activities_file=activities_file,
-                        guests_file=guests_file)
+                        guests_file=guests_file, dog_doing=dog_doing)
         {"offered": offered, "refused": refused, "errored": errored}[verdict].append(scene_id)
 
     print()
@@ -809,7 +831,7 @@ def offer(scene_id: str, model: str | None, style: dict, setting: dict, composit
           monday: dt.date, out: pathlib.Path, env: dict, args, seed: int = 0, moment: str = "",
           premise_id: str = "plain", context_path: pathlib.Path | None = None,
           activities_file: pathlib.Path | None = None,
-          guests_file: pathlib.Path | None = None) -> str:
+          guests_file: pathlib.Path | None = None, dog_doing: str = "") -> str:
     """Generate one candidate, find its children, copy it in and register it.
     Returns "offered", "refused" or "errored"."""
     jpg, manifest = out / f"{scene_id}.jpg", out / f"{scene_id}.json"
@@ -839,6 +861,7 @@ def offer(scene_id: str, model: str | None, style: dict, setting: dict, composit
            *(["--moment", moment] if moment else []),
            *(["--activities-file", str(activities_file)] if activities_file else []),
            *(["--guests-file", str(guests_file)] if guests_file else []),
+           *(["--dog-doing", dog_doing] if dog_doing else []),
            "--provider", args.provider, "--seed", str(seed), "--reuse-if-same"]
     if model:
         cmd += ["--model", model]
@@ -861,6 +884,7 @@ def offer(scene_id: str, model: str | None, style: dict, setting: dict, composit
          *(["--flat-scale"] if PREMISE_BY_ID.get(premise_id, {}).get("flat_scale") else []),
          *(["--swimwear"] if setting.get("swimwear") else []),
          *(["--guests-file", str(guests_file)] if guests_file else []),
+         *(["--dog-doing", dog_doing] if dog_doing else []),
          scene_id, str(jpg), str(manifest)],
         env=env,
     )
