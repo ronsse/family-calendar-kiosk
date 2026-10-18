@@ -43,6 +43,16 @@ EOF
   chmod 600 "$units_env"
   echo "seeded $units_env (all defaults; edit it to move the backups)"
 fi
+# The timer's 02:30 means the HOUSEHOLD's 02:30. systemd reads a zone at the end of
+# OnCalendar=, so the installed copy gets the household's `timezone` (the same value the wall
+# uses; its default when db/household.json is absent). The server's own clock is usually UTC.
+zone="$(cd "$repo" && python3 -c 'import sys; sys.path.insert(0, "tools"); import household_config as h; print(h.load_or_defaults()["timezone"])' 2>/dev/null || true)"
+if [ -n "$zone" ] && systemd-analyze calendar "Sun *-*-* 02:30:00 $zone" >/dev/null 2>&1; then
+  sed -i "s|^OnCalendar=\(.*\)\$|OnCalendar=\1 $zone|" "$dest/scene-week.timer"
+  echo "scene-week.timer: 02:30 in $zone"
+else
+  echo "WARNING: could not read the household timezone; scene-week.timer runs on the server's clock."
+fi
 systemctl --user daemon-reload
 systemctl --user enable --now scene-week.timer wall-backup.timer
 

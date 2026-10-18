@@ -22,8 +22,8 @@ script is therefore "the wall keeps last week's picture", which is a completely 
 Sunday night.
 
 TWO RUNS A WEEK, AND A DIRECTOR CHOOSES (2026-10-18). The timer fires on Sunday and on
-Wednesday; each is a RUN (`2026-W43`, `2026-W43b`) with its own seven-day window — Mon..Sun,
-Wed..Tue — its own brief, its own ids and its own pair of candidates. What each run draws is
+Wednesday; each is a RUN (`2026-W43`, `2026-W43b`) with its own half of the week — Sun..Tue,
+Wed..Sat, the days its picture is actually up — its own brief, its own ids and its own pair of candidates. What each run draws is
 chosen by tools/scene_director.py: a text model reads the run's calendar, weather, holidays,
 `scene:` notes and visiting family, and picks a setting from the household's catalog (or
 describes a new one), a style, a camera and a premise. A book fair on the calendar is a book
@@ -398,8 +398,8 @@ def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
 def main() -> int:
     global COMPOSITIONS
     ap = argparse.ArgumentParser()
-    ap.add_argument("--week", help="the run: 2026-W40 (Sunday's, Mon..Sun) or 2026-W40b "
-                                   "(Wednesday's, Wed..Tue). Default: the run today belongs to.")
+    ap.add_argument("--week", help="the run: 2026-W40 (Sunday's, Sun..Tue) or 2026-W40b "
+                                   "(Wednesday's, Wed..Sat). Default: the run today belongs to.")
     ap.add_argument("--no-director", action="store_true",
                     help="choose by the week-number rotation instead of asking the director "
                          "(the same as scenes.director: rotation)")

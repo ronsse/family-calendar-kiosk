@@ -245,9 +245,11 @@ of keywords (`scene-headlines.json`, now deleted) swapped in a setting when an e
 trip need not be a snowy hill, and the examples were only examples. So the choice is a model's
 now, and everything after the choice stays deterministic.
 
-**Two runs.** The timer fires Sunday and Wednesday at 02:30. The Sunday run is `2026-W43` and
-looks at Monday..Sunday; the Wednesday run is `2026-W43b` and looks at Wednesday..the next
-Tuesday. Each offers two candidates (one per model), so a week has four to choose from, and the
+**Two runs, splitting the week.** The timer fires Sunday and Wednesday at 02:30 in the
+household's zone (`install.sh` writes `timezone` from `household.json` into the installed
+timer; the server itself runs UTC). The Sunday run is `2026-W43` and looks at Sunday..Tuesday;
+the Wednesday run is `2026-W43b` and looks at Wednesday..Saturday. Each brief is the days its
+picture is actually on the wall, so the two never describe the same day. Each offers two candidates (one per model), so a week has four to choose from, and the
 ids carry the run (`2026w43b-…`). Each run freezes its own brief in `db/scene-context/`.
 
 **The director** (`tools/scene_director.py`, one Gemini 2.5 Flash call through

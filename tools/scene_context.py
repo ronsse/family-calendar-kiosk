@@ -3,7 +3,7 @@
 
     python3 tools/scene_context.py                    # this week's brief, fetched or reused
     python3 tools/scene_context.py --week 2026-W40    # a particular week (the Sunday run)
-    python3 tools/scene_context.py --week 2026-W40b   # its Wednesday run (Wed..next Tue)
+    python3 tools/scene_context.py --week 2026-W40b   # its Wednesday run (Wed..Sat)
     python3 tools/scene_context.py --refresh          # fetch again even if frozen
     python3 tools/scene_context.py --print            # the three lines gen-scene will see
     python3 tools/scene_context.py --selftest         # the freeze rule, asserted offline
@@ -25,8 +25,10 @@ Three sources, each optional, each degrading to nothing rather than to a guess:
   holidays  A table by date. A holiday is a prop, not a premise: costumes go OVER ordinary
             clothes with the hair showing, because hair is how the children are found.
 
-There are TWO runs a week (2026-10-18): Sunday's, for Mon..Sun, named for its ISO week
-(`2026-W43`), and Wednesday's, for Wed..the next Tue, named with a `b` (`2026-W43b`). The result
+There are TWO runs a week (2026-10-18), and they SPLIT it: Sunday's covers Sun..Tue and is
+named for the ISO week it opens (`2026-W43`), Wednesday's covers Wed..Sat and carries a `b`
+(`2026-W43b`). Each brief is the days its picture is actually on the wall, so the two never
+describe the same day (until 2026-10-18 they were two overlapping seven-day windows). The result
 is FROZEN to db/scene-context/<run>.json the first time it is computed, and every retry of that
 run reads the file, so a forecast that moved between 02:30 and the 04:00 retry cannot change
 the brief the director already chose from.
@@ -78,7 +80,7 @@ PROPS = {
     "kitchen":     "a mixing bowl and an apron",
 }
 
-# The week's holiday, if any, by (month, day) of any day in Mon..Sun. Easter is computed.
+# The run's holiday, if any, by (month, day) of any day in its window. Easter is computed.
 HOLIDAYS = [
     ((10, 31), "Halloween: carved pumpkins on steps, and any costume is worn OVER ordinary clothes "
                "with no mask and the hair fully showing"),
@@ -121,6 +123,18 @@ def week_of(text: str) -> dt.date:
     return dt.date.fromisocalendar(int(year), int(week), 1)
 
 
+def local_today() -> dt.date:
+    """Today in the HOUSEHOLD's zone, not the server's. The host runs UTC, so a Saturday 20:00
+    retry in Denver would otherwise be named as Sunday's run."""
+    try:
+        from zoneinfo import ZoneInfo
+        import household_config
+        zone = household_config.load_or_defaults()["timezone"]
+        return dt.datetime.now(ZoneInfo(zone)).date()
+    except Exception:  # noqa: BLE001 — a broken config is reported where it is applied
+        return dt.date.today()
+
+
 def week_for_today(today: dt.date | None = None) -> dt.date:
     """The Monday of the week the picture is FOR.
 
@@ -129,7 +143,7 @@ def week_for_today(today: dt.date | None = None) -> dt.date:
     week here, and every other day to its own — the same rule scene-week.py uses, because the
     two must agree on the week's name or the context is for one week and the seed for another.
     """
-    today = today or dt.date.today()
+    today = today or local_today()
     monday = today - dt.timedelta(days=today.weekday())
     return monday + dt.timedelta(days=7) if today.weekday() == 6 else monday
 
@@ -146,9 +160,11 @@ def parse_run(text: str) -> tuple[dt.date, str]:
 
 
 def window(monday: dt.date, part: str = "") -> tuple[dt.date, dt.date]:
-    """The seven days a run's picture is for: Mon..Sun, or Wed..the next Tue."""
-    start = monday + dt.timedelta(days=2 if part == "b" else 0)
-    return start, start + dt.timedelta(days=6)
+    """The days a run's picture is up for: Sun..Tue (the Sunday before `monday` through Tuesday),
+    or Wed..Sat. Together they are one Sunday-to-Saturday week, split at Wednesday."""
+    if part == "b":
+        return monday + dt.timedelta(days=2), monday + dt.timedelta(days=5)
+    return monday - dt.timedelta(days=1), monday + dt.timedelta(days=1)
 
 
 def run_for_today(today: dt.date | None = None) -> tuple[dt.date, str]:
@@ -157,13 +173,13 @@ def run_for_today(today: dt.date | None = None) -> tuple[dt.date, str]:
     Sunday is the first run of the week AHEAD (week_for_today); a Monday or Tuesday retry is
     still that run. Wednesday starts the `b` run, and a retry up to Saturday is still it.
     """
-    today = today or dt.date.today()
+    today = today or local_today()
     monday = week_for_today(today)
     return monday, ("b" if 2 <= today.weekday() <= 5 else "")
 
 
-def holidays_in(start: dt.date) -> list[str]:
-    days = [start + dt.timedelta(days=i) for i in range(7)]
+def holidays_in(start: dt.date, end: dt.date) -> list[str]:
+    days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
     found: list[str] = []
     for day in days:
         for (m, d), text in HOLIDAYS:
@@ -192,10 +208,10 @@ def load_place() -> dict | None:
             "timezone": place.get("timezone", "auto")}
 
 
-def fetch_forecast(place: dict, start: dt.date) -> dict:
+def fetch_forecast(place: dict, start: dt.date, end: dt.date) -> dict:
     q = urllib.parse.urlencode({
         "latitude": place["lat"], "longitude": place["lon"], "timezone": place["timezone"],
-        "start_date": start.isoformat(), "end_date": (start + dt.timedelta(days=6)).isoformat(),
+        "start_date": start.isoformat(), "end_date": end.isoformat(),
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,weather_code",
         "temperature_unit": "fahrenheit", "precipitation_unit": "inch",
     })
@@ -250,7 +266,7 @@ def weather_line(w: dict) -> str:
         "warm": "everyone in short sleeves",
         "hot": "everyone in short sleeves and sun hats pushed back, and shade wherever there is any",
     }[w["temp"]]
-    return f"The weather: a {w['temp']} week with {sky}, {ground}; {wear}."
+    return f"The weather: a {w['temp']} few days with {sky}, {ground}; {wear}."
 
 
 # ---------------------------------------------------------------------------------------------
@@ -276,14 +292,13 @@ def calendar_options() -> dict:
     return opts
 
 
-def fetch_calendar(start: dt.date, opts: dict | None = None) -> dict:
+def fetch_calendar(start: dt.date, end: dt.date, opts: dict | None = None) -> dict:
     """Counts by category, `scene:` notes, and — as `opts` allow — one-off titles and visitors.
 
     The DB is a docker volume, so tools/scene-calendar.cjs runs inside the container with
     node:sqlite rather than copying the file out. Visitors are matched there and come back as
     ids; titles come back only with `opts["titles"]`.
     """
-    end = start + dt.timedelta(days=6)
     got = subprocess.run(
         ["docker", "exec", "-i", CONTAINER, "node", "--no-warnings", "-",
          start.isoformat(), end.isoformat(), json.dumps(opts or {})],
@@ -317,7 +332,7 @@ def compute(monday: dt.date, part: str = "", opts: dict | None = None) -> dict:
         "from": start.isoformat(), "to": end.isoformat(),
         "fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "weather": None, "weather_line": "", "calendar": None, "props_line": "",
-        "hints": [], "holidays": holidays_in(start), "titles": bool(opts.get("titles")),
+        "hints": [], "holidays": holidays_in(start, end), "titles": bool(opts.get("titles")),
         "events": [], "routine": 0, "visitors": [], "notes": [],
     }
     place = load_place()
@@ -331,12 +346,12 @@ def compute(monday: dt.date, part: str = "", opts: dict | None = None) -> dict:
                             "copy db/scene-place.example.json)")
     else:
         try:
-            ctx["weather"] = summarise_weather(fetch_forecast(place, start))
+            ctx["weather"] = summarise_weather(fetch_forecast(place, start, end))
             ctx["weather_line"] = weather_line(ctx["weather"])
         except Exception as exc:  # noqa: BLE001 — a missing line is the designed outcome
             ctx["notes"].append(f"weather: none ({type(exc).__name__}: {exc})")
     try:
-        cal = fetch_calendar(start, opts)
+        cal = fetch_calendar(start, end, opts)
         ctx["calendar"] = cal["counts"]
         ctx["hints"] = cal["hints"]
         ctx["events"] = cal.get("events", [])
@@ -382,6 +397,11 @@ def context_for(monday: dt.date, refresh: bool = False, part: str = "",
         with open(path, encoding="utf-8") as fh:
             stored = json.load(fh)
         missing = provisional(stored, PLACE_PATH.exists(), bool(opts.get("titles")))
+        # A brief frozen for another window (written before the 2026-10-18 split, when every run
+        # was seven days) describes days this picture will not be up for.
+        start, end = window(monday, part)
+        if (stored.get("from"), stored.get("to")) != (start.isoformat(), end.isoformat()):
+            missing.append(f"brief for the {start}..{end} window")
         if not missing:
             return stored, path
         print(f"context : {path.name} was provisional (no {', '.join(missing)}; fetched "
@@ -407,7 +427,7 @@ def selftest() -> None:
     fetches: list[dt.date] = []
     monday = dt.date(2026, 9, 28)
     full = {"week": "2026-W40", "fetched_at": "full", "weather": {"temp": "warm"},
-            "calendar": {"dance": 1}, "notes": []}
+            "calendar": {"dance": 1}, "notes": [], "from": "2026-09-27", "to": "2026-09-29"}
     failures = []
 
     def case(name: str, stored: dict | None, place: bool, expect_fetch: bool,
@@ -448,6 +468,8 @@ def selftest() -> None:
                  expect_fetch=True, titles=True)
             case("titles already in it", {**full, "titles": True}, place=True,
                  expect_fetch=False, titles=True)
+            case("frozen for the old seven-day window", {**full, "from": "2026-09-28",
+                 "to": "2026-10-04"}, place=True, expect_fetch=True)
         finally:
             CONTEXT_DIR, PLACE_PATH, compute = saved
     if failures:
@@ -462,15 +484,20 @@ def selftest() -> None:
     for day, want in expect.items():
         if run_for_today(day) != want:
             failures.append(f"run_for_today({day}) = {run_for_today(day)}, expected {want}")
-    if window(m43, "b") != (dt.date(2026, 10, 21), dt.date(2026, 10, 27)):
+    if window(m43) != (dt.date(2026, 10, 18), dt.date(2026, 10, 20)):
+        failures.append(f"the Sunday window is {window(m43)}")
+    if window(m43, "b") != (dt.date(2026, 10, 21), dt.date(2026, 10, 24)):
         failures.append(f"the b window is {window(m43, 'b')}")
+    # The two halves tile the week: next Sunday's window starts the day after this b one ends.
+    if window(m43 + dt.timedelta(7))[0] != window(m43, "b")[1] + dt.timedelta(1):
+        failures.append("the windows leave a gap or overlap between runs")
     if parse_run("2026-W43b") != (m43, "b") or run_name(*parse_run("2026-W43")) != "2026-W43":
         failures.append("run names do not round-trip")
     if failures:
         for f in failures:
             print("  FAIL " + f)
         raise SystemExit(1)
-    print("context freeze rule and runs OK (7 cases, 9 dates)")
+    print("context freeze rule and runs OK (8 cases, 9 dates)")
 
 
 def main(argv: list[str]) -> int:

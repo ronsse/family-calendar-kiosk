@@ -254,7 +254,8 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   or the calendar is provisional and is fetched again next run. W40's had been frozen sixteen
   days early by a test run, with no forecast and stale counts. `npm run verify:context`.
 - **A DIRECTOR chooses each run's picture, and there are TWO runs a week** (2026-10-18). The
-  timer fires Sun and Wed 02:30: `2026-W43` covers Mon..Sun, `2026-W43b` Wed..next Tue, and ids
+  timer fires Sun and Wed 02:30 HOUSEHOLD time (install.sh appends `timezone`; the host is UTC):
+  `2026-W43` covers Sun..Tue, `2026-W43b` Wed..Sat — the days each picture is up — and ids
   carry the run (`2026w43b-…`). `tools/scene_director.py` (one ~$0.002 text call) reads the
   frozen brief and picks a catalog or INVENTED setting, style, camera and premise from the
   household's own tables, validated like the activity writer; a valid answer freezes in
