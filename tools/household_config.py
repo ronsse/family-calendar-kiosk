@@ -43,6 +43,11 @@ SCENE_PROVIDERS = ("fal", "nvidia", "nous")
 # Where the children's activities come from (2026-10-12): `written` by tools/scene_activity_writer.py
 # under code guardrails, frozen per scene, the table as its fallback; or `table` only.
 SCENE_ACTIVITY_SOURCES = ("written", "table")
+# Who chooses each run's picture (2026-10-18): `ai`, tools/scene_director.py reading the run's
+# calendar, weather and visitors (rotation as its fallback); or `rotation`, the week-number
+# arithmetic only. `shareTitles` lets the director and the brief read one-off event TITLES and
+# visitors' descriptions; off, they see counts by category, as before.
+SCENE_DIRECTORS = ("ai", "rotation")
 PET_KINDS = ("dog",)
 MAX_PETS = 1
 PET_NAME_MAX = 24
@@ -70,6 +75,8 @@ DEFAULTS: dict[str, Any] = {
         "premises": ["plain"],
         "weeklyBudgetUsd": None,
         "activities": "written",
+        "director": "ai",
+        "shareTitles": False,
     },
 }
 
@@ -200,6 +207,10 @@ def _scenes(v: Any, errors: list[str]) -> dict | None:
         errs.append("scenes.weeklyBudgetUsd: must be null or a number >= 0")
     if not isinstance(out["activities"], str) or out["activities"] not in SCENE_ACTIVITY_SOURCES:
         errs.append(f"scenes.activities: must be one of {', '.join(SCENE_ACTIVITY_SOURCES)}")
+    if not isinstance(out["director"], str) or out["director"] not in SCENE_DIRECTORS:
+        errs.append(f"scenes.director: must be one of {', '.join(SCENE_DIRECTORS)}")
+    if not isinstance(out["shareTitles"], bool):
+        errs.append("scenes.shareTitles: must be true or false")
     errors.extend(errs)
     return None if errs else out
 

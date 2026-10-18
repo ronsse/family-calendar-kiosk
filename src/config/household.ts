@@ -43,6 +43,9 @@ export type SceneProvider = (typeof SCENE_PROVIDERS)[number];
 /** Where the children's activities come from: an AI writer held to code guardrails, or the table. */
 export const SCENE_ACTIVITY_SOURCES = ['written', 'table'] as const;
 export type SceneActivitySource = (typeof SCENE_ACTIVITY_SOURCES)[number];
+/** Who chooses each run's picture: the AI director (rotation as its fallback), or rotation only. */
+export const SCENE_DIRECTORS = ['ai', 'rotation'] as const;
+export type SceneDirector = (typeof SCENE_DIRECTORS)[number];
 
 /** v0.1 knows one kind of pet. */
 export const PET_KINDS = ['dog'] as const;
@@ -74,6 +77,10 @@ export interface SceneSettings {
    * table as its fallback. `table`: tools/scene-activities.json only, as before 2026-10-12.
    */
   readonly activities: SceneActivitySource;
+  /** `ai` (default): tools/scene_director.py chooses each run's picture. `rotation`: the week number. */
+  readonly director: SceneDirector;
+  /** Opt-in: event titles and visitor descriptions may reach the director. Off = counts only. */
+  readonly shareTitles: boolean;
 }
 
 export interface HouseholdConfig {
@@ -111,6 +118,8 @@ export const DEFAULT_HOUSEHOLD: HouseholdConfig = {
     premises: ['plain'],
     weeklyBudgetUsd: null,
     activities: 'written',
+    director: 'ai',
+    shareTitles: false,
   },
 };
 
@@ -238,7 +247,7 @@ function parsePets(v: unknown): Field<PetConfig[]> {
   return errors.length > 0 ? bad(...errors) : ok(out);
 }
 
-const SCENE_KEYS = ['mode', 'provider', 'styles', 'settings', 'premises', 'weeklyBudgetUsd', 'activities'] as const;
+const SCENE_KEYS = ['mode', 'provider', 'styles', 'settings', 'premises', 'weeklyBudgetUsd', 'activities', 'director', 'shareTitles'] as const;
 
 function isStringList(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0);
@@ -255,6 +264,8 @@ function parseScenes(v: unknown): Field<SceneSettings> {
   const premises = 'premises' in v ? v['premises'] : d.premises;
   const budget = 'weeklyBudgetUsd' in v ? v['weeklyBudgetUsd'] : d.weeklyBudgetUsd;
   const activities = 'activities' in v ? v['activities'] : d.activities;
+  const director = 'director' in v ? v['director'] : d.director;
+  const shareTitles = 'shareTitles' in v ? v['shareTitles'] : d.shareTitles;
   if (typeof mode !== 'string' || !(SCENE_MODES as readonly string[]).includes(mode)) {
     errors.push(`scenes.mode: must be one of ${SCENE_MODES.join(', ')}`);
   }
@@ -270,6 +281,10 @@ function parseScenes(v: unknown): Field<SceneSettings> {
   if (typeof activities !== 'string' || !(SCENE_ACTIVITY_SOURCES as readonly string[]).includes(activities)) {
     errors.push(`scenes.activities: must be one of ${SCENE_ACTIVITY_SOURCES.join(', ')}`);
   }
+  if (typeof director !== 'string' || !(SCENE_DIRECTORS as readonly string[]).includes(director)) {
+    errors.push(`scenes.director: must be one of ${SCENE_DIRECTORS.join(', ')}`);
+  }
+  if (typeof shareTitles !== 'boolean') errors.push('scenes.shareTitles: must be true or false');
   if (errors.length > 0) return bad(...errors);
   return ok({
     mode: mode as SceneMode,
@@ -279,6 +294,8 @@ function parseScenes(v: unknown): Field<SceneSettings> {
     premises: [...(premises as string[])],
     weeklyBudgetUsd: budget as number | null,
     activities: activities as SceneActivitySource,
+    director: director as SceneDirector,
+    shareTitles: shareTitles as boolean,
   });
 }
 

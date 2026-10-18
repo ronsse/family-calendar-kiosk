@@ -1,11 +1,11 @@
 [Unit]
-Description=family-calendar — weekly scene generation (Sunday night)
+Description=family-calendar — scene generation (Sunday and Wednesday nights)
 
 [Timer]
-# Sunday 02:30 local. Late enough that the week's picture is waiting on Sunday morning if it
+# Sunday and Wednesday 02:30 local. The Wednesday run (`2026-W43b`) covers Wed..next Tue. Late enough that the week's picture is waiting on Sunday morning if it
 # is approved on Saturday, and far from the 06:00 school-day window this project's prime
 # invariant is about — a generation run must never share a minute with the wall's busiest read.
-OnCalendar=Sun *-*-* 02:30:00
+OnCalendar=Sun,Wed *-*-* 02:30:00
 # The box is not always on. Without this, a Sunday spent powered down silently skips the week,
 # and the symptom is exactly the one that started all of this: "the image never updates."
 Persistent=true

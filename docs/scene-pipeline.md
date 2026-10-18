@@ -237,35 +237,48 @@ than a hole in the rule:
   containing a name is refused at the wire like anything else. The channel is deliberate; it is
   not unchecked.
 
-### 2.3a A big event chooses the setting (2026-10-17)
+### 2.3a Two runs a week, and a director chooses the picture (2026-10-18)
 
-Categories and notes above only scatter props through the crowd. A week with one big event in
-it — a birthday party, a ski trip, a camping weekend, a vacation — now chooses the whole
-picture's **setting** instead of the season's rotation. Most weeks have no such event, and those
-weeks are drawn exactly as before (the plan for a week with no headline is byte-identical).
+Until 2026-10-18 the setting, style and camera were arithmetic on the week number, and a table
+of keywords (`scene-headlines.json`, now deleted) swapped in a setting when an event matched
+"ski" or "birthday". The household's verdict was that a keyword list is not judgement: a ski
+trip need not be a snowy hill, and the examples were only examples. So the choice is a model's
+now, and everything after the choice stays deterministic.
 
-The rules are a table, `tools/scene-headlines.json`: each names whole `words`, an optional `with`
-(the title must also carry one of these; `{child}` is any active child's name on the wall) and
-the `setting` it chooses. The first rule any event matches wins, so the specific sits above the
-general and a ski trip is a ski hill rather than a station. §2.1 still holds: the match runs
-**inside the wall container** in `tools/scene-calendar.cjs`, which reads the titles and the
-children's names there and prints only the rule's id and the setting id. Three rules keep it rare:
+**Two runs.** The timer fires Sunday and Wednesday at 02:30. The Sunday run is `2026-W43` and
+looks at Monday..Sunday; the Wednesday run is `2026-W43b` and looks at Wednesday..the next
+Tuesday. Each offers two candidates (one per model), so a week has four to choose from, and the
+ids carry the run (`2026w43b-…`). Each run freezes its own brief in `db/scene-context/`.
 
-- **A routine is not an event.** A title that also appears a week or more away from this
-  occurrence (the wall holds about sixty days ahead) is a lesson or a club, so a ski lesson every
-  Saturday never turns every winter picture into a ski hill. A multi-day all-day event is one
-  row and still counts.
-- **A birthday needs a party or one of the children.** An aunt's birthday on a contacts calendar
-  is not a party picture; a child's birthday, or anybody's birthday party, is.
-- **A `scene:` note is matched first, and taken at its word.** `scene: birthday` needs no
-  "party" beside it, because nobody types that by accident.
+**The director** (`tools/scene_director.py`, one Gemini 2.5 Flash call through
+`fal_api.text`, about $0.002) reads the run's brief and answers JSON: a catalog setting or an
+invented one (a place description, a crowd, optional wardrobe, one to three place tags), a
+style, a camera, a premise and a one-line why. It sees the catalog flagged in-season,
+occasion-only (`"season": []`: `birthday-party`, `setting-off`) or out-of-season, the settings
+the wall showed most recently, a random shortlist of three fresh in-season settings to lean
+toward when nothing stands out, and the styles not recently on the wall. Everything it may pick
+is an id from the household's own tables, and the answer is validated like the activity
+writer's (§2.5): word counts, no quotes, no signs or lettering, no names, the prompt guard,
+wardrobe that keeps every face visible, tags from the closed place vocabulary. A refusal is
+retried once with the reasons quoted back; a second refusal, or no answer at all, falls back
+to the rotation, and nothing is frozen, so the next run asks again. A valid decision is frozen
+in `db/scene-director/<run>.json`, so a retry of the same run draws the same picture.
+`scenes.director: "rotation"` turns it off; `--setting` and `--no-director` bypass it per run.
+A dry run does not ask unless `--ask-director` is passed.
 
-A person's `--setting` still wins, and a household's `scenes.settings` allowlist can rule a
-headline setting out. The two settings that exist only for headlines, `birthday-party` and
-`setting-off`, carry `"season": []` so the rotation never draws them unasked, and their own
-places (`party`, `travel`) in `scene-activities.json`. `check_headlines()` refuses to run if a
-rule names a setting that does not exist. The headline is frozen with the rest of the brief, and
-the dry run prints it on the `setting :` line.
+**What it is told.** By default only what §2.1 already allows: category counts, weather, the
+holiday, the `scene:` note, and "N grown-ups and M children visiting". `scenes.shareTitles:
+true` also sends the window's one-off event titles and the visitors' descriptions. It is opt-in
+because a title is household data leaving the house. Either way the image prompt carries no
+title and no name; the director's words are checked for names before they are used.
+
+**Visiting family** (`tools/scene_guests.py`, `db/guests.json`, synthetic twin
+`db/guests.example.json`). Each guest has names to match, an age band, hair and a height. A
+visit is detected only when an event in the window names a guest **and** carries a visit word
+("visiting", "in town", "staying", "arrive"…), so a birthday on a contacts calendar is not a
+visit. Present guests join the picture by description (a grown-up, an older child, hair, height
+against the children's landmarks), never by name, and the finder is told about them as decoys
+so it does not tap a cousin. A run with no guests produces a prompt byte-identical to before.
 
 ## 2.4 Where the activities come from — proposed, and my recommendation
 

@@ -94,6 +94,8 @@ test('(c) every validation refuses its own bad case, as "<path>: <why>"', () => 
     [{ scenes: { premises: null } }, 'scenes.premises:'],
     [{ scenes: { weeklyBudgetUsd: -1 } }, 'scenes.weeklyBudgetUsd:'],
     [{ scenes: { activities: 'sometimes' } }, 'scenes.activities:'],
+    [{ scenes: { director: 'random' } }, 'scenes.director:'],
+    [{ scenes: { shareTitles: 'yes' } }, 'scenes.shareTitles:'],
     [{ timezne: 'Europe/Berlin' }, 'timezne: unknown key'],
   ];
   for (const [patch, prefix] of cases) {

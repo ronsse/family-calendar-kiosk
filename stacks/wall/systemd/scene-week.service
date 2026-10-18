@@ -7,7 +7,7 @@ Documentation=file://%h/projects/family-calendar/docs/runbook.md
 # Nothing here blocks the wall, so it waits for the network rather than for the wall itself.
 After=network-online.target
 Wants=network-online.target
-# Up to four retries (see Restart= below), then it stays failed until next Sunday. The window
+# Up to four retries (see Restart= below), then it stays failed until the next run (Sunday or Wednesday). The window
 # is wider than four RestartSec gaps so the limit is the burst, never the clock.
 StartLimitIntervalSec=6h
 StartLimitBurst=5

@@ -17,6 +17,8 @@
     "settings": null,
     "premises": ["plain"],
     "weeklyBudgetUsd": 1.0,
-    "activities": "written"
+    "activities": "written",
+    "director": "ai",
+    "shareTitles": false
   }
 }

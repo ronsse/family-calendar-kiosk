@@ -17,6 +17,9 @@
                                   a `swimwear: true` setting passes it — BACKLOG 4.11)
     --reuse-if-same              (keep an existing out.jpg ONLY if it was drawn from this exact
                                   prompt, model, seed and avatars; otherwise set it aside and draw)
+    --guests-file <list.json>    (visiting family who are in the picture too — written per run by
+                                  scene-week from db/guests.json and the calendar; absent or
+                                  empty leaves the prompt byte-identical — tools/scene_guests.py)
     --activities-file <set.json> (what the children are doing, WRITTEN for this scene by
                                   tools/scene_activity_writer.py and frozen in
                                   db/scene-activities/; replaces the table pick, re-validated
@@ -74,6 +77,7 @@ from PIL import Image
 
 import fal_api
 import scene_activities  # noqa: E402  (the strict activity filter, shared with scene-week)
+import scene_guests  # noqa: E402  (visiting family: prompt section, nearest clause)
 from gen_icon_shim import ENDPOINT, MODEL, data_uri
 from prompt_guard import enforce, enforce_references
 from scene_cast import (
@@ -621,9 +625,11 @@ def build_prompt_v2(
     wardrobe: str = "",
     placement: str = "",
     swimwear: bool = False,
+    guests: list | None = None,
 ) -> str:
     premise = premise or {}
     context = context or {}
+    guests = guests or []
     n = len(cast["children"])
     for kind, entry in (("composition", composition), ("premise", premise)):
         if entry and not cast_fits(entry, n):
@@ -655,7 +661,13 @@ def build_prompt_v2(
         children.append(placement)
     if use_refs:
         children.append(portraits_v2(n))
-    children.append(fill_children(premise["nearest"], n) if premise.get("nearest") else nearest_v2(n))
+    # VISITORS ARE NEAR TOO. A visiting eight-year-old is bigger than every child in the cast, so
+    # "the nearest and largest children" would ask for a picture that cannot exist, or push the
+    # visitors back into the crowd. Only with guests; without them the clause is unchanged.
+    if premise.get("nearest"):
+        children.append(fill_children(premise["nearest"], n))
+    else:
+        children.append(scene_guests.nearest_clause(n) if guests else nearest_v2(n))
     if not use_refs:
         # pick_activities names them by portrait; without portraits that is a dangling reference.
         activities = activities.replace("The child from portrait", "Child")
@@ -680,6 +692,7 @@ def build_prompt_v2(
             f"CAMERA\n{fill_children(composition['camera'], n)}",
             ("THE CHILD\n" if n == 1 else f"THE {count_words(n).upper()} CHILDREN\n")
             + "\n".join(c for c in children if c),
+            f"VISITING FAMILY\n{scene_guests.prompt_section(guests, cast)}" if guests else "",
             f"WHAT THEY ARE DOING\n{activities}",
             "THIS WEEK'S NOTE\n" + "\n".join(hints) if hints else "",
             f"LAYOUT\n{fill_children(premise['layout'], n) if premise.get('layout') else layout_v2(n)}",
@@ -736,6 +749,7 @@ def build_prompt(
     wardrobe: str = "",
     placement: str = "",
     swimwear: bool = False,
+    guests: list | None = None,
 ) -> str:
     """The whole prompt, assembled once so every provider sends identical words.
 
@@ -752,8 +766,10 @@ def build_prompt(
         return build_prompt_v2(
             setting, crowd, style, composition, activities, use_refs, cast, wardrobe=wardrobe,
             placement=placement, swimwear=swimwear,
-            premise=premise, context=context,
+            premise=premise, context=context, guests=guests,
         )
+    if guests:
+        raise SystemExit("--guests-file is a prompt-version-2 feature; version 1 is the control")
     if premise and premise["id"] != "plain":
         raise SystemExit("a premise is a prompt-version-2 feature; version 1 is the control")
     if context:
@@ -808,10 +824,12 @@ def generate(
     version: int = 2,
     premise: dict | None = None,
     context: dict | None = None,
+    guests: list | None = None,
 ) -> bytes:
     prompt = build_prompt(
         setting, crowd, style_id, activities, use_refs, composition_id, version,
         premise=premise, context=context, wardrobe=wardrobe, placement=placement,
+        guests=guests,
     )
 
     # Both guards, on this side of the socket, for the reason gen-icon.py gives: a second
@@ -983,7 +1001,7 @@ if __name__ == "__main__":
     composition_id, model, version, print_only = "eye-level", None, 2, False
     premise_id, context_path, wardrobe, moment = "plain", None, "", ""
     reuse_if_same, swimwear, print_digest = False, False, False
-    activities_file = None
+    activities_file, guests_file = None, None
     while argv and argv[0].startswith("--"):
         flag = argv.pop(0)
         if flag == "--style":
@@ -1022,6 +1040,8 @@ if __name__ == "__main__":
             context_path = argv.pop(0)
         elif flag == "--activities-file":
             activities_file = argv.pop(0)
+        elif flag == "--guests-file":
+            guests_file = argv.pop(0)
         else:
             raise SystemExit(f"unknown flag {flag}\n{__doc__}")
     if len(argv) != 3:
@@ -1033,6 +1053,7 @@ if __name__ == "__main__":
     load_composition(composition_id)
     premise = load_premise(premise_id)
     context = load_context(context_path)
+    guests = scene_guests.load_selected(guests_file)
     # A premise restricts the families it can be drawn in — an impossible PHOTOGRAPH is the
     # whole idea of `impossible-photo`, and a cutaway needs walls a photograph cannot remove.
     # Refused here, before a key is read, for the same reason as a typo'd style.
@@ -1083,6 +1104,8 @@ if __name__ == "__main__":
         print(f"premise: {premise_id}", file=sys.stderr)
     if context:
         print(f"context: {context_path} ({context.get('week', '?')})", file=sys.stderr)
+    if guests:
+        print(f"guests: {', '.join(g['id'] for g in guests)}", file=sys.stderr)
     if version == 2:
         print(f"cast: {load_cast()['source']}", file=sys.stderr)
     if provider == "nvidia":
@@ -1096,7 +1119,7 @@ if __name__ == "__main__":
     prompt = build_prompt(
         setting, crowd, style_id, activities, use_refs, composition_id=composition_id,
         version=version, premise=premise, context=context, wardrobe=wardrobe,
-        placement=placement, swimwear=swimwear,
+        placement=placement, swimwear=swimwear, guests=guests,
     )
     if print_only:
         enforce(prompt)
@@ -1121,7 +1144,7 @@ if __name__ == "__main__":
             generate(
                 setting, crowd, style_id, activities, os.environ["NOUS_API_KEY"], use_refs,
                 composition_id=composition_id, version=version, premise=premise,
-                context=context,
+                context=context, guests=guests,
             ),
             dst,
         )

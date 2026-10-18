@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The Sunday timer's entry point: scene-week.py with its API keys injected from 1Password.
+# The Sunday and Wednesday timer's entry point: scene-week.py with its API keys injected from 1Password.
 #
 #   tools/scene-week-timer.sh [scene-week.py arguments]     # run from the repo root
 #

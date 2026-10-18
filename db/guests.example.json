@@ -1,0 +1,12 @@
+{
+  "_why": "Visiting family, written ahead of time so the wall can draw them in when the calendar says they are here. The real one is db/guests.json (gitignored — names and ages are household data); this synthetic copy is never loaded as a fallback, because an example cousin in a real picture would be a stranger. `names` are the words a calendar title uses for that person, matched as whole words in any event in the run's window (\"Sam & Alex in town\"); a group's names bring every member. Names are only ever used to MATCH — the picture gets the description, never the name. Heights are optional and only reach the prompt as comparisons with the children (\"comes up to his chest\").",
+  "guests": [
+    {"id": "aunt", "names": ["Sam"], "sex": "woman", "height_cm": 168, "hair": "long wavy auburn hair"},
+    {"id": "uncle", "names": ["Alex"], "sex": "man", "height_cm": 185, "hair": "short grey hair and a beard"},
+    {"id": "cousin-1", "names": ["Robin"], "sex": "boy", "age": 9, "height_cm": 133, "hair": "short sandy hair"},
+    {"id": "cousin-2", "names": ["Jo"], "sex": "girl", "age": 3, "height_cm": 95, "hair": "dark curls in two bunches"}
+  ],
+  "groups": [
+    {"names": ["Smiths", "the Smiths"], "members": ["aunt", "uncle", "cousin-1", "cousin-2"]}
+  ]
+}

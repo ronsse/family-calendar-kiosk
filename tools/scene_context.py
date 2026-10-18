@@ -2,7 +2,8 @@
 """THIS WEEK — what the coming week is allowed to tell the picture.
 
     python3 tools/scene_context.py                    # this week's brief, fetched or reused
-    python3 tools/scene_context.py --week 2026-W40    # a particular week
+    python3 tools/scene_context.py --week 2026-W40    # a particular week (the Sunday run)
+    python3 tools/scene_context.py --week 2026-W40b   # its Wednesday run (Wed..next Tue)
     python3 tools/scene_context.py --refresh          # fetch again even if frozen
     python3 tools/scene_context.py --print            # the three lines gen-scene will see
     python3 tools/scene_context.py --selftest         # the freeze rule, asserted offline
@@ -13,20 +14,22 @@ Three sources, each optional, each degrading to nothing rather than to a guess:
             gitignored; tenth-of-a-degree, no key, nothing sent but a lat/lon that covers a
             few miles of suburb). Becomes ONE sentence about the sky and what people wear.
   calendar  Category COUNTS from the wall's own SQLite, read the way the wall reads it — the
-            latest promoted sync per source. Never a title, never a name, never a time: "two
-            dance things and a sport thing this week" becomes props in the crowd ("ballet
-            slippers", "a ball and cones"). The only titles that leave the house are the
-            ones a person wrote to be sent, by starting an all-day event with `scene:`.
-            And at most one HEADLINE: a one-off event in tools/scene-headlines.json (a
-            birthday party, a ski or camping trip) that chooses the week's SETTING. It is
-            matched inside the container and comes out as an id; most weeks have none.
+            latest promoted sync per source: "two dance things and a sport thing this week"
+            becomes props in the crowd ("ballet slippers", "a ball and cones"). By default
+            the only titles that leave the house are the ones a person wrote to be sent, by
+            starting an all-day event with `scene:`. A household that sets
+            `scenes.shareTitles` also hands the scene director (tools/scene_director.py) the
+            run's ONE-OFF event titles — a book fair, a ski trip, a birthday — so it can
+            theme the picture without anyone asking. VISITORS (db/guests.json) are matched
+            by name inside the container and come out as ids whichever way that is set.
   holidays  A table by date. A holiday is a prop, not a premise: costumes go OVER ordinary
             clothes with the hair showing, because hair is how the children are found.
 
-The result is FROZEN to db/scene-context/<week>.json the first time it is computed, and every
-later run of that week reads the file. scene-week.py chooses style, setting and camera as a
-pure function of the week so a re-run reproduces itself; a forecast that moved between Sunday
-and Tuesday would silently break that, and so would a calendar edit.
+There are TWO runs a week (2026-10-18): Sunday's, for Mon..Sun, named for its ISO week
+(`2026-W43`), and Wednesday's, for Wed..the next Tue, named with a `b` (`2026-W43b`). The result
+is FROZEN to db/scene-context/<run>.json the first time it is computed, and every retry of that
+run reads the file, so a forecast that moved between 02:30 and the 04:00 retry cannot change
+the brief the director already chose from.
 
 ONLY A COMPLETE BRIEF IS FROZEN. One missing a source that could have answered — weather when a
 place is configured, or the calendar — is PROVISIONAL and is fetched again on the next run.
@@ -131,8 +134,36 @@ def week_for_today(today: dt.date | None = None) -> dt.date:
     return monday + dt.timedelta(days=7) if today.weekday() == 6 else monday
 
 
-def holidays_in(monday: dt.date) -> list[str]:
-    days = [monday + dt.timedelta(days=i) for i in range(7)]
+def run_name(monday: dt.date, part: str = "") -> str:
+    """`2026-W43` for the Sunday run, `2026-W43b` for the Wednesday one."""
+    return iso_week(monday) + part
+
+
+def parse_run(text: str) -> tuple[dt.date, str]:
+    """`2026-W43` or `2026-W43b` → (Monday, part)."""
+    part = "b" if text.endswith("b") else ""
+    return week_of(text[:-1] if part else text), part
+
+
+def window(monday: dt.date, part: str = "") -> tuple[dt.date, dt.date]:
+    """The seven days a run's picture is for: Mon..Sun, or Wed..the next Tue."""
+    start = monday + dt.timedelta(days=2 if part == "b" else 0)
+    return start, start + dt.timedelta(days=6)
+
+
+def run_for_today(today: dt.date | None = None) -> tuple[dt.date, str]:
+    """The run a timer firing today belongs to.
+
+    Sunday is the first run of the week AHEAD (week_for_today); a Monday or Tuesday retry is
+    still that run. Wednesday starts the `b` run, and a retry up to Saturday is still it.
+    """
+    today = today or dt.date.today()
+    monday = week_for_today(today)
+    return monday, ("b" if 2 <= today.weekday() <= 5 else "")
+
+
+def holidays_in(start: dt.date) -> list[str]:
+    days = [start + dt.timedelta(days=i) for i in range(7)]
     found: list[str] = []
     for day in days:
         for (m, d), text in HOLIDAYS:
@@ -161,10 +192,10 @@ def load_place() -> dict | None:
             "timezone": place.get("timezone", "auto")}
 
 
-def fetch_forecast(place: dict, monday: dt.date) -> dict:
+def fetch_forecast(place: dict, start: dt.date) -> dict:
     q = urllib.parse.urlencode({
         "latitude": place["lat"], "longitude": place["lon"], "timezone": place["timezone"],
-        "start_date": monday.isoformat(), "end_date": (monday + dt.timedelta(days=6)).isoformat(),
+        "start_date": start.isoformat(), "end_date": (start + dt.timedelta(days=6)).isoformat(),
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum,weather_code",
         "temperature_unit": "fahrenheit", "precipitation_unit": "inch",
     })
@@ -226,26 +257,36 @@ def weather_line(w: dict) -> str:
 # calendar
 
 CALENDAR_JS = HERE / "scene-calendar.cjs"
-HEADLINES_PATH = HERE / "scene-headlines.json"
 
 
-def load_headlines() -> list[dict]:
-    with open(HEADLINES_PATH, encoding="utf-8") as fh:
-        return json.load(fh)["headlines"]
+def calendar_options() -> dict:
+    """What the calendar read may return beyond counts: titles if the household shares them,
+    and the visitors to look for. Either source failing to load means "no", never a guess."""
+    opts: dict = {"titles": False, "guests": []}
+    try:
+        import household_config
+        opts["titles"] = bool(household_config.load_or_defaults()["scenes"].get("shareTitles"))
+    except (SystemExit, OSError, ValueError, KeyError):
+        pass
+    try:
+        import scene_guests
+        opts["guests"] = scene_guests.matchers(scene_guests.load())
+    except (SystemExit, OSError, ValueError, KeyError):
+        pass
+    return opts
 
 
-def fetch_calendar(monday: dt.date) -> dict:
-    """Counts by category, opt-in `scene:` notes and the week's HEADLINE, read in the container.
+def fetch_calendar(start: dt.date, opts: dict | None = None) -> dict:
+    """Counts by category, `scene:` notes, and — as `opts` allow — one-off titles and visitors.
 
     The DB is a docker volume, so tools/scene-calendar.cjs runs inside the container with
-    node:sqlite rather than copying the file out. Titles never leave it except the ones after a
-    `scene:` marker — that is the one channel a person composes for the picture. The headline
-    comes back as a rule id and a setting id from scene-headlines.json, never as words.
+    node:sqlite rather than copying the file out. Visitors are matched there and come back as
+    ids; titles come back only with `opts["titles"]`.
     """
-    sunday = monday + dt.timedelta(days=6)
+    end = start + dt.timedelta(days=6)
     got = subprocess.run(
         ["docker", "exec", "-i", CONTAINER, "node", "--no-warnings", "-",
-         monday.isoformat(), sunday.isoformat(), json.dumps(load_headlines())],
+         start.isoformat(), end.isoformat(), json.dumps(opts or {})],
         input=CALENDAR_JS.read_text(encoding="utf-8"), capture_output=True, text=True, timeout=30, check=False,
     )
     if got.returncode != 0:
@@ -267,38 +308,45 @@ def props_line(counts: dict, holidays: list[str], children: int = 3) -> str:
 
 # ---------------------------------------------------------------------------------------------
 
-def compute(monday: dt.date) -> dict:
+def compute(monday: dt.date, part: str = "", opts: dict | None = None) -> dict:
     """Everything, with each source's failure written down instead of raised."""
+    start, end = window(monday, part)
+    opts = calendar_options() if opts is None else opts
     ctx: dict = {
-        "week": iso_week(monday), "monday": monday.isoformat(),
+        "week": iso_week(monday), "run": run_name(monday, part), "monday": monday.isoformat(),
+        "from": start.isoformat(), "to": end.isoformat(),
         "fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "weather": None, "weather_line": "", "calendar": None, "props_line": "",
-        "hints": [], "holidays": holidays_in(monday), "headline": None, "notes": [],
+        "hints": [], "holidays": holidays_in(start), "titles": bool(opts.get("titles")),
+        "events": [], "routine": 0, "visitors": [], "notes": [],
     }
     place = load_place()
     # Open-Meteo forecasts 16 days ahead. Further out it answers 400, which reads as a broken
     # call; it is a week that has no forecast yet, and the picture does without.
     horizon = dt.date.today() + dt.timedelta(days=15)
-    if place is not None and monday + dt.timedelta(days=6) > horizon:
+    if place is not None and end > horizon:
         ctx["notes"].append("weather: none (no forecast yet — Open-Meteo reaches 16 days ahead)")
     elif place is None:
         ctx["notes"].append(f"weather: none ({PLACE_PATH.relative_to(ROOT)} missing; "
                             "copy db/scene-place.example.json)")
     else:
         try:
-            ctx["weather"] = summarise_weather(fetch_forecast(place, monday))
+            ctx["weather"] = summarise_weather(fetch_forecast(place, start))
             ctx["weather_line"] = weather_line(ctx["weather"])
         except Exception as exc:  # noqa: BLE001 — a missing line is the designed outcome
             ctx["notes"].append(f"weather: none ({type(exc).__name__}: {exc})")
     try:
-        cal = fetch_calendar(monday)
+        cal = fetch_calendar(start, opts)
         ctx["calendar"] = cal["counts"]
         ctx["hints"] = cal["hints"]
-        ctx["headline"] = cal.get("headline")
-        if ctx["headline"]:
-            h = ctx["headline"]
-            ctx["notes"].append(f"headline: {h['id']} from the {h['source']} — "
-                                f"the setting is {h['setting']}")
+        ctx["events"] = cal.get("events", [])
+        ctx["routine"] = cal.get("routine", 0)
+        ctx["visitors"] = cal.get("visitors", [])
+        if ctx["visitors"]:
+            ctx["notes"].append("visitors: " + ", ".join(
+                f"{v['id']} {v['from']}..{v['to']}" for v in ctx["visitors"]))
+        if ctx["titles"]:
+            ctx["notes"].append(f"events: {len(ctx['events'])} one-off, {ctx['routine']} routine")
     except Exception as exc:  # noqa: BLE001
         ctx["notes"].append(f"calendar: none ({type(exc).__name__}: {exc})")
     # The headcount comes from the same cast file the prompt is built from (db/cast.json).
@@ -307,7 +355,7 @@ def compute(monday: dt.date) -> dict:
     return ctx
 
 
-def provisional(ctx: dict, place_configured: bool) -> list[str]:
+def provisional(ctx: dict, place_configured: bool, titles: bool = False) -> list[str]:
     """What a stored brief is missing that a later fetch could supply. Empty means frozen.
 
     Weather counts only when a place is configured: without `db/scene-place.json` it can never
@@ -319,20 +367,26 @@ def provisional(ctx: dict, place_configured: bool) -> list[str]:
         missing.append("weather")
     if ctx.get("calendar") is None:
         missing.append("calendar")
+    elif titles and not ctx.get("titles"):
+        # Written before the household turned shareTitles on: the director would be choosing
+        # without the one thing it was switched on to read.
+        missing.append("event titles")
     return missing
 
 
-def context_for(monday: dt.date, refresh: bool = False) -> tuple[dict, pathlib.Path]:
-    path = CONTEXT_DIR / f"{iso_week(monday)}.json"
+def context_for(monday: dt.date, refresh: bool = False, part: str = "",
+                opts: dict | None = None) -> tuple[dict, pathlib.Path]:
+    path = CONTEXT_DIR / f"{run_name(monday, part)}.json"
+    opts = calendar_options() if opts is None else opts
     if path.exists() and not refresh:
         with open(path, encoding="utf-8") as fh:
             stored = json.load(fh)
-        missing = provisional(stored, PLACE_PATH.exists())
+        missing = provisional(stored, PLACE_PATH.exists(), bool(opts.get("titles")))
         if not missing:
             return stored, path
         print(f"context : {path.name} was provisional (no {', '.join(missing)}; fetched "
               f"{stored.get('fetched_at')}) — fetching again", file=sys.stderr)
-    ctx = compute(monday)
+    ctx = compute(monday, part, opts)
     CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(ctx, fh, indent=2)
@@ -356,7 +410,8 @@ def selftest() -> None:
             "calendar": {"dance": 1}, "notes": []}
     failures = []
 
-    def case(name: str, stored: dict | None, place: bool, expect_fetch: bool) -> None:
+    def case(name: str, stored: dict | None, place: bool, expect_fetch: bool,
+             titles: bool = False) -> None:
         fetches.clear()
         path = CONTEXT_DIR / "2026-W40.json"
         if path.exists():
@@ -367,7 +422,7 @@ def selftest() -> None:
             PLACE_PATH.write_text("{}")
         elif PLACE_PATH.exists():
             PLACE_PATH.unlink()
-        ctx, _ = context_for(monday)
+        ctx, _ = context_for(monday, opts={"titles": titles})
         if bool(fetches) != expect_fetch:
             failures.append(f"{name}: fetched={bool(fetches)}, expected {expect_fetch}")
         if expect_fetch and json.loads(path.read_text())["fetched_at"] != "full":
@@ -379,7 +434,7 @@ def selftest() -> None:
         CONTEXT_DIR = pathlib.Path(tmp) / "ctx"
         CONTEXT_DIR.mkdir()
         PLACE_PATH = pathlib.Path(tmp) / "place.json"
-        compute = lambda m: (fetches.append(m), dict(full))[1]  # noqa: E731
+        compute = lambda m, part="", opts=None: (fetches.append(m), dict(full))[1]  # noqa: E731
         try:
             case("no file", None, place=True, expect_fetch=True)
             case("complete brief is frozen", dict(full), place=True, expect_fetch=False)
@@ -389,13 +444,33 @@ def selftest() -> None:
                  place=True, expect_fetch=True)
             case("no place configured: no weather is final",
                  {**full, "weather": None}, place=False, expect_fetch=False)
+            case("shareTitles turned on after the freeze", dict(full), place=True,
+                 expect_fetch=True, titles=True)
+            case("titles already in it", {**full, "titles": True}, place=True,
+                 expect_fetch=False, titles=True)
         finally:
             CONTEXT_DIR, PLACE_PATH, compute = saved
     if failures:
         for f in failures:
             print("  FAIL " + f)
         raise SystemExit(1)
-    print("context freeze rule OK (5 cases)")
+    # The two runs: names, windows, and which one a timer firing on each weekday belongs to.
+    m43 = dt.date(2026, 10, 19)
+    expect = {dt.date(2026, 10, 18): (m43, ""), dt.date(2026, 10, 19): (m43, ""),
+              dt.date(2026, 10, 20): (m43, ""), dt.date(2026, 10, 21): (m43, "b"),
+              dt.date(2026, 10, 24): (m43, "b"), dt.date(2026, 10, 25): (m43 + dt.timedelta(7), "")}
+    for day, want in expect.items():
+        if run_for_today(day) != want:
+            failures.append(f"run_for_today({day}) = {run_for_today(day)}, expected {want}")
+    if window(m43, "b") != (dt.date(2026, 10, 21), dt.date(2026, 10, 27)):
+        failures.append(f"the b window is {window(m43, 'b')}")
+    if parse_run("2026-W43b") != (m43, "b") or run_name(*parse_run("2026-W43")) != "2026-W43":
+        failures.append("run names do not round-trip")
+    if failures:
+        for f in failures:
+            print("  FAIL " + f)
+        raise SystemExit(1)
+    print("context freeze rule and runs OK (7 cases, 9 dates)")
 
 
 def main(argv: list[str]) -> int:
@@ -404,16 +479,15 @@ def main(argv: list[str]) -> int:
         return 0
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--week", help="ISO week, e.g. 2026-W40. Default: the week the picture is for.")
+    ap.add_argument("--week", help="run, e.g. 2026-W40 (Sunday) or 2026-W40b (Wednesday). "
+                    "Default: the run a timer firing today belongs to.")
     ap.add_argument("--refresh", action="store_true", help="fetch again even if frozen")
     ap.add_argument("--print", action="store_true", help="print the lines the prompt will carry")
     args = ap.parse_args(argv)
-    if args.week:
-        monday = week_of(args.week)
-    else:
-        monday = week_for_today()
-    ctx, path = context_for(monday, refresh=args.refresh)
-    print(f"context : {path.relative_to(ROOT)}  ({ctx['week']}, fetched {ctx['fetched_at']})")
+    monday, part = parse_run(args.week) if args.week else run_for_today()
+    ctx, path = context_for(monday, refresh=args.refresh, part=part)
+    print(f"context : {path.relative_to(ROOT)}  ({ctx.get('run', ctx['week'])}, "
+          f"{ctx.get('from', ctx['monday'])}..{ctx.get('to', '')}, fetched {ctx['fetched_at']})")
     for note in ctx["notes"]:
         print(f"  {note}")
     if args.print:
@@ -421,6 +495,10 @@ def main(argv: list[str]) -> int:
         print(f"props   : {ctx['props_line'] or '(none)'}")
         print(f"hints   : {'; '.join(ctx['hints']) or '(none)'}")
         print(f"counts  : {json.dumps(ctx['calendar'])}")
+        print(f"visitors: {', '.join(v['id'] for v in ctx.get('visitors', [])) or '(none)'}")
+        if ctx.get("titles"):
+            print(f"events  : {len(ctx.get('events', []))} one-off (shareTitles on; "
+                  "titles are in the file, not printed)")
     return 0
 
 

@@ -65,8 +65,11 @@ function genScene(mode: '--print-prompt' | '--print-digest', cast: string, extra
 // Written activity sets are read from SCENE_ACTIVITIES_DIR; by default a directory that does not
 // exist, so no test ever sees the household's own frozen sets in db/scene-activities/.
 const NO_ACTIVITIES = join(tmpdir(), `unit-g-no-activities-${process.pid}`);
+const SNOWY_HILL = JSON.parse(readFileSync('tools/scene-settings.json', 'utf8'))
+  .settings.find((x: { id: string }) => x.id === 'snowy-hill');
+const NO_DIRECTOR = join(tmpdir(), `unit-g-no-director-${process.pid}`);
 
-function sceneWeek(opts: { cast?: string; household: string; args?: string[]; activitiesDir?: string }) {
+function sceneWeek(opts: { cast?: string; household: string; args?: string[]; activitiesDir?: string; directorDir?: string }) {
   const args = ['tools/scene-week.py', '--dry-run', '--no-context', ...(opts.args ?? [])];
   assert.ok(args.includes('--dry-run'));
   const r = spawnSync('python3', args, {
@@ -75,6 +78,7 @@ function sceneWeek(opts: { cast?: string; household: string; args?: string[]; ac
       SCENE_CAST: opts.cast ?? EXAMPLE_CAST,
       HOUSEHOLD_CONFIG: opts.household,
       SCENE_ACTIVITIES_DIR: opts.activitiesDir ?? NO_ACTIVITIES,
+      SCENE_DIRECTOR_DIR: opts.directorDir ?? NO_DIRECTOR,
     }),
   });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
@@ -174,7 +178,7 @@ test('(e) over the weekly budget is exit 3, which the timer does not retry', () 
   withTmp((dir) => {
     const w = sceneWeek({ household: household(dir, { weeklyBudgetUsd: 0.01 }) });
     assert.equal(w.status, 3, w.out);
-    assert.match(w.out, /budget {2}: spent \$[\d.]+ of \$0\.01 this week, this run \$[\d.]+ \(pictures \$[\d.]+, finder \$[\d.]+, writer \$[\d.]+\) {2}— OVER BUDGET/);
+    assert.match(w.out, /budget {2}: spent \$[\d.]+ of \$0\.01 this week, this run \$[\d.]+ \(pictures \$[\d.]+, finder \$[\d.]+, writer \$[\d.]+(?:, director \$[\d.]+)?\) {2}— OVER BUDGET/);
     const unit = readFileSync('stacks/wall/systemd/scene-week.service', 'utf8');
     assert.match(unit, /^RestartPreventExitStatus=1 3$/m);
   });
@@ -251,7 +255,7 @@ test('written mode: a frozen set is shown on the dry run, phrased as the prompt 
 
 // The projection's "this run" figure, as printed. Three decimals: the writer is a fifth of a cent.
 function thisRun(out: string): { total: number; writer: number } {
-  const m = /this run \$([\d.]+) \(pictures \$[\d.]+, finder \$[\d.]+, writer \$([\d.]+)\)/.exec(out);
+  const m = /this run \$([\d.]+) \(pictures \$[\d.]+, finder \$[\d.]+, writer \$([\d.]+)(?:, director \$[\d.]+)?\)/.exec(out);
   assert.ok(m, out);
   return { total: Number(m[1]), writer: Number(m[2]) };
 }
@@ -268,6 +272,8 @@ test('the budget projection pays for the activity writer only when it will run',
     const t = thisRun(table.out);
     const u = thisRun(unwritten.out);
     assert.equal(t.writer, 0);
+    // The director has not been asked yet on a dry run, so its call is projected on its own line.
+    assert.match(table.out, /, director \$0\.002\)/);
     assert.equal(u.writer, 0.002);
     assert.ok(u.total > t.total, `${u.total} > ${t.total}`);
     assert.equal(Math.round((u.total - t.total) * 1000), 2);
@@ -280,6 +286,34 @@ test('the budget projection pays for the activity writer only when it will run',
     assert.equal(frozen.status, 0, frozen.out);
     assert.match(frozen.out, /^activities: written, frozen in /m);
     assert.equal(thisRun(frozen.out).total, t.total);
+  });
+});
+
+test('the Wednesday run is its own id, and the rotation director is never projected', () => {
+  withTmp((dir) => {
+    const wed = sceneWeek({ household: household(dir, {}), args: ['--week', '2026-W43b'] });
+    assert.equal(wed.status, 0, wed.out);
+    assert.match(wed.out, /^id {6}: 2026w43b-/m);
+    assert.match(wed.out, /the director chooses at run time/);
+    const rot = sceneWeek({ household: household(dir, { director: 'rotation' }), args: ['--week', '2026-W43b'] });
+    assert.equal(rot.status, 0, rot.out);
+    assert.doesNotMatch(rot.out, /director/);
+  });
+});
+
+test('a frozen director decision is used, and its setting wins over the rotation', () => {
+  withTmp((dir) => {
+    const where = join(dir, 'director');
+    mkdirSync(where);
+    writeFileSync(join(where, '2026-W43b.json'), JSON.stringify({
+      run: '2026-W43b', source: 'director', setting: SNOWY_HILL, style: 'house',
+      camera: 'close-front', premise: 'plain', why: 'a test decision',
+    }));
+    const w = sceneWeek({ household: household(dir, {}), directorDir: where, args: ['--week', '2026-W43b'] });
+    assert.equal(w.status, 0, w.out);
+    assert.match(w.out, /director: a test decision/);
+    assert.match(w.out, /^id {6}: 2026w43b-snowy-hill/m);
+    assert.match(w.out, /^setting : snowy-hill$/m);
   });
 });
 

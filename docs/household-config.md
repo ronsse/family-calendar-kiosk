@@ -43,6 +43,8 @@ dog.
 | `scenes.premises` | `["plain"]` | a list of ids | what the timer may draw unattended | `scenes` |
 | `scenes.weeklyBudgetUsd` | `null` | `null` or a finite number ≥ 0 | a cap on fal spend over the last seven days (the ledger is summed on a rolling window); `null` means uncapped | `scenes` |
 | `scenes.activities` | `written` | `written` or `table` | what the children are doing in a scene: `written` asks a text model for a fresh, guardrailed set per scene (frozen in `db/scene-activities/`, table as fallback); `table` picks from `tools/scene-activities.json` only | `scenes` |
+| `scenes.director` | `ai` | `ai` or `rotation` | who picks each run's setting, style, camera and premise: `ai` asks a text model that reads the coming window's brief (weather, calendar, visitors) and freezes its choice in `db/scene-director/`, falling back to the rotation when it refuses twice or cannot be reached; `rotation` is the old week-number arithmetic | `scenes` |
+| `scenes.shareTitles` | `false` | boolean | what the director is told about the calendar: `false` sends only category counts and "N grown-ups and M children visiting"; `true` also sends one-off event titles and visitors' descriptions (never names in the image prompt). Opt-in because titles are household data leaving the house | `scenes` |
 
 Notes on the table:
 

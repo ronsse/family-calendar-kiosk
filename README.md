@@ -4,7 +4,7 @@ A wall-mounted calendar and chore board for a family whose children can't all re
 
 ![A touch panel on a wall showing an illustrated meadow scene: three cartoon children play by a stream, on a moose and up a tree, while a black-and-white dog peeks out from the grass](docs/images/hero.png)
 
-Each week's picture is shaped by your week. The forecast sets the sky and the coats, a holiday brings its props, and a match or a dance class on the calendar scatters a ball and cones or ballet slippers through the crowd. A big event chooses the whole picture: a birthday party on the calendar puts the children at a birthday party, a ski trip puts them on a ski hill, a camping trip at a campsite. Most weeks have no big event, and the picture rotates through the season's settings. An all-day event that starts with `scene:` lets you ask for something outright, such as "scene: ski trip". Event titles never leave the house; only a `scene:` note does, because you wrote it to be sent.
+The picture is shaped by your week. Twice a week, on Sunday and Wednesday nights, a text model reads the coming days: the forecast, the holiday, the calendar and any visiting family. It then chooses the setting, the art style and the camera. A birthday party on the calendar can become a party picture, and a book fair a library, without anyone asking. A quiet week gets something fresh from the season's settings. Cousins you describe in `db/guests.json` join the picture while they are in town, described rather than named. By default the model sees only event categories. Set `scenes.shareTitles` to let it read the titles. An all-day event that starts with `scene:` still asks for something outright, such as "scene: ski trip".
 
 ## What it does
 

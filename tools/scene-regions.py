@@ -6,6 +6,8 @@
     python3 tools/scene-regions.py [--provider fal|nous] <id> assets/scenes/<id>.jpg assets/scenes/<id>.json
     python3 tools/scene-regions.py --dog-only   <id> <id>.jpg <id>.json  # patch an existing manifest
     python3 tools/scene-regions.py --heads-only <id> <id>.jpg <id>.json  # ditto, the rail's faces
+    --guests-file <list.json>   visiting family drawn in on purpose (scene-week writes it): named
+                                to the locator as people who are NOT the portraits
 
 THIS IS THE TAP-REGION LOCATOR, NOT A QUALITY GATE BOLTED ON. The household asked on
 2026-09-12 whether the verification step was "the wrong path" — it had been introduced by one
@@ -61,6 +63,7 @@ import urllib.request
 from PIL import Image
 
 import fal_api
+import scene_guests  # noqa: E402  (visiting family: the locator's decoys)
 from gen_icon_shim import ENDPOINT, data_uri
 from prompt_guard import enforce, enforce_references
 from scene_cast import avatars, count_words, dog_lines, finder_lines, load_cast, slots
@@ -329,6 +332,12 @@ def locate(scene: str, key: str) -> list[dict]:
     """
     cast = load_cast()
     prompt = locate_prompt(cast)
+    # VISITORS ARE THE LIKELIEST LOOK-ALIKES. A visiting cousin is blonde and child-sized on
+    # purpose, which is exactly what the busy-town look-alike was (CLAUDE.md, 2026-09-13), so
+    # the locator is told who they are. Without guests the question is byte-identical.
+    if GUESTS:
+        prompt = prompt.replace("Answer with JSON only",
+                                scene_guests.finder_decoys(GUESTS) + "\n\nAnswer with JSON only", 1)
     raw = ask_images(prompt, [scene, *avatars(cast)], key, f"locate {os.path.basename(scene)}")
     try:
         return json.loads(unfence(raw))["children"]
@@ -411,6 +420,7 @@ def dog_region(box: list, regions: list[dict]) -> dict | None:
 
 FLAT_SCALE = False   # set by --flat-scale; see `floor_in_for`
 SWIMWEAR = False     # set by --swimwear; changes what "fully clothed" is asked as, never whether
+GUESTS: list = []    # set by --guests-file; visiting family the locator must not box
 
 # The clothed question, two ways. The swimwear form exists for a setting an adult forced with
 # `swimwear: true` (BACKLOG 4.11). It is still a yes/no question about a covered top AND covered
@@ -852,6 +862,8 @@ if __name__ == "__main__":
             SWIMWEAR = True
         elif flag == "--flat-scale":
             FLAT_SCALE = True
+        elif flag == "--guests-file":
+            GUESTS = scene_guests.load_selected(argv.pop(0))
         elif flag == "--provider":
             PROVIDER = argv.pop(0)
             if PROVIDER not in ("fal", "nous"):

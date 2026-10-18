@@ -56,6 +56,9 @@ db/cast.json
 db/scene-place.json
 db/scene-context/
 db/scene-activities/
+# Visiting family (names, ages, hair) and what the director chose each run. Template: db/guests.example.json
+db/guests.json
+db/scene-director/
 tools/op.env
 
 # Release prep: private, never published

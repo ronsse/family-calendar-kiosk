@@ -1,9 +1,0 @@
-{
-  "_comment": "THE WEEK'S HEADLINE: a one-off event in the coming week that chooses the whole picture's SETTING instead of the season's rotation. Read by tools/scene_context.py and matched INSIDE the wall container by tools/scene-calendar.cjs, so a title never leaves the house: only `id` and `setting` come out. First rule that any event matches wins, so the specific goes above the general (a ski trip is a ski hill, not a station). `words` are whole words, case-blind. `with`, when present, means the title must ALSO carry one of these, and `{child}` stands for any active child's name on the wall — so an aunt's birthday on a contacts calendar is not a party, and a child's birthday or anybody's birthday PARTY is. A title that recurs a week or more away is routine and never a headline. An all-day `scene:` note is matched too, ahead of the calendar and without `with`. Most weeks match nothing and are drawn exactly as before. Every `setting` must exist in scene-settings.json; give a headline-only setting \"season\": [] so the rotation never draws it unasked.",
-  "headlines": [
-    {"id": "birthday", "setting": "birthday-party", "words": ["birthday", "bday"], "with": ["party", "{child}"]},
-    {"id": "ski", "setting": "snowy-hill", "words": ["ski", "skiing", "snowboarding", "sledding"]},
-    {"id": "camping", "setting": "night-camp", "words": ["camping", "campground", "campout", "camp out", "campsite"]},
-    {"id": "trip", "setting": "setting-off", "words": ["vacation", "trip", "road trip", "flight", "airport"]}
-  ]
-}

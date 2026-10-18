@@ -1,22 +1,20 @@
 /**
- * tools/scene-calendar.cjs — what the coming week's calendar may tell the picture, and above all
- * what it may NOT: a title never comes out, only category counts, `scene:` notes and at most one
- * HEADLINE id from tools/scene-headlines.json. Driven against a real schema in a temp file, the
- * same way scene_context.py runs it inside the container (WALL_DB stands in for the volume).
+ * tools/scene-calendar.cjs — what the coming days' calendar may tell the picture, and above all
+ * what it may NOT: by default a title never comes out, only category counts and `scene:` notes.
+ * Titles of ONE-OFF events come out only with `titles: true` (household `scenes.shareTitles`),
+ * and visitors come out as ids only. Driven against a real schema in a temp file, the same way
+ * scene_context.py runs it inside the container (WALL_DB stands in for the volume).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDatabase } from '../src/db/connection.ts';
 import { migrate, seedDev } from '../src/db/migrate.ts';
 
 const SCRIPT = join(import.meta.dirname, '..', 'tools', 'scene-calendar.cjs');
-const RULES = JSON.parse(
-  readFileSync(join(import.meta.dirname, '..', 'tools', 'scene-headlines.json'), 'utf8'),
-).headlines;
 
 type Ev = { title: string; day: string; allDay?: boolean; days?: number };
 
@@ -56,87 +54,86 @@ function wall(dir: string, events: Ev[]): string {
   return path;
 }
 
-function read(db: string, rules: unknown = RULES): { raw: string; out: Record<string, unknown> } {
-  const raw = execFileSync(
-    process.execPath,
-    ['--no-warnings', SCRIPT, '2026-11-02', '2026-11-08', JSON.stringify(rules)],
-    { env: { ...process.env, WALL_DB: db }, encoding: 'utf8' },
-  ).trim();
+function read(db: string, opts?: unknown): { raw: string; out: Record<string, any> } {
+  const args = ['--no-warnings', SCRIPT, '2026-11-02', '2026-11-08'];
+  if (opts !== undefined) args.push(JSON.stringify(opts));
+  const raw = execFileSync(process.execPath, args, { env: { ...process.env, WALL_DB: db }, encoding: 'utf8' }).trim();
   return { raw, out: JSON.parse(raw) };
 }
 
 const dir = mkdtempSync(join(tmpdir(), 'scene-calendar-'));
 test.after(() => rmSync(dir, { recursive: true, force: true }));
 
-test('an ordinary week has no headline, and the counts still come out', () => {
+const GUESTS = [
+  { id: 'aunt', names: ['Sam', 'Smiths', 'the Smiths'] },
+  { id: 'cousin-1', names: ['Robin', 'Smiths', 'the Smiths'] },
+];
+
+test('without options the output is counts and scene notes, nothing else', () => {
   const { out } = read(wall(dir, [
     { title: 'Soccer practice', day: '2026-11-04' },
     { title: 'Dentist', day: '2026-11-05' },
+    { title: 'scene: a kite festival', day: '2026-11-03', allDay: true },
   ]));
-  assert.equal(out.headline, null);
-  assert.deepEqual(out.counts, { calendar: 2 });
+  assert.deepEqual(Object.keys(out), ['counts', 'hints']);
+  assert.deepEqual(out.counts, { calendar: 3 });
+  assert.deepEqual(out.hints, ['a kite festival']);
 });
 
-test('a routine is not an event: a weekly ski lesson never chooses the picture', () => {
+test('no title and no name leaves by default, even with guests to match', () => {
+  const { raw, out } = read(wall(dir, [
+    { title: "Child B's birthday party with Rosalind", day: '2026-11-07' },
+    { title: 'Orthodontist for Bartholomew', day: '2026-11-04' },
+    { title: 'Sam and Robin visiting', day: '2026-11-05', allDay: true, days: 3 },
+  ]), { titles: false, guests: GUESTS });
+  for (const secret of ['Rosalind', 'Bartholomew', 'Orthodontist', 'Child B', 'party', 'Sam', 'Robin', 'visiting']) {
+    assert.ok(!raw.toLowerCase().includes(secret.toLowerCase()), `${secret} leaked: ${raw}`);
+  }
+  assert.equal(out.events, undefined);
+  assert.deepEqual(out.visitors, [
+    { id: 'aunt', from: '2026-11-05', to: '2026-11-07' },
+    { id: 'cousin-1', from: '2026-11-05', to: '2026-11-07' },
+  ]);
+});
+
+test('with titles on, one-off events come out with their days; routines are only counted', () => {
   const { out } = read(wall(dir, [
     { title: 'Ski lesson', day: '2026-11-07' },
     { title: 'Ski lesson', day: '2026-11-14' },
-    { title: 'Ski lesson', day: '2026-11-21' },
-  ]));
-  assert.equal(out.headline, null);
+    { title: 'Book fair', day: '2026-11-03', allDay: true, days: 3 },
+    { title: 'Pumpkin carving', day: '2026-11-06' },
+  ]), { titles: true });
+  assert.deepEqual(out.events, [
+    { title: 'Book fair', from: '2026-11-03', to: '2026-11-05', all_day: true },
+    { title: 'Pumpkin carving', from: '2026-11-06', to: '2026-11-06', all_day: false },
+  ]);
+  assert.equal(out.routine, 1);
 });
 
-test("a child's birthday, or anybody's birthday PARTY, is a party; an aunt's birthday is not", () => {
-  assert.equal(read(wall(dir, [{ title: "Aunt Mo's birthday", day: '2026-11-03', allDay: true }])).out.headline, null);
-  assert.deepEqual(read(wall(dir, [{ title: "Child A's Birthday!", day: '2026-11-03', allDay: true }])).out.headline,
-    { id: 'birthday', setting: 'birthday-party', source: 'calendar' });
-  assert.deepEqual(read(wall(dir, [{ title: 'Birthday party at the Smiths', day: '2026-11-07' }])).out.headline,
-    { id: 'birthday', setting: 'birthday-party', source: 'calendar' });
-});
-
-test('the specific rule outranks the general one: a ski trip is a ski hill, not a station', () => {
-  const { out } = read(wall(dir, [{ title: 'Ski trip', day: '2026-11-06', allDay: true, days: 3 }]));
-  assert.deepEqual(out.headline, { id: 'ski', setting: 'snowy-hill', source: 'calendar' });
-});
-
-test('a multi-day vacation is one event and a trip', () => {
-  const { out } = read(wall(dir, [{ title: 'Family vacation', day: '2026-11-05', allDay: true, days: 6 }]));
-  assert.deepEqual(out.headline, { id: 'trip', setting: 'setting-off', source: 'calendar' });
-});
-
-test('words are whole words: "skip" is not "ski" and "tripod" is not "trip"', () => {
+test('an event that began before the window and runs into it is still this week', () => {
   const { out } = read(wall(dir, [
-    { title: 'Skip rope club', day: '2026-11-04' },
-    { title: 'Return the tripod', day: '2026-11-05' },
-  ]));
-  assert.equal(out.headline, null);
+    { title: 'Family vacation', day: '2026-10-30', allDay: true, days: 6 },
+  ]), { titles: true, guests: GUESTS });
+  assert.deepEqual(out.events, [{ title: 'Family vacation', from: '2026-10-30', to: '2026-11-04', all_day: true }]);
+  assert.deepEqual(out.visitors, []);
 });
 
-test('a scene: note outranks the calendar and needs no "party" beside "birthday"', () => {
+test('a group name brings every member; names are whole words', () => {
   const { out } = read(wall(dir, [
-    { title: 'Birthday party at the Smiths', day: '2026-11-07' },
-    { title: 'scene: camping by a lake', day: '2026-11-02', allDay: true },
-  ]));
-  assert.deepEqual(out.headline, { id: 'camping', setting: 'night-camp', source: 'scene note' });
-  assert.deepEqual(out.hints, ['camping by a lake']);
-  assert.deepEqual(read(wall(dir, [{ title: 'scene: birthday', day: '2026-11-02', allDay: true }])).out.headline,
-    { id: 'birthday', setting: 'birthday-party', source: 'scene note' });
+    { title: 'The Smiths arrive', day: '2026-11-06', allDay: true, days: 2 },
+    { title: 'Samba class visit', day: '2026-11-03' },
+  ]), { guests: GUESTS });
+  assert.deepEqual(out.visitors.map((v: { id: string }) => v.id), ['aunt', 'cousin-1']);
+  const none = read(wall(dir, [{ title: 'Samba class', day: '2026-11-03' }]), { guests: GUESTS }).out;
+  assert.deepEqual(none.visitors, []);
 });
 
-test('no title and no child name ever leaves: only ids, counts and scene notes', () => {
-  const { raw } = read(wall(dir, [
-    { title: "Child B's birthday party with Rosalind", day: '2026-11-07' },
-    { title: 'Orthodontist for Bartholomew', day: '2026-11-04' },
-  ]));
-  for (const secret of ['Rosalind', 'Bartholomew', 'Orthodontist', 'Child B', 'party with']) {
-    assert.ok(!raw.toLowerCase().includes(secret.toLowerCase()), `${secret} leaked: ${raw}`);
-  }
-  assert.match(raw, /"birthday-party"/);
-});
-
-test('without a rules argument the output is exactly the old shape', () => {
-  const raw = execFileSync(process.execPath, ['--no-warnings', SCRIPT, '2026-11-02', '2026-11-08'], {
-    env: { ...process.env, WALL_DB: wall(dir, []) }, encoding: 'utf8',
-  }).trim();
-  assert.deepEqual(Object.keys(JSON.parse(raw)), ['counts', 'hints']);
+test("a name alone is not a visit: an aunt's birthday on the calendar brings nobody", () => {
+  const { out } = read(wall(dir, [
+    { title: "Sam Smith's birthday", day: '2026-11-04', allDay: true },
+    { title: 'Call Robin', day: '2026-11-05' },
+  ]), { guests: GUESTS });
+  assert.deepEqual(out.visitors, []);
+  const here = read(wall(dir, [{ title: 'Robin staying with us', day: '2026-11-05', allDay: true }]), { guests: GUESTS }).out;
+  assert.deepEqual(here.visitors, [{ id: 'cousin-1', from: '2026-11-05', to: '2026-11-05' }]);
 });

@@ -23,21 +23,21 @@ week.
 
 ![The dog's sheet](images/dog-sheet.png)
 
-Each week's picture is shaped by your week. The forecast sets the sky and the coats, a
-holiday brings its props, and the calendar's event *categories* scatter things through the
-crowd: a ball and cones in a week with a match, ballet slippers in a week with dance. One big
-event chooses the whole setting: a birthday party is drawn at a birthday party, a ski trip on a
-ski hill, a camping trip at a campsite, a vacation at a station on the morning you set off. The
-rules are `tools/scene-headlines.json`; a weekly lesson never counts, and most weeks have no big
-event and rotate through the season's settings as usual. An all-day event whose title starts with
-`scene:` lets you ask for something outright, such as `scene: ski trip`. Event titles never leave
-the house; only a `scene:` note does, because you wrote it to be sent.
+Each picture is shaped by your week. Two runs a week (Sunday and Wednesday nights) each
+offer two candidates. A text model, the *director*, reads the coming days: the forecast, the
+holiday, the calendar and any visiting family. It then chooses the setting, style and camera.
+A birthday party on the calendar can become a party picture, and a book fair a library, with
+nobody asking. On a quiet week it picks something fresh from the season's settings. Visiting
+cousins listed in `db/guests.json` join the picture, described rather than named. By default
+the director sees only event *categories*. Set `scenes.shareTitles` to `true` to let it read
+titles too. An all-day event whose title starts with `scene:` still asks for something
+outright, such as `scene: ski trip`.
 [scene-pipeline.md](scene-pipeline.md) §2 has the design.
 
 `scenes.mode` in `household.json` picks one of three modes ([household-config.md](household-config.md)):
 
 - **`off`**: no picture. The wall opens on the board.
-- **`static`**: your own picture, free (§6). The Sunday timer does nothing.
+- **`static`**: your own picture, free (§6). The timer does nothing.
 - **`generated`** (the default): two new candidate pictures each week (§5).
 
 ## 2. The identity rule
@@ -147,7 +147,7 @@ budget  : spent $0.00 of $1.00 this week, this run $0.360 (pictures $0.346, find
 ```
 
 If the run would go over the cap, `scene-week.py` draws nothing and exits with status 3. The
-Sunday timer does not retry a 3 or a refusal (1), because a retry would only pay again
+timer does not retry a 3 or a refusal (1), because a retry would only pay again
 (`RestartPreventExitStatus=1 3` in `stacks/wall/systemd/scene-week.service`). It does retry an
 error (2), every 30 minutes, at most four times. [runbook.md](runbook.md) §6 lists every exit.
 
@@ -157,8 +157,8 @@ list price and the purpose. `python3 tools/fal_api.py` prints the total.
 
 ## 6. Candidates, approval and the baseline
 
-A generated picture is a **candidate** and is never put up automatically. Each Sunday at 02:30,
-`scene-week.timer` offers two pictures, drawn from the same brief by two models. A grown-up
+A generated picture is a **candidate** and is never put up automatically. Each Sunday and
+Wednesday at 02:30, `scene-week.timer` offers two pictures, drawn from the same brief by two models. A grown-up
 chooses one on the Pictures screen. **Approving is selecting**: the wall shows the most
 recently approved picture, so approving an old one again is how you go back. Approving needs no
 PIN. Retiring a picture needs the PIN.
@@ -196,7 +196,7 @@ Add `--no-context` to skip the week's weather and calendar brief. The style rota
 running wall over `docker exec`. Without Docker, the dry run says so and uses the rotation's
 pick.
 
-To generate for real, set `FAL_KEY`. The Sunday timer reads it through `op run` from
+To generate for real, set `FAL_KEY`. The timer reads it through `op run` from
 `tools/op.env`, which you copy from `tools/op.env.example`.
 
 ## 8. The three guardrails

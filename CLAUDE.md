@@ -253,10 +253,18 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   **Only a COMPLETE brief freezes** (2026-10-01): one missing weather (with a place configured)
   or the calendar is provisional and is fetched again next run. W40's had been frozen sixteen
   days early by a test run, with no forecast and stale counts. `npm run verify:context`.
-  **A one-off big event picks the SETTING** (2026-10-17): `tools/scene-headlines.json`, matched
-  inside the container by `tools/scene-calendar.cjs` so only a rule id leaves. A title that recurs
-  a week or more away is routine and never counts; a week with no headline is byte-identical.
-- **The Sunday timer retries an ERROR, never a refusal.** On 2026-09-27 DNS failed at 02:54,
+- **A DIRECTOR chooses each run's picture, and there are TWO runs a week** (2026-10-18). The
+  timer fires Sun and Wed 02:30: `2026-W43` covers Mon..Sun, `2026-W43b` Wed..next Tue, and ids
+  carry the run (`2026w43b-…`). `tools/scene_director.py` (one ~$0.002 text call) reads the
+  frozen brief and picks a catalog or INVENTED setting, style, camera and premise from the
+  household's own tables, validated like the activity writer; a valid answer freezes in
+  `db/scene-director/<run>.json`, two refusals fall back to the rotation and freeze NOTHING.
+  A dry run does not ask unless `--ask-director`. It sees titles and visitor descriptions only
+  with `scenes.shareTitles: true` (opt-in; counts otherwise), and the image prompt never
+  carries a name either way. The keyword headline table it replaced is deleted.
+  **A visit needs a guest's name AND a visit word** ("visiting", "in town", "staying"…) in one
+  event — `tools/scene_guests.py`, `db/guests.json`. A guest-free prompt is byte-identical.
+- **The scene timer retries an ERROR, never a refusal.** On 2026-09-27 DNS failed at 02:54,
   `op read` could not reach 1Password, scene-week exited 2 — and nothing ran for a week, the
   wall silently kept the old picture. `scene-week.service` now restarts on failure every 30 min,
   four times at most, and runs `tools/scene-week-timer.sh` (2026-10-12), which wraps scene-week
