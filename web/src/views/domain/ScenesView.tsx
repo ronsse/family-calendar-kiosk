@@ -83,6 +83,7 @@ import {
   refusalIsRetryable,
   reviewOrder,
   sceneDecisions,
+  sceneHistoryWords,
   sceneLabel,
   type AdminActions,
   type RefusalCode,
@@ -469,6 +470,7 @@ function Preview({
   isActive: boolean;
   secondaryTextPx: number;
 }) {
+  const history = scene === null ? '' : sceneHistoryWords(scene);
   return (
     <div
       style={{
@@ -511,6 +513,26 @@ function Preview({
           {BROKEN_WORD}
         </div>
       ) : null}
+      {history.length === 0 ? null : (
+        // How long this one has been up, ever — the favourites, measured. Laid OVER the art in
+        // a corner rather than under it, because the column below the preview is already
+        // exactly as tall as the pane allows (the 2026-09-26 measurement above).
+        <div
+          style={{
+            position: 'absolute',
+            left: px(spacePx.xs),
+            top: px(spacePx.xs),
+            padding: `${px(spacePx.xxs)} ${px(spacePx.sm)}`,
+            borderRadius: radius.sm,
+            background: colour.surface,
+            ...text(secondaryTextPx),
+            color: colour.ink,
+            fontWeight: fontWeight.black,
+          }}
+        >
+          {history}
+        </div>
+      )}
     </div>
   );
 }

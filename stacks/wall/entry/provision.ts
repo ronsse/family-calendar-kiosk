@@ -23,7 +23,8 @@
  *   npm run provision -- --chores ~/wall-chores.json
  *   npm run provision -- --add-scene w37-cozy-painted   # register a generated scene as a candidate
  *   npm run provision -- --add-backdrop ~/porch.jpg --id porch   # a still picture, straight up
- *   npm run provision -- --scenes                       # the catalog, and which one is up
+ *   npm run provision -- --scenes                       # the catalog, which one is up, how long each was
+ *   npm run provision -- --scene-events -               # backfill past decisions (JSON from a backup)
  *   npm run provision -- --reset-activity               # wipe the wall's USE, keep its setup
  *   npm run provision -- --band child-a=fluent --ledger child-c=on   # one child's screen, in place
  *   npm run provision -- --list
@@ -60,8 +61,10 @@ import {
   activeScene,
   approveScene,
   listScenes,
+  logSceneDecision,
   readSceneManifest,
   registerScene,
+  sceneHistory,
 } from '../../../src/domain/scenes/library.ts';
 import { REPO_ROOT, registerBaselineAssets, registerCommittedScenes } from './baseline.ts';
 import { seedAssets } from './seed-assets.ts';
@@ -92,7 +95,7 @@ function flag(name: string): string | null {
 const KNOWN_FLAGS: readonly string[] = [
   'db', 'device', 'pin', 'revoke', 'household', 'calendars', 'chores', 'taps',
   'add-scene', 'style', 'scenes', 'list', 'force', 'reset-activity', 'band', 'ledger',
-  'settings', 'add-backdrop', 'id',
+  'settings', 'add-backdrop', 'id', 'scene-events',
 ];
 
 /** A backdrop is a picture for a wall, not a camera original. */
@@ -409,12 +412,14 @@ async function main(): Promise<void> {
   const ledger = flag('ledger');
   const addScene = flag('add-scene');
   const addBackdrop = flag('add-backdrop');
+  const sceneEvents = flag('scene-events');
   const wantsScenes = args.includes('--scenes');
   const wantsReset = args.includes('--reset-activity');
   const wantsList =
     args.includes('--list') ||
     (addScene === null &&
       addBackdrop === null &&
+      sceneEvents === null &&
       !wantsScenes &&
       !wantsReset &&
       device === null &&
@@ -749,8 +754,67 @@ async function main(): Promise<void> {
     process.stdout.write('  it is on the wall now. Choose another picture from the grown-up screen to take it down.\n');
   }
 
+  /**
+   * Past decisions, replayed into `scene_decision` (v11, 2026-10-18).
+   *
+   * The log starts on the day it was added; before that `approveScene` overwrote every earlier
+   * approval in place, so the only record of them is the nightly backups — each one a snapshot
+   * of every scene's LATEST decision. The union of those snapshots is most of the history, and
+   * this is how it gets in: a JSON array of `{ sceneId, kind, atUtc }`, insert-if-absent, so
+   * running it twice adds nothing. A scene id the library does not know is skipped and said,
+   * never invented: a decision about a picture that is not in the catalog is not history.
+   */
+  if (sceneEvents !== null) {
+    const refuse = (why: string): never => {
+      process.stderr.write(`${why}\n`);
+      process.exit(2);
+    };
+    if (sceneEvents.length === 0) refuse('--scene-events needs a path, e.g. --scene-events events.json (or - for stdin)');
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(sceneEvents === '-' ? 0 : sceneEvents, 'utf8'));
+    } catch (err) {
+      refuse(`--scene-events: not readable JSON (${err instanceof Error ? err.message : String(err)})`);
+    }
+    if (!Array.isArray(raw)) refuse('--scene-events: expected a JSON array of { sceneId, kind, atUtc }');
+    const known = new Set(listScenes(db).map((r) => r.id));
+    const bad: string[] = [];
+    const events: { sceneId: string; kind: 'approved' | 'retired'; atUtc: string }[] = [];
+    (raw as unknown[]).forEach((e, i) => {
+      const q = (typeof e === 'object' && e !== null ? e : {}) as Record<string, unknown>;
+      const { sceneId, kind, atUtc } = q;
+      if (
+        typeof sceneId !== 'string' ||
+        (kind !== 'approved' && kind !== 'retired') ||
+        typeof atUtc !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(atUtc)
+      ) {
+        bad.push(`  [${String(i)}] needs sceneId, kind approved|retired, and an ISO atUtc ending in Z`);
+        return;
+      }
+      events.push({ sceneId, kind, atUtc });
+    });
+    if (bad.length > 0) {
+      for (const b of bad) process.stderr.write(`${b}\n`);
+      refuse(`--scene-events: ${String(bad.length)} malformed event(s). Nothing was written.`);
+    }
+    let added = 0;
+    let present = 0;
+    const unknown = new Set<string>();
+    inTransaction(db, () => {
+      for (const e of events) {
+        if (!known.has(e.sceneId)) unknown.add(e.sceneId);
+        else if (logSceneDecision(db, e.sceneId, e.kind, e.atUtc)) added += 1;
+        else present += 1;
+      }
+    });
+    process.stdout.write(`scene events: ${String(added)} added, ${String(present)} already known\n`);
+    for (const id of unknown) process.stdout.write(`  skipped ${id}: not in the library\n`);
+  }
+
   if (wantsScenes) {
     const active = activeScene(db, assetRoot);
+    const history = sceneHistory(db, new Date().toISOString() as Utc);
     process.stdout.write(`on the wall: ${active?.id ?? 'NONE — the information board'}\n`);
     for (const row of listScenes(db)) {
       const regions = readSceneManifest(assetRoot, row.id);
@@ -759,6 +823,16 @@ async function main(): Promise<void> {
       process.stdout.write(
         `${mark} ${row.id.padEnd(28)} ${row.state.padEnd(10)} ${row.source.padEnd(10)} ${health}\n`,
       );
+    }
+    // The favourites: time as the chosen picture, longest first. Not time looked at — the
+    // dark screen at night is inside it, for every picture alike.
+    const ranked = [...history].filter(([, h]) => h.upMs > 0).sort((a, b) => b[1].upMs - a[1].upMs);
+    if (ranked.length > 0) {
+      process.stdout.write('longest up (time as the chosen picture):\n');
+      for (const [id, h] of ranked) {
+        const days = (h.upMs / 86_400_000).toFixed(1);
+        process.stdout.write(`   ${id.padEnd(48)} ${days.padStart(6)} days  chosen ${String(h.timesChosen)}x\n`);
+      }
     }
   }
 

@@ -572,6 +572,23 @@ CREATE TABLE scene (
 -- one" — and it asks it in front of a child waiting for a screen to draw.
 CREATE INDEX ix_scene_active ON scene(state, decided_at_utc DESC);
 
+-- Every decision ever made about a scene, appended and never rewritten (v11, 2026-10-18).
+--
+-- `scene.decided_at_utc` is overwritten by every approval — that is what makes approving also
+-- SELECTING — so the table above can say which picture is up and never which pictures WERE up,
+-- or for how long. Replaying this log in time order with the same rule `activeScene` uses (the
+-- newest approval that has not been retired since) gives each picture's time as the chosen
+-- one: the household's favourites, measured instead of remembered (`sceneHistory`).
+--
+-- Time as the CHOSEN picture, not time looked at: the board windows and the dark screen at
+-- night are inside it, and so is a picture whose file went missing and was skipped.
+CREATE TABLE scene_decision (
+  scene_id  TEXT NOT NULL,
+  kind      TEXT NOT NULL CHECK (kind IN ('approved','retired')),
+  at_utc    TEXT NOT NULL,
+  PRIMARY KEY (scene_id, at_utc, kind)
+) STRICT;
+
 -- ---------------------------------------------------------------------------
 -- The dog's week  (the Easter egg)
 -- ---------------------------------------------------------------------------
@@ -607,3 +624,4 @@ INSERT INTO schema_migration(version, applied_at_utc) VALUES (7, '2026-09-09T00:
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (8, '2026-09-09T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (9, '2026-09-15T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (10, '2026-09-15T00:00:00Z');
+INSERT INTO schema_migration(version, applied_at_utc) VALUES (11, '2026-10-18T00:00:00Z');

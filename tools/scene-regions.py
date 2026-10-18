@@ -401,27 +401,58 @@ def locate_dog(scene: str, key: str) -> list | None:
 
 
 def dog_region(box: list, regions: list[dict]) -> dict | None:
-    """The dog's tap target as fractions, grown to the floor, or None if it would touch a child.
+    """The dog's tap target as fractions, grown to the floor, or None if it cannot clear a child.
 
     Grown like a child's target (`grow_to_tap_floor`) because a finger is the same size
-    whatever it is aiming at. NOT trimmed to open a gutter and never a problem for `check`:
-    if the padded box comes within the gutter of any child's target, the dog is dropped from
-    this scene and the children keep their picture. Nothing about the egg may cost a scene.
+    whatever it is aiming at. Never a problem for `check`, and never trims a CHILD: the
+    children's targets are fixed by the time he is placed, and nothing about the egg may cost
+    a scene.
+
+    CLOSE IS FINE, OVERLAP IS NOT (2026-10-18). He used to be dropped within a 12px gutter of
+    any child, which lost him from `2026w43-autumn-forest-nb2`, where he sits on the bench right
+    beside the boy: *"it can be close as long as it's not overlapping."* So a dog box that
+    overlaps a child's target gives way on HIS side, along whichever axis the overlap is
+    smaller, down to the dime floor (`ABS_TAP_FLOOR_PX`); only one he cannot clear that way is
+    dropped. Touching edges count as clear.
     """
     x, y, w, h = to_fractions(box)
     r = {"x": x, "y": y, "w": w, "h": h}
     grow_to_tap_floor([r])
+    trimmed = False
     for c in regions:
-        gap_x = max(r["x"] - (c["x"] + c["w"]), c["x"] - (r["x"] + r["w"])) * LOGICAL_W
-        gap_y = max(r["y"] - (c["y"] + c["h"]), c["y"] - (r["y"] + r["h"])) * LOGICAL_H
-        if max(gap_x, gap_y) < GUTTER_PX - 1e-6:
-            gap = max(gap_x, gap_y)
-            how = f"overlaps slot {c['slot']}'s target" if gap < 0 else \
-                f"{gap:.0f}px from slot {c['slot']}'s target"
-            print(f"  dog: {how} — dropped, the children come first", file=sys.stderr)
+        over_x = min(r["x"] + r["w"], c["x"] + c["w"]) - max(r["x"], c["x"])
+        over_y = min(r["y"] + r["h"], c["y"] + c["h"]) - max(r["y"], c["y"])
+        if over_x * LOGICAL_W <= 1e-6 or over_y * LOGICAL_H <= 1e-6:
+            continue                                   # clear of this child, however close
+        if over_x * LOGICAL_W <= over_y * LOGICAL_H:   # give way sideways
+            if r["x"] + r["w"] / 2 >= c["x"] + c["w"] / 2:
+                r["x"] = c["x"] + c["w"]
+                r["w"] -= over_x
+            else:
+                r["w"] -= over_x
+            room = r["w"] * LOGICAL_W
+        else:                                          # give way up or down
+            if r["y"] + r["h"] / 2 >= c["y"] + c["h"] / 2:
+                r["y"] = c["y"] + c["h"]
+                r["h"] -= over_y
+            else:
+                r["h"] -= over_y
+            room = r["h"] * LOGICAL_H
+        if room < ABS_TAP_FLOOR_PX - 1e-6:
+            print(f"  dog: overlaps slot {c['slot']}'s target and cannot give way above "
+                  f"{ABS_TAP_FLOOR_PX}px — dropped, the children come first", file=sys.stderr)
+            return None
+        trimmed = True
+    for c in regions:                                  # a trim for one child may not land on another
+        over_x = min(r["x"] + r["w"], c["x"] + c["w"]) - max(r["x"], c["x"])
+        over_y = min(r["y"] + r["h"], c["y"] + c["h"]) - max(r["y"], c["y"])
+        if over_x * LOGICAL_W > 1e-6 and over_y * LOGICAL_H > 1e-6:
+            print(f"  dog: overlaps slot {c['slot']}'s target — dropped, the children come first",
+                  file=sys.stderr)
             return None
     print(f"  dog   {r['w'] * LOGICAL_W:5.0f}x{r['h'] * LOGICAL_H:5.0f} logical px"
-          f"  at ({r['x']:.3f}, {r['y']:.3f})", file=sys.stderr)
+          f"  at ({r['x']:.3f}, {r['y']:.3f}){'  [gave way to a child]' if trimmed else ''}",
+          file=sys.stderr)
     return {k: round(v, 4) for k, v in r.items()}
 
 
@@ -975,7 +1006,23 @@ def selftest() -> None:
     assert abs(boy["h"] * LOGICAL_H - 162) < 0.01, "height is never touched"
     assert not girl.get("tightened"), "a box already within two heads is left alone"
     assert abs(bare["w"] * LOGICAL_W - 48) < 0.01, "no head box, no change"
+    # The dog in nb2 on the bench beside the boy: 17px over his target. He gives way, and the
+    # boy's target does not move. Close is fine; only a dog that cannot clear is dropped.
+    import contextlib, io
+    def fk(x0, y0, x1, y1):            # logical px -> the locator's [ymin, xmin, ymax, xmax] /1000
+        return [y0 / LOGICAL_H * 1000, x0 / LOGICAL_W * 1000, y1 / LOGICAL_H * 1000, x1 / LOGICAL_W * 1000]
+    kids = [box(0, 637.5, 324, 794, 486)]
+    with contextlib.redirect_stderr(io.StringIO()):
+        dog = dog_region(fk(777.6, 324, 859.2, 452.5), kids)
+        touching = dog_region(fk(794, 324, 860, 452), kids)
+        buried = dog_region(fk(650, 340, 780, 470), kids)
+    assert dog is not None, "a dog beside a child is kept"
+    assert abs(dog["x"] * LOGICAL_W - 794) < 0.5 and dog["w"] * LOGICAL_W >= ABS_TAP_FLOOR_PX
+    assert abs(kids[0]["x"] * LOGICAL_W - 637.5) < 0.01, "the child's target never moves for him"
+    assert touching is not None and abs(touching["x"] * LOGICAL_W - 794) < 0.5, "touching is clear"
+    assert buried is None, "a dog inside a child's target is dropped"
     print("gutter fitting OK (stacked, side by side, overlap, height floor, head-anchored width)")
+    print("dog placement OK (beside a child kept, touching kept, inside dropped)")
 
 
 if __name__ == "__main__":

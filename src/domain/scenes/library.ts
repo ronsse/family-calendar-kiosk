@@ -140,7 +140,10 @@ export function registerScene(
       scene.nowUtc,
       scene.state === 'candidate' ? null : scene.nowUtc,
     ).changes;
-  if (inserted > 0) return 'inserted';
+  if (inserted > 0) {
+    if (scene.state !== 'candidate') logSceneDecision(db, scene.id, scene.state, scene.nowUtc);
+    return 'inserted';
+  }
   // A committed scene whose FILE moved is followed, the same way registerBaselineAssets
   // follows a relocated asset. Nothing else about an existing row is touched.
   const moved = db
@@ -156,20 +159,119 @@ export function registerScene(
  * that is not a no-op, it is the mechanism by which "show that one again" works.
  */
 export function approveScene(db: Db, id: string, nowUtc: Utc): boolean {
-  return (
-    db
-      .prepare(`UPDATE scene SET state = 'approved', decided_at_utc = ? WHERE id = ?`)
-      .run(nowUtc, id).changes > 0
-  );
+  return decide(db, id, 'approved', nowUtc);
 }
 
 /** Take a scene out of service. The row stays: the catalog is a history, not a live set. */
 export function retireScene(db: Db, id: string, nowUtc: Utc): boolean {
+  return decide(db, id, 'retired', nowUtc);
+}
+
+/** The row and its log entry in ONE transaction: a decision the log missed is lost time. */
+function decide(db: Db, id: string, kind: SceneDecisionKind, nowUtc: Utc): boolean {
+  return db.transaction(() => {
+    const changed =
+      db.prepare(`UPDATE scene SET state = ?, decided_at_utc = ? WHERE id = ?`).run(kind, nowUtc, id)
+        .changes > 0;
+    if (changed) logSceneDecision(db, id, kind, nowUtc);
+    return changed;
+  })();
+}
+
+// ---------------------------------------------------------------------------
+// History — which pictures were up, and for how long
+// ---------------------------------------------------------------------------
+
+export type SceneDecisionKind = 'approved' | 'retired';
+
+/**
+ * Appends one decision to `scene_decision`. Insert-if-absent, so replaying a backup's
+ * decisions into a log that already has some of them adds only the ones it lacks.
+ */
+export function logSceneDecision(db: Db, id: string, kind: SceneDecisionKind, atUtc: string): boolean {
   return (
     db
-      .prepare(`UPDATE scene SET state = 'retired', decided_at_utc = ? WHERE id = ?`)
-      .run(nowUtc, id).changes > 0
+      .prepare(`INSERT OR IGNORE INTO scene_decision (scene_id, kind, at_utc) VALUES (?, ?, ?)`)
+      .run(id, kind, atUtc).changes > 0
   );
+}
+
+export interface SceneHistory {
+  /** Milliseconds this scene was the chosen picture, summed over every stretch. */
+  readonly upMs: number;
+  /** How many times it was approved — first approval included, re-approvals counted. */
+  readonly timesChosen: number;
+}
+
+/**
+ * Each scene's time as THE picture, by replaying the decision log.
+ *
+ * The rule is `activeScene`'s, applied to every moment of the past: the chosen picture is the
+ * approved one with the newest approval that has not been retired since. Retiring the one that
+ * is up falls through to the one approved before it, exactly as the wall does.
+ *
+ * Two things the wall does that this does not, on purpose. It does not check files or
+ * manifests — a picture whose file went missing was still the CHOICE, and the question here is
+ * what the household chose. And it ignores `scenes.mode = off`. Neither the board windows nor
+ * the dark screen at night are taken out: this is time as the chosen picture, not time looked
+ * at, and every picture pays that tax equally, so it ranks favourites correctly anyway.
+ *
+ * Scenes with no decisions are absent from the map; the caller treats absence as zero.
+ */
+export function sceneHistory(db: Db, nowUtc: Utc): Map<string, SceneHistory> {
+  const events = db
+    .prepare(
+      `SELECT scene_id AS id, kind, at_utc AS at FROM scene_decision
+        ORDER BY at_utc ASC, kind ASC, scene_id ASC`,
+    )
+    .all() as { id: string; kind: SceneDecisionKind; at: string }[];
+  const now = Date.parse(nowUtc);
+  const approvedAt = new Map<string, string>();
+  const acc = new Map<string, { upMs: number; timesChosen: number }>();
+  const entry = (id: string) => {
+    let e = acc.get(id);
+    if (e === undefined) acc.set(id, (e = { upMs: 0, timesChosen: 0 }));
+    return e;
+  };
+  // Same order as `approvedScenes`: newest approval, then id descending on a tie.
+  const chosen = (): string | null => {
+    let best: string | null = null;
+    let bestAt = '';
+    for (const [id, at] of approvedAt) {
+      if (best === null || at > bestAt || (at === bestAt && id > best)) {
+        best = id;
+        bestAt = at;
+      }
+    }
+    return best;
+  };
+  let current: string | null = null;
+  let since = Number.NaN;
+  const close = (untilMs: number): void => {
+    if (current === null || !(untilMs > since)) return;
+    entry(current).upMs += untilMs - since;
+  };
+  for (const ev of events) {
+    const at = Date.parse(ev.at);
+    if (!Number.isFinite(at)) continue;
+    // A decision stamped after `now` (a clock that was wrong when it was written) is not
+    // allowed to borrow time it has not had yet.
+    const t = Math.min(at, now);
+    if (ev.kind === 'approved') {
+      approvedAt.set(ev.id, ev.at);
+      entry(ev.id).timesChosen += 1;
+    } else {
+      approvedAt.delete(ev.id);
+    }
+    const next = chosen();
+    if (next !== current) {
+      close(t);
+      current = next;
+      since = t;
+    }
+  }
+  close(now);
+  return acc;
 }
 
 // ---------------------------------------------------------------------------
@@ -411,7 +513,9 @@ export function registerBaselineScenes(
           : `baseline scene ${id} needs ${regions.length} children, household has ${children}: registered, not approved`,
       );
     }
-    inserted += insert.run(id, baselineRelPath(raw, id), fits ? 'approved' : 'candidate', at, fits ? at : null).changes;
+    const n = insert.run(id, baselineRelPath(raw, id), fits ? 'approved' : 'candidate', at, fits ? at : null).changes;
+    if (n > 0 && fits) logSceneDecision(db, id, 'approved', at);
+    inserted += n;
   });
 
   // The one promotion: an undecided baseline candidate whose roster now fits (see above).
@@ -428,6 +532,7 @@ export function registerBaselineScenes(
     if (regions.length !== children) return;
     const at = new Date(BASELINE_EPOCH_MS + (i - (ordered.length - 1)) * 1000).toISOString();
     if (promote.run(at, id).changes > 0) {
+      logSceneDecision(db, id, 'approved', at);
       log(`scene ${id}: baseline fits ${String(children)} children now, approved`);
     }
   });

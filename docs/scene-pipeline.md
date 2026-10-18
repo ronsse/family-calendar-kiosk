@@ -291,8 +291,9 @@ chasing his tail, a stick too big for him, flat on his back in a leaf pile, shak
 a swim, sneaking a sandwich, asleep in the sun, sitting in a suitcase, and more. Each mood
 names its `places` (the same closed vocabulary as the activities) and may name `seasons`.
 `hiding` is still one of them and stays the most likely. He is always **on his own** and
-never posed with the children; that was asked for, and his tap target is dropped near a
-child's anyway.
+never posed with the children; that was asked for. His tap target may sit right beside a
+child's, but never on it: an overlap is trimmed off his side (never under the 36px floor),
+and only a dog who cannot clear is dropped.
 
 The director chooses the mood with the rest of the picture. A choice that does not fit the
 place or season is dropped and drawn instead; the decision is not refused over it. Without a

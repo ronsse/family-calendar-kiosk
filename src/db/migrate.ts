@@ -17,7 +17,7 @@ export const SCHEMA_PATH = resolve(HERE, '../../db/schema.sql');
 export const SEED_DEV_PATH = resolve(HERE, '../../db/seed.dev.sql');
 
 /** The version db/schema.sql declares. Bumping it requires a new migration step. */
-export const TARGET_VERSION = 10;
+export const TARGET_VERSION = 11;
 
 /**
  * Upgrades, keyed by the version they PRODUCE.
@@ -124,6 +124,24 @@ const UPGRADES: readonly { readonly to: number; readonly sql: string }[] = [
     // v5, no backfill: the classifier does not run from inside a migration.
     to: 10,
     sql: `ALTER TABLE calendar_event ADD COLUMN category TEXT;`,
+  },
+  {
+    // v11 is a new table, so it carries its CHECK on both paths, like v3 and v9. The backfill
+    // is the one fact the old table kept: each scene's LATEST decision. Every earlier approval
+    // was overwritten in place by `approveScene`, so history before this step is as long as
+    // the household's backups make it (`provision.ts --scene-events`), and no longer.
+    to: 11,
+    sql: `
+      CREATE TABLE scene_decision (
+        scene_id  TEXT NOT NULL,
+        kind      TEXT NOT NULL CHECK (kind IN ('approved','retired')),
+        at_utc    TEXT NOT NULL,
+        PRIMARY KEY (scene_id, at_utc, kind)
+      ) STRICT;
+      INSERT OR IGNORE INTO scene_decision (scene_id, kind, at_utc)
+        SELECT id, state, decided_at_utc FROM scene
+         WHERE state IN ('approved','retired') AND decided_at_utc IS NOT NULL;
+    `,
   },
 ];
 

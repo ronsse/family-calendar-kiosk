@@ -30,7 +30,13 @@ import { isLedgerError } from '../domain/ledger/index.ts';
 import type { ChoreTransitionError } from '../domain/chores/index.ts';
 import { claimChore, unclaimChore } from '../domain/chores/index.ts';
 import { petEnabled, setDogDeed } from '../domain/dog/index.ts';
-import { activeScene, approveScene, listScenes, readSceneManifest } from '../domain/scenes/library.ts';
+import {
+  activeScene,
+  approveScene,
+  listScenes,
+  readSceneManifest,
+  sceneHistory,
+} from '../domain/scenes/library.ts';
 import {
   cancelRedemption,
   requestRedemption,
@@ -132,6 +138,9 @@ export const wallRoutes: RouteSpec[] = [
       // Computed with the same function the snapshot uses, never re-derived: a review screen
       // that disagreed with the wall about which picture is showing would be worse than none.
       const active = assetRoot === undefined ? null : activeScene(ctx.db, assetRoot);
+      // How long each picture has been THE picture, and how often it was chosen — the
+      // household's favourites, from the decision log rather than from anybody's memory.
+      const history = sceneHistory(ctx.db, ctx.now.toISOString() as Utc);
       return {
         activeSceneId: active?.id ?? null,
         scenes: listScenes(ctx.db).map((row) => {
@@ -149,6 +158,8 @@ export const wallRoutes: RouteSpec[] = [
             image: encodeURI(`/${row.relPath.replace(/^\/+/, '')}`),
             regionCount: regions?.length ?? 0,
             usable: regions !== null,
+            upMs: history.get(row.id)?.upMs ?? 0,
+            timesChosen: history.get(row.id)?.timesChosen ?? 0,
           };
         }),
       };

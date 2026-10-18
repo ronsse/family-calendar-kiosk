@@ -599,6 +599,14 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   `slotForChild` in `logic/sceneFace.ts` is now the only definition of that wrap; `SceneView`
   had it inline. Every failure falls back to the cartoon avatar: a wrong crop is worse than no
   crop, because the rail is how the three-year-old reaches his own screen.
+- **Which pictures are FAVOURITES is a replay of `scene_decision`, not a column** (v11,
+  2026-10-18). `decided_at_utc` is overwritten by every approval, so it could only ever say
+  which picture is up. Every approve and retire now appends a row, and `sceneHistory()` replays
+  them with `activeScene`'s rule to give each picture `upMs` and `timesChosen` (the Pictures
+  screen's corner chip; `provision.ts --scenes` prints the ranking). It is time as the CHOSEN
+  picture — the dark screen at night is inside it, for every picture alike. History before v11
+  came from the nightly backups through `--scene-events -` (insert-if-absent), so it misses any
+  choice that was undone before 04:45 the same night.
 - **Putting a picture up asks for nothing; taking one out still asks for the PIN.** The
   household's response to a PIN-gated Pictures screen was to give the children the PIN — which
   also handed them the approval queue, the ledger and every chore's worth. `approve` is on the
@@ -620,7 +628,10 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   and is byte-identical to the old prompt, and a frozen director decision with no `dog` key
   means hiding, so a retry of an old run reuses its pictures; `tools/scene-regions.py` looks for him AFTER the children pass and
   writes an optional top-level `dog` box into the manifest (`WallScene.dog`, null when absent
-  or when his box would sit within 16px of a child's target — the children come first). Tap
+  or when his box OVERLAPS a child's target — the children come first). **Close is fine**
+  (2026-10-18, *"it can be close as long as it's not overlapping"*): an overlapping dog gives
+  way on HIS side down to the 36px dime floor and is dropped only if he cannot clear; touching
+  counts as clear, and a child's target never moves for him. `npm run verify:finder`. Tap
   him on the wall and `DogSheet` opens, and **every word on it is his** (2026-09-15 pivot).
   Two halves, side by side: **Do this for me** — today's `pet` EXTRAS (`dogAsks` in
   `logic/dog.ts`: `category === 'pet' && kind === 'extra'`, gathered across every child's row),
@@ -639,7 +650,9 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   fits and a fifth scrolls. `scene-regions.py --dog-only <id> <jpg> <json>` patches an approved
   scene's manifest without re-verifying the children; a dogless scene is left byte-identical.
   Which scenes carry him: campsite, autumn-forest, harvest-market; not trailer-camp,
-  mountain-meadow or either lantern market (found, but on top of a child). The sheet lives ON
+  mountain-meadow or either lantern market (found, but on top of a child). A `--dog-only`
+  sweep under the new rule put him back in six pictures and left him out of two where he is
+  genuinely behind a child. The sheet lives ON
   the picture only (`dogSheetAfter`) and closes itself after 60 s.
 - **`"rotation": null` MEANS "LEAVE THE ROSTER ALONE", NOT "EVERYONE" — and that ate the fix
   above for eight days.** The dog's chores were edited to `rotation: null` on 2026-09-16 so all

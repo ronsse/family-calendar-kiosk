@@ -576,6 +576,12 @@ export interface SceneCatalogEntry {
   image: string;
   regionCount: number;
   usable: boolean;
+  /**
+   * Time as the chosen picture, summed, and how many times it was put up (`sceneHistory` on
+   * the server). Optional because an older server does not send them; absent reads as zero.
+   */
+  upMs?: number;
+  timesChosen?: number;
 }
 
 export interface SceneCatalog {
@@ -1024,6 +1030,33 @@ export function sceneLabel(scene: Pick<SceneCatalogEntry, 'id' | 'source'>): {
   const parts = [`Week ${String(Number(week))}`];
   if (model !== undefined) parts.push(MODEL_WORD[model] ?? model.toUpperCase());
   return { title: words(setting ?? scene.id), detail: parts.join(' · ') };
+}
+
+/**
+ * "Up 9 days · chosen 3 times": what the decision log says about one picture, for a person.
+ *
+ * Empty when it has never been up, so a new candidate carries no line at all rather than
+ * "Up 0 minutes". Days once it is a day, hours below that — a favourite is a matter of days,
+ * and "212 hours" makes an adult do the arithmetic this is here to save.
+ */
+export function sceneHistoryWords(scene: Pick<SceneCatalogEntry, 'upMs' | 'timesChosen'>): string {
+  const up = scene.upMs ?? 0;
+  const times = scene.timesChosen ?? 0;
+  if (!(up > 0) && times === 0) return '';
+  const HOUR = 3_600_000;
+  const DAY = 24 * HOUR;
+  const span =
+    up >= DAY
+      ? plural(Math.round(up / DAY), 'day')
+      : up >= HOUR
+        ? plural(Math.round(up / HOUR), 'hour')
+        : 'under an hour';
+  const chosen = times === 1 ? 'chosen once' : `chosen ${String(times)} times`;
+  return times === 0 ? `Up ${span}` : `Up ${span} · ${chosen}`;
+}
+
+function plural(n: number, unit: string): string {
+  return `${String(n)} ${unit}${n === 1 ? '' : 's'}`;
 }
 
 const HOUSE_ART_WORD = 'House picture';
