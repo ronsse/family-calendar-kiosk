@@ -121,8 +121,10 @@ test('the v11 upgrade seeds the log from each scene\'s LATEST decision, the one 
   candidate(db, 'waiting');
   approveScene(db, 'up', at('2026-10-10T00:00:00Z'));
   retireScene(db, 'gone', at('2026-10-11T00:00:00Z'));
-  // Back to v10, as the household's database was before this step existed.
-  db.exec('DROP TABLE scene_decision; DELETE FROM schema_migration WHERE version = 11;');
+  // Back to v10, as the household's database was before this step existed. Every LATER step
+  // must be undone too, or the migrator reads the newest version and never re-runs v11.
+  db.exec(`ALTER TABLE countdown DROP COLUMN horizon_days;
+    DROP TABLE scene_decision; DELETE FROM schema_migration WHERE version >= 11;`);
   const r = migrate(db);
   assert.equal(r.version, TARGET_VERSION);
   assert.deepEqual(decisions(db), [

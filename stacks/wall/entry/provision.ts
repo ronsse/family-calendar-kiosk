@@ -21,6 +21,7 @@
  *   npm run provision -- --settings db/household.json   # zone, locale, features, pets ('-' = stdin)
  *   npm run provision -- --calendars db/calendars.sql
  *   npm run provision -- --chores ~/wall-chores.json
+ *   npm run provision -- --countdowns db/countdowns.json  # add/update countdowns, never delete ('-' = stdin)
  *   npm run provision -- --add-scene w37-cozy-painted   # register a generated scene as a candidate
  *   npm run provision -- --add-backdrop ~/porch.jpg --id porch   # a still picture, straight up
  *   npm run provision -- --scenes                       # the catalog, which one is up, how long each was
@@ -68,6 +69,7 @@ import {
 } from '../../../src/domain/scenes/library.ts';
 import { REPO_ROOT, registerBaselineAssets, registerCommittedScenes } from './baseline.ts';
 import { seedAssets } from './seed-assets.ts';
+import { applyCountdowns, parseCountdownFile } from '../../../src/domain/countdowns/author.ts';
 import { issueDeviceToken, listDevices, parentPinIsSet, revokeDevice, setParentPin } from '../../../src/http/index.ts';
 
 const args = process.argv.slice(2);
@@ -95,7 +97,7 @@ function flag(name: string): string | null {
 const KNOWN_FLAGS: readonly string[] = [
   'db', 'device', 'pin', 'revoke', 'household', 'calendars', 'chores', 'taps',
   'add-scene', 'style', 'scenes', 'list', 'force', 'reset-activity', 'band', 'ledger',
-  'settings', 'add-backdrop', 'id', 'scene-events',
+  'settings', 'add-backdrop', 'id', 'scene-events', 'countdowns',
 ];
 
 /** A backdrop is a picture for a wall, not a camera original. */
@@ -413,6 +415,7 @@ async function main(): Promise<void> {
   const addScene = flag('add-scene');
   const addBackdrop = flag('add-backdrop');
   const sceneEvents = flag('scene-events');
+  const countdowns = flag('countdowns');
   const wantsScenes = args.includes('--scenes');
   const wantsReset = args.includes('--reset-activity');
   const wantsList =
@@ -420,6 +423,7 @@ async function main(): Promise<void> {
     (addScene === null &&
       addBackdrop === null &&
       sceneEvents === null &&
+      countdowns === null &&
       !wantsScenes &&
       !wantsReset &&
       device === null &&
@@ -810,6 +814,40 @@ async function main(): Promise<void> {
     });
     process.stdout.write(`scene events: ${String(added)} added, ${String(present)} already known\n`);
     for (const id of unknown) process.stdout.write(`  skipped ${id}: not in the library\n`);
+  }
+
+  /**
+   * Countdowns, additively. Upsert by id, never delete — `"active": false` retires one. The
+   * household SQL still carries the children's own; this is for the rest (a grown-up's
+   * birthday with `"horizonDays": 14`), so adding one never needs `--household --force`.
+   * NOTE `--household` begins with `DELETE FROM countdown`: re-apply this file after it.
+   */
+  if (countdowns !== null) {
+    const refuse = (why: string): never => {
+      process.stderr.write(`${why}\n`);
+      process.exit(2);
+    };
+    if (countdowns.length === 0) refuse('--countdowns needs a path, e.g. --countdowns db/countdowns.json (or - for stdin)');
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(countdowns === '-' ? 0 : countdowns, 'utf8'));
+    } catch (err) {
+      refuse(`--countdowns: not readable JSON (${err instanceof Error ? err.message : String(err)})`);
+    }
+    const parsed = parseCountdownFile(raw);
+    if (!parsed.ok) {
+      for (const e of parsed.errors) process.stderr.write(`  ${e}\n`);
+      refuse(`--countdowns: ${String(parsed.errors.length)} problem(s). Nothing was written.`);
+    } else {
+      const r = applyCountdowns(db, parsed.entries);
+      if (r.errors.length > 0) {
+        for (const e of r.errors) process.stderr.write(`  ${e}\n`);
+        refuse(`--countdowns: ${String(r.errors.length)} problem(s). Nothing was written.`);
+      }
+      process.stdout.write(
+        `countdowns: ${String(r.added)} added, ${String(r.updated)} updated, ${String(r.unchanged)} unchanged\n`,
+      );
+    }
   }
 
   if (wantsScenes) {

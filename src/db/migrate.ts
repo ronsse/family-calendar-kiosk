@@ -17,7 +17,7 @@ export const SCHEMA_PATH = resolve(HERE, '../../db/schema.sql');
 export const SEED_DEV_PATH = resolve(HERE, '../../db/seed.dev.sql');
 
 /** The version db/schema.sql declares. Bumping it requires a new migration step. */
-export const TARGET_VERSION = 11;
+export const TARGET_VERSION = 12;
 
 /**
  * Upgrades, keyed by the version they PRODUCE.
@@ -141,6 +141,16 @@ const UPGRADES: readonly { readonly to: number; readonly sql: string }[] = [
       INSERT OR IGNORE INTO scene_decision (scene_id, kind, at_utc)
         SELECT id, state, decided_at_utc FROM scene
          WHERE state IN ('approved','retired') AND decided_at_utc IS NOT NULL;
+    `,
+  },
+  {
+    // A countdown may carry its own horizon. NULL keeps the household's 60 days, so every
+    // existing row is unchanged; a grown-up's birthday sets 14, because two months of "Mum's
+    // birthday" on a child's wall is furniture (2026-10-20).
+    to: 12,
+    sql: `
+      ALTER TABLE countdown ADD COLUMN horizon_days INTEGER
+        CHECK (horizon_days IS NULL OR horizon_days BETWEEN 0 AND 366);
     `,
   },
 ];

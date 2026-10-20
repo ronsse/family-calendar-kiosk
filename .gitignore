@@ -47,6 +47,8 @@ db/calendars.sql
 db/chores.json
 # The real household settings (zone, pets, scene budget). Template: db/household.example.json
 db/household.json
+# Countdowns beyond the children's own (grown-ups' birthdays). Template: db/countdowns.example.json
+db/countdowns.json
 
 # fal.ai spend ledger — the household's, not the repo's (tools/fal_api.py)
 db/fal-ledger.jsonl

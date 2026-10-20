@@ -282,6 +282,15 @@ at the process level.
 
 ## Amendments
 
+### 2026-10-20 — a countdown's own horizon (schema v12)
+
+`countdown.horizon_days` (nullable INTEGER, 0–366). A countdown is off the wire until its
+sleeps are at or under this number, and `NULL` keeps the 60-day default. The wire shape is
+unchanged: `CountdownView` gains no field, because the decision is made where the 60-day rule
+is already made. It exists for grown-ups' birthdays, which the household wants on the wall
+only in the last two weeks; a child's birthday stays at 60. Authored through
+`provision.ts --countdowns` (runbook §1.7), which is additive and never deletes.
+
 ### 2026-10-12 — `WallSnapshot.household`: the household's settings
 
 `WallSnapshot.household: HouseholdView`, after `theme`. Additive; `apiVersion` and

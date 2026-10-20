@@ -474,6 +474,9 @@ CREATE TABLE countdown (
   annual_md     TEXT,
   child_id      TEXT REFERENCES child(id),   -- NULL = whole household
   active        INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+  -- How many days ahead this countdown appears. NULL = the household default
+  -- (COUNTDOWN_HORIZON_DAYS, 60). A grown-up's birthday sets 14. v12, 2026-10-20.
+  horizon_days  INTEGER CHECK (horizon_days IS NULL OR horizon_days BETWEEN 0 AND 366),
   CHECK ((target_date IS NOT NULL) <> (annual_md IS NOT NULL))
 ) STRICT;
 
@@ -625,3 +628,4 @@ INSERT INTO schema_migration(version, applied_at_utc) VALUES (8, '2026-09-09T00:
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (9, '2026-09-15T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (10, '2026-09-15T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (11, '2026-10-18T00:00:00Z');
+INSERT INTO schema_migration(version, applied_at_utc) VALUES (12, '2026-10-20T00:00:00Z');

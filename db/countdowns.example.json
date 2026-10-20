@@ -1,0 +1,18 @@
+[
+  {
+    "id": "cd-bday-parent-a",
+    "labelShort": "Parent A",
+    "labelFull": "Parent A's birthday",
+    "emoji": "🎂",
+    "annual": "03-02",
+    "horizonDays": 14
+  },
+  {
+    "id": "cd-bday-grandma",
+    "labelShort": "Grandma",
+    "labelFull": "Grandma's birthday",
+    "emoji": "🎂",
+    "annual": "11-09",
+    "horizonDays": 14
+  }
+]

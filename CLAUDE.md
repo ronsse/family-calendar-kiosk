@@ -291,6 +291,10 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   draw digest, so `--reuse-if-same` stops reusing every cached picture and next Sunday is a paid
   redraw. Update the fixture and the digest only on purpose. The digest hashes the AVATAR
   bytes too, so the public build ships its own copy under `tools/release/public-assets/`.
+- **`--household` deletes every countdown, and `--countdowns` never deletes one.** Grown-ups'
+  birthdays live in gitignored `db/countdowns.json` (v12 `horizon_days`, 14 for them, the 60-day
+  default for the children's), applied additively (runbook §1.7). `household.sql` opens with
+  `DELETE FROM countdown`, so re-apply the countdowns file after any household re-apply.
 - **`--season` and `--tags` existed in gen-scene for weeks and nothing passed them.** So the
   activity filter was dead and a sledge turned up on green hills (2026-09-13). scene-week passes
   both now and settings carry `tags`. Fifth instance of the signature bug: an input with no
@@ -612,8 +616,8 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   also handed them the approval queue, the ledger and every chore's worth. `approve` is on the
   WALL surface now (`POST /api/wall/v1/scenes/:id/approve`, `WallActions.approveScene`) because
   approving is also selecting and every outcome is another picture, each undone by choosing a
-  different one. `retire` stayed on admin. **The PIN can now go back to being the adults'** —
-  change it.
+  different one. `retire` stayed on admin. **The PIN is the adults' alone** (confirmed
+  2026-10-20: the children neither know it nor need it); its future is a paired phone.
 - **The finder cannot see the dog in `mountain-meadow` or `trailer-camp` and re-running will not
   help.** Both predate the dog being in the generation prompt, so he is not in the pictures to
   find; `--dog-only` was run on both on 2026-09-16 and honestly reported nothing. That is not a

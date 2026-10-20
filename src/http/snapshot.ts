@@ -316,6 +316,7 @@ interface CountdownRow {
   target_date: string | null;
   annual_md: string | null;
   child_id: string | null;
+  horizon_days: number | null;
 }
 
 /**
@@ -351,7 +352,8 @@ export const COUNTDOWN_HORIZON_DAYS = 60;
 export function countdownsFor(db: Db, today: LocalDate): CountdownView[] {
   const rows = db
     .prepare(
-      `SELECT id, label_short, label_full, icon_asset_id, emoji, target_date, annual_md, child_id
+      `SELECT id, label_short, label_full, icon_asset_id, emoji, target_date, annual_md, child_id,
+              horizon_days
          FROM countdown WHERE active = 1 ORDER BY id`,
     )
     .all() as CountdownRow[];
@@ -363,7 +365,9 @@ export function countdownsFor(db: Db, today: LocalDate): CountdownView[] {
     const sleeps = daysBetween(today, target);
     // Off the wire entirely, not hidden by a renderer: three bands would each have to apply
     // the same rule and one of them would eventually not. Same reasoning as `displayStreak`.
-    if (sleeps > COUNTDOWN_HORIZON_DAYS) continue;
+    // A row may shorten (or lengthen) its own horizon: a grown-up's birthday is worth two weeks
+    // of sleeps on a child's wall, not two months (2026-10-20).
+    if (sleeps > (row.horizon_days ?? COUNTDOWN_HORIZON_DAYS)) continue;
     views.push({
       id: row.id,
       labelShort: row.label_short,

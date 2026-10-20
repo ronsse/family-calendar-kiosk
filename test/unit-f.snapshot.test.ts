@@ -252,6 +252,33 @@ test('freshness reports provenance, and an unsynced calendar reads as unknown no
   }
 });
 
+test('a countdown with its own horizon appears only inside it (a grown-up birthday, 14 days)', async () => {
+  const h = await start();
+  try {
+    const today = localDate();
+    const add = (id: string, target: string, horizon: number | null) =>
+      h.db
+        .prepare(
+          `INSERT INTO countdown (id,label_short,label_full,icon_asset_id,emoji,target_date,annual_md,child_id,active,horizon_days)
+           VALUES (?,?,?, 'ico-cake', NULL, ?, NULL, NULL, 1, ?)`,
+        )
+        .run(id, id, id, target, horizon);
+
+    add('cd-short-in', addDays(today, 14), 14);
+    add('cd-short-out', addDays(today, 15), 14);
+    // NULL keeps the household default, so every row written before v12 is unchanged.
+    add('cd-default', addDays(today, 15), null);
+
+    const snap = (await snapshot(h, today)).body as WallSnapshot;
+    const seen = (id: string) => snap.countdowns.some((c) => c.id === id);
+    assert.ok(seen('cd-short-in'), 'exactly on its own horizon is inside it');
+    assert.equal(seen('cd-short-out'), false, 'one day past its own horizon is off the wire');
+    assert.ok(seen('cd-default'), 'NULL falls back to COUNTDOWN_HORIZON_DAYS');
+  } finally {
+    await h.stop();
+  }
+});
+
 test('countdowns count SLEEPS as a local-date subtraction, and drop what is over', async () => {
   const h = await start();
   try {

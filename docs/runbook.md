@@ -218,6 +218,32 @@ bash stacks/wall/systemd/install.sh
 
 §6 below is the rest of the weekly-picture story.
 
+### 1.7 Adding a birthday or other countdown
+
+Countdowns beyond the ones `household.sql` creates go in **a file**, `db/countdowns.json`
+(gitignored; the template is `db/countdowns.example.json`). Applying the file adds and updates
+countdowns. It never deletes one and never touches the ledger, so unlike `--household` it is
+safe at any time.
+
+```bash
+docker exec -i family-calendar-wall node --experimental-strip-types \
+  stacks/wall/entry/provision.ts --db /data/wall.db --countdowns - < db/countdowns.json
+```
+
+- **Success.** It prints `countdowns: N added, N updated, N unchanged` and exits 0.
+  Re-applying an unchanged file prints `0 added, 0 updated`.
+- **Refused.** One bad entry refuses the whole file. Each problem is printed, then `Nothing
+  was written.`, and it exits 2.
+- **Removing one.** Set `"active": false`. The row stays.
+- **After `--household`, apply this file again.** `household.sql` begins with
+  `DELETE FROM countdown`, so a household re-apply removes every countdown that came from here.
+
+Each entry is either a yearly date (`"annual": "MM-DD"`) or a one-off date (`"date":
+"YYYY-MM-DD"`). `horizonDays` decides how close the date must be before the countdown appears:
+leave it out for the wall's default of 60 days, or set `14` for a birthday that should appear
+only in the last two weeks. As with `--settings`, restart `kiosk.service` to see the change at
+once.
+
 ---
 
 ## 2. The Pi
