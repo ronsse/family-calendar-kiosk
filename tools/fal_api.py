@@ -271,10 +271,13 @@ def generate(model: str, prompt: str, refs: list[str], purpose: str, timeout: in
 
 
 def vision(prompt: str, images: list[str], purpose: str, model: str = VISION_MODEL,
-           timeout: int = 120, attempts: int = 3) -> str:
+           timeout: int = 120, attempts: int = 3, max_tokens: int | None = None) -> str:
     """One text answer about one or more images. Retries 5xx and timeouts only — a 4xx is our
-    own request being wrong and will be wrong again in four seconds."""
+    own request being wrong and will be wrong again in four seconds. `max_tokens` is honoured
+    by any-llm (measured 2026-10-20) and left out of the body when not given."""
     body = {"prompt": prompt, "image_urls": images, "model": model, "temperature": 0}
+    if max_tokens:
+        body["max_tokens"] = max_tokens
     record(VISION_ENDPOINT + ":" + model, VISION_PRICE, purpose)
     last: Exception | None = None
     for attempt in range(attempts):

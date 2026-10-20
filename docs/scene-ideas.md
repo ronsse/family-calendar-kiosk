@@ -73,11 +73,17 @@ the first try. Until the finder can say "two figures match slot 1 — refused", 
 picture to admire, not to navigate by. That is a `scene-regions.py` change (one more vision
 question: *how many figures in this picture match this description?*), not a prompt change.
 
+**Built 2026-10-20** as `check_lookalikes`: one call nominates unframed children, code drops
+the far-back and counted-out ladders, and each survivor is matched against the portraits on
+its own. A pasted twin refuses at 92% and 64% of the child's height and passes at 30%. No
+`busy-town` has been drawn against the current avatars, so its look-alike rate is still
+unmeasured; one paid probe would settle whether it can rotate.
+
 ### 2.2 Verdict per idea the household raised
 
 | Asked for | Answer |
 |---|---|
-| Where's Waldo | `busy-town`. Works as a picture (probe 2). Blocked as navigation until the finder refuses look-alikes (§2.1). Never at true Waldo scale — limit 1. |
+| Where's Waldo | `busy-town`. Works as a picture (probe 2). The finder refuses look-alikes since 2026-10-20 (§2.1); rotation waits on one probe against the current avatars. Never at true Waldo scale — limit 1. |
 | Photoreal but impossible | `impossible-photo`. Works, first time, on gpt-image-2. **Recommended first premise to put on the wall.** |
 | Riding unicorns / Pegasus | In the pool ("white unicorn at a canter", "winged horse just leaving the ground"). Unicorn held twice. |
 | Driving a monster truck | Standing on its roof holding a rail — limit 5. In the pool, untested. |

@@ -62,7 +62,7 @@ import time
 import urllib.error
 import urllib.request
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 import fal_api
 import scene_guests  # noqa: E402  (visiting family: the locator's decoys)
@@ -294,13 +294,16 @@ def ask(messages: list, key: str, timeout: int = 180, attempts: int = 3) -> str:
     return payload["choices"][0]["message"]["content"]
 
 
-def ask_images(prompt: str, images: list[str], key: str, purpose: str) -> str:
+def ask_images(prompt: str, images: list[str], key: str, purpose: str,
+               max_tokens: int | None = None) -> str:
     """One question about a list of images, through whichever door PROVIDER names. The prompt
-    and the attachments are guarded here, once, so neither door can skip it."""
+    and the attachments are guarded here, once, so neither door can skip it. `max_tokens`
+    bounds the fal door only; without it the request is byte-identical to before."""
     enforce(prompt)
     enforce_references([p for p in images if p.startswith("assets/")])
     if PROVIDER == "fal":
-        return fal_api.vision(prompt, [data_uri(p) for p in images], purpose)
+        return fal_api.vision(prompt, [data_uri(p) for p in images], purpose,
+                              **({"max_tokens": max_tokens} if max_tokens else {}))
     content = [{"type": "text", "text": prompt}]
     content += [{"type": "image_url", "image_url": {"url": data_uri(p)}} for p in images]
     return ask([{"role": "user", "content": content}], key)
@@ -770,6 +773,281 @@ def verify_identity(scene: str, regions: list[dict], key: str) -> list[str]:
     return problems
 
 
+LETTERS = "ABCDEFGH"
+
+
+LOOKALIKE_MIN_HEIGHT = 0.5   # shorter than this, against the child she resembles, is far back
+LOOKALIKE_MAX_CANDIDATES = len(LETTERS)
+# A bound on each answer. Without one, `2026w41-book-fair-gpt` (a queue of children at
+# temperature 0) ran past the 120 s timeout on every attempt of three runs (2026-10-20). At
+# 1200 a crowded `swim-pool` list was cut off mid-JSON; 3000 holds ~70 children and still
+# stops a loop in seconds. A cut-off answer is unreadable JSON, which refuses, never errors.
+LOOKALIKE_MAX_TOKENS = 3000
+# A run of this many boxes with one top and one bottom that TILE sideways (each starting where
+# the last ended) or step evenly at one width is the model COUNTING, not seeing: on
+# `2026w42-swim-pool-gpt` (2026-10-20) it cut a bleacher into [250, 268, 320, 296],
+# [250, 296, 320, 320], ... then thirty 16-wide strips, and crops of an empty bench and an
+# adult's shoulder were judged "the eldest" in every run. Children are never that regular; the
+# rungs are dropped and every box the model actually placed is still judged.
+LOOKALIKE_LADDER_RUNGS = 4
+
+
+def lookalike_prompt(cast: dict, n_marked: int) -> str:
+    """The first question `check_lookalikes` asks, of the whole picture with our children
+    framed: where is every OTHER child? It judges nothing — asked to judge hair across a whole
+    crowded picture, the model nominated a real twin on two runs in three (2026-10-20). Finding
+    children is the reliable half; the crops decide who resembles whom."""
+    letters = LETTERS[:n_marked]
+    framed = ", ".join(letters[:-1]) + (f" and {letters[-1]}" if n_marked > 1 else letters)
+    prompt = (
+        "In this picture "
+        + ("one child is" if n_marked == 1 else f"{count_words(n_marked)} children are")
+        + f" framed with a thick yellow-and-black box and labelled {framed}. List every OTHER "
+        "child in the picture, outside every frame, who stands at least a third as tall as the "
+        "SMALLEST framed child and whose hair can be seen, whole or partly hidden. Leave out "
+        "grown-ups, smaller children further away, and anyone whose head is covered by a hat, "
+        "hood, helmet or costume.\n\n"
+        'Answer with JSON only: {"children": [{"box_2d": [ymin, xmin, ymax, xmax], '
+        '"where": "<a few words>"}, ...]}, with box_2d around that whole figure, head to feet, '
+        'in 0-1000 coordinates. If there are none, answer {"children": []}.'
+    )
+    if GUESTS:
+        prompt = prompt.replace(
+            "Answer with JSON only",
+            scene_guests.finder_decoys(GUESTS)
+            + "\nDo not list the visitors: they are meant to be in the picture.\n\n"
+            + "Answer with JSON only", 1)
+    return prompt
+
+
+def ladder_rungs(boxes: list) -> set[int]:
+    """Indices of the boxes in any run of `LOOKALIKE_LADDER_RUNGS` or more that share a top and
+    a bottom and either TILE (each starts where the last ended) or step evenly at one width.
+    Units are whole 0-1000 numbers, as the model answers. Only well-formed boxes are
+    considered; the rest refuse later."""
+    rows: dict[tuple, list[tuple[int, int, int]]] = {}
+    for i, b in enumerate(boxes):
+        if (isinstance(b, list) and len(b) == 4
+                and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in b)):
+            rows.setdefault((round(b[0]), round(b[2])), []).append((round(b[1]), round(b[3]), i))
+
+    def linked(run: list, cur: tuple) -> bool:
+        prev = run[-1]
+        if cur[0] <= prev[0]:
+            return False
+        if abs(cur[0] - prev[1]) <= 1:
+            return True                     # tiles: starts where the last one ended
+        if len(run) < 2:
+            return cur[1] - cur[0] == prev[1] - prev[0]
+        before = run[-2]
+        return (cur[1] - cur[0] == prev[1] - prev[0]
+                and cur[0] - prev[0] == prev[0] - before[0])
+
+    rungs: set[int] = set()
+    for row in rows.values():
+        row.sort()
+        run = row[:1]
+        for cur in row[1:]:
+            if linked(run, cur):
+                run.append(cur)
+                continue
+            if len(run) >= LOOKALIKE_LADDER_RUNGS:
+                rungs.update(i for *_, i in run)
+            run = [run[-1], cur] if linked(run[-1:], cur) else [cur]
+        if len(run) >= LOOKALIKE_LADDER_RUNGS:
+            rungs.update(i for *_, i in run)
+    return rungs
+
+
+def lookalike_candidates(regions: list[dict], answer: dict | None) -> tuple[list[str], list[dict]]:
+    """The first answer -> (problems, candidates worth a crop). Pure, for the selftest.
+
+    A child is dropped when its centre is inside one of our frames (it is one of ours), inside
+    a candidate already kept (answered twice), when it is under `LOOKALIKE_MIN_HEIGHT` of
+    the SMALLEST framed child (far back for anyone), or when it is a rung of a counted-out
+    ladder (`ladder_rungs`). The largest survivors go to the crops.
+    FAIL-CLOSED: an answer or a box we cannot read is a problem."""
+    if not isinstance(answer, dict) or not isinstance(answer.get("children"), list):
+        return ["look-alike check unreadable — refusing rather than guessing"], []
+    floor = LOOKALIKE_MIN_HEIGHT * min(r["h"] for r in regions)
+    problems, cands = [], []
+    entries = answer["children"]
+    rungs = ladder_rungs([e.get("box_2d") if isinstance(e, dict) else None for e in entries])
+    for n, e in enumerate(entries):
+        if n in rungs:
+            continue
+        b = e.get("box_2d") if isinstance(e, dict) else None
+        # Looser than `sane_box` on purpose: a child at the picture's edge is answered a few
+        # units outside 0-1000 (measured: [280, -5, 313, 9]) and one lying down is wider than
+        # tall. Both are children; clamp them. Only a box that is not a box refuses.
+        if not (isinstance(b, list) and len(b) == 4
+                and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in b)
+                and b[2] > b[0] and b[3] > b[1]):
+            problems.append(f"look-alike box unreadable: {b if b is not None else e!r}"[:120])
+            continue
+        x, y, w, h = to_fractions(b)
+        if w <= 0 or h <= 0:
+            continue                                # wholly outside the picture
+        cx, cy = x + w / 2, y + h / 2
+        if any(o["x"] <= cx <= o["x"] + o["w"] and o["y"] <= cy <= o["y"] + o["h"] for o in regions):
+            continue
+        if h < floor:
+            continue
+        if any(o["x"] <= cx <= o["x"] + o["w"] and o["y"] <= cy <= o["y"] + o["h"] for o in cands):
+            continue                                # the same child answered twice
+        cands.append({"x": x, "y": y, "w": w, "h": h,
+                      "where": " ".join(str(e.get("where") or "").split())[:60]})
+    cands.sort(key=lambda c: -c["h"])
+    return problems, cands[:LOOKALIKE_MAX_CANDIDATES]
+
+
+def twin_prompt(cast: dict) -> str:
+    """The second question, asked of ONE crop at a time: the identity check's own matching
+    sentence (`verify_prompt`), so a look-alike is defined as a figure that check would have
+    accepted as one of ours. One crop per call on purpose: shown several at once and told most
+    were nobody (2026-10-20), the model judged an exact copy of the middle child "portrait 2"
+    in two runs and null in the third, when only a DIFFERENT crop in the same call had changed."""
+    n = len(cast["children"])
+    refs = ("The image after it is a reference portrait: portrait 1. The child is:\n" if n == 1
+            else f"The {count_words(n)} images after it are reference portraits, in order: "
+                 f"{portrait_list(n)}. The children are:\n")
+    none_of = ("the child" if n == 1 else "either of the two" if n == 2
+               else f"any of the {count_words(n)}")
+    choices = "|".join(str(i) for i in range(1, n + 1))
+    return (
+        "The first image is a crop taken from a picture. " + refs + finder_lines(cast) + "\n\n"
+        "Say which portrait the crop shows, matching on HAIR COLOUR and HAIRSTYLE and on the "
+        "child's apparent AGE and SIZE. Ignore clothing, eye colour and the exact face — the "
+        "same child is drawn with different clothes and a different face in every picture.\n\n"
+        'Answer with JSON only: {"portrait": <' + choices + '|null>}. Use null if the crop '
+        f"does not clearly show {none_of}, shows a grown-up, or shows a child whose hair is "
+        "hidden by a hat, hood, helmet or costume: with no hair to see, nothing matches."
+    )
+
+
+def twin_problems(regions: list[dict], cands: list[dict], answer: dict | None,
+                  slot_of: list[int]) -> list[str]:
+    """The second answer -> refusals. A crop counts only when it matches a portrait AND is at
+    least `LOOKALIKE_MIN_HEIGHT` of THAT child's framed height. FAIL-CLOSED like the rest."""
+    if not isinstance(answer, dict) or not isinstance(answer.get("twins"), list):
+        return ["look-alike crop check unreadable — refusing rather than guessing"]
+    by_crop = {str(m.get("crop", "")).strip().upper(): m for m in answer["twins"]
+               if isinstance(m, dict)}
+    by_slot = {r["slot"]: r for r in regions}
+    problems = []
+    for letter, c in zip(LETTERS, cands):
+        if letter not in by_crop:
+            problems.append(f"look-alike crop {letter} unanswered — refusing rather than guessing")
+            continue
+        p = by_crop[letter].get("portrait")
+        if p is None:
+            continue
+        if not isinstance(p, int) or isinstance(p, bool) or not 1 <= p <= len(slot_of):
+            problems.append(f"look-alike crop {letter}: unreadable portrait {p!r}"[:100])
+            continue
+        r = by_slot.get(slot_of[p - 1])
+        if r is None or c["h"] < LOOKALIKE_MIN_HEIGHT * r["h"]:
+            continue
+        where = f" ({c['where']})" if c["where"] else ""
+        problems.append(
+            f"slot {r['slot']}: a look-alike {c['h'] / r['h']:.0%} of this child's height elsewhere "
+            f"in the picture{where} — the child could tap the wrong figure"
+        )
+    return problems
+
+
+def mark_regions(scene: str, regions: list[dict], out: str) -> None:
+    """The picture with each found child framed and lettered, for `check_lookalikes`. A frame
+    rather than crops, because the question is about everyone OUTSIDE the boxes."""
+    from PIL import ImageFont
+    im = Image.open(scene).convert("RGB")
+    W, H = im.size
+    draw = ImageDraw.Draw(im)
+    line = max(4, W // 240)
+    try:
+        font = ImageFont.load_default(size=max(24, H // 18))
+    except TypeError:                      # Pillow before 10.1 has one fixed bitmap size
+        font = ImageFont.load_default()
+    for letter, r in zip(LETTERS, regions):
+        x0, y0 = int(r["x"] * W), int(r["y"] * H)
+        x1, y1 = int((r["x"] + r["w"]) * W), int((r["y"] + r["h"]) * H)
+        draw.rectangle((x0, y0, x1, y1), outline=(0, 0, 0), width=line * 2)
+        draw.rectangle((x0 + line // 2, y0 + line // 2, x1 - line // 2, y1 - line // 2),
+                       outline=(255, 214, 0), width=line)
+        tx, ty = x0 + line * 2, max(0, y0 - font.size - line) if hasattr(font, "size") else y0
+        draw.text((tx, ty), letter, fill=(255, 214, 0), font=font,
+                  stroke_width=max(2, line // 2), stroke_fill=(0, 0, 0))
+    im.save(out, **({"quality": 90} if out.lower().endswith(".jpg") else {}))
+
+
+def check_lookalikes(scene: str, regions: list[dict], key: str) -> list[str]:
+    """Is there a SECOND figure a child could take for herself?
+
+    The identity check cannot see this. It is shown a crop and asked which portrait it holds,
+    and a look-alike in a crop honestly answers "portrait 1" — which is how the first busy-town
+    picture (2026-09-13) passed with the eldest's target on a stranger in the same braids. The
+    busy-town brief now covers every other head, so this asks the opposite question of the
+    whole picture: outside our frames, does anyone share a child's uncovered hair? It holds for
+    every premise, not only the crowd: a market or a fair can draw a stranger's child too.
+
+    One vision call to NOMINATE (the whole picture, ~$0.002), code drops the far-back and the
+    framed, and each survivor is judged as its own crop (~$0.002 each, usually none to three),
+    which is where a vision model is reliable (2026-10-20: the one-call version blamed a
+    brunette on the blonde frame). The
+    identity and locate prompts are untouched, because their answers on the existing pictures
+    were measured against exactly those words. Named
+    visitors are excluded: they are drawn on purpose and may look alike by design."""
+    if not regions:
+        return []
+    tmp = os.path.join("/tmp", f"region-{os.getpid()}")
+    os.makedirs(tmp, exist_ok=True)
+    # JPEG, not PNG: a marked 1920x1080 PNG is several MB of base64 and the vision call timed
+    # out on it three times running (2026-10-20); the frames survive JPEG at 90.
+    marked = os.path.join(tmp, "marked.jpg")
+    mark_regions(scene, regions, marked)
+    cast = load_cast()
+    name = os.path.basename(scene)
+    # One retry on an answer we cannot read: a garbled box is the model, not the picture.
+    for attempt in (1, 2):
+        raw = ask_images(lookalike_prompt(cast, len(regions)), [marked], key,
+                         f"look-alikes {name}", max_tokens=LOOKALIKE_MAX_TOKENS)
+        try:
+            answer = json.loads(unfence(raw))
+        except Exception:
+            answer = None
+        problems, cands = lookalike_candidates(regions, answer)
+        if not problems:
+            break
+    if problems or not cands:
+        return problems
+    im = Image.open(scene).convert("RGB")
+    W, H = im.size
+    # Our own children are painted out first. A crop is padded, and on 2026-10-20 the padding
+    # of a dark-haired boy's crop took in the youngest's blond head beside it, so the judge
+    # matched the youngest — to himself.
+    blank = ImageDraw.Draw(im)
+    for r in regions:
+        blank.rectangle((int(r["x"] * W), int(r["y"] * H),
+                         int((r["x"] + r["w"]) * W), int((r["y"] + r["h"]) * H)), fill=(128, 128, 128))
+    crops = []
+    for i, c in enumerate(cands):
+        pad_w, pad_h = c["w"] * 0.15, c["h"] * 0.05
+        path = os.path.join(tmp, f"twin{i}.jpg")
+        im.crop((int(max(0, c["x"] - pad_w) * W), int(max(0, c["y"] - pad_h) * H),
+                 int(min(1, c["x"] + c["w"] + pad_w) * W), int(min(1, c["y"] + c["h"] + pad_h) * H))
+                ).save(path, quality=90)
+        crops.append(path)
+    twins = []
+    for letter, crop in zip(LETTERS, crops):
+        raw = ask_images(twin_prompt(cast), [crop, *avatars(cast)], key,
+                         f"look-alike crop {letter} {name}", max_tokens=LOOKALIKE_MAX_TOKENS)
+        try:
+            twins.append({"crop": letter, "portrait": json.loads(unfence(raw))["portrait"]})
+        except Exception:
+            pass                           # left out, so twin_problems refuses it as unanswered
+    return twin_problems(regions, cands, {"twins": twins}, slots(cast))
+
+
 def main(scene_id: str, image: str, dst: str) -> None:
     key = os.environ["NOUS_API_KEY"] if PROVIDER == "nous" else ""
     if PROVIDER == "fal":
@@ -825,6 +1103,8 @@ def main(scene_id: str, image: str, dst: str) -> None:
     # clothing check would have caught. One run should report everything wrong with a scene.
     print("verifying each box holds the right child, fully clothed", file=sys.stderr)
     problems += verify_identity(image, regions, key)
+    print("checking nobody else in the picture could be taken for one of them", file=sys.stderr)
+    problems += check_lookalikes(image, regions, key)
 
     for r in regions:
         print(f"  slot {r['slot']}  {r['w'] * LOGICAL_W:5.0f}x{r['h'] * LOGICAL_H:5.0f} logical px"
@@ -1021,7 +1301,67 @@ def selftest() -> None:
     assert abs(kids[0]["x"] * LOGICAL_W - 637.5) < 0.01, "the child's target never moves for him"
     assert touching is not None and abs(touching["x"] * LOGICAL_W - 794) < 0.5, "touching is clear"
     assert buried is None, "a dog inside a child's target is dropped"
+    # The look-alike verdict: the picture nominates, code drops far-back and framed figures,
+    # and the crop answer decides who she resembles.
+    three = [box(1, 100, 100, 200, 400), box(2, 400, 150, 480, 400), box(0, 700, 300, 760, 400)]
+    slot_of = [1, 2, 0]                                  # portrait p -> slot, as slots() gives it
+    def la(x0, y0, x1, y1, where=""):                    # logical px -> the model's 0-1000 box
+        return {"where": where, "box_2d": [y0 / LOGICAL_H * 1000, x0 / LOGICAL_W * 1000,
+                                                         y1 / LOGICAL_H * 1000, x1 / LOGICAL_W * 1000]}
+    assert lookalike_candidates(three, {"children": []}) == ([], [])
+    nominees = {"children": [la(300, 150, 360, 380, "by the fountain"),   # 230 tall: a twin of A?
+                             la(850, 100, 870, 140),                      # 40 tall: far back
+                             la(410, 160, 470, 390),                      # inside B's frame
+                             la(305, 155, 355, 375)]}                     # the fountain one again
+    probs, cands = lookalike_candidates(three, nominees)
+    assert probs == [] and len(cands) == 1 and cands[0]["where"] == "by the fountain", cands
+    twin = {"twins": [{"crop": "A", "portrait": 1}]}
+    got = twin_problems(three, cands, twin, slot_of)
+    assert len(got) == 1 and got[0].startswith("slot 1: a look-alike 77%") and "fountain" in got[0], got
+    assert twin_problems(three, cands, {"twins": [{"crop": "A", "portrait": None}]}, slot_of) == []
+    # Tall enough to be nominated against the smallest child (100px), too short for the eldest.
+    _, mid = lookalike_candidates(three, {"children": [la(300, 250, 330, 380)]})
+    assert len(mid) == 1
+    assert twin_problems(three, mid, {"twins": [{"crop": "a", "portrait": 1}]}, slot_of) == [], \
+        "130px is far back against a 300px eldest"
+    assert twin_problems(three, mid, {"twins": [{"crop": "A", "portrait": 3}]}, slot_of) != [], \
+        "and a near twin of the 100px youngest"
+    edge = {"children": [{"box_2d": [300 / LOGICAL_H * 1000, -5, 500 / LOGICAL_H * 1000, 60]}]}
+    probs, at_edge = lookalike_candidates(three, edge)
+    assert probs == [] and len(at_edge) == 1 and at_edge[0]["x"] == 0.0, "a child at the edge is clamped"
+    # A counted-out ladder is dropped whole; three evenly spaced children are not a ladder,
+    # and an uneven row is children standing in a line.
+    bench = {"children": [la(300, 250, 330, 380, "real")]
+             + [{"where": "rung", "box_2d": [300, 520 + 32 * k, 600, 552 + 32 * k]} for k in range(6)]}
+    probs, rung_cands = lookalike_candidates(three, bench)
+    assert probs == [] and [c["where"] for c in rung_cands] == ["real"], rung_cands
+    assert ladder_rungs([[1, 10, 9, 20], [1, 30, 9, 40], [1, 50, 9, 60]]) == set()
+    assert ladder_rungs([[1, 10, 9, 20], [1, 30, 9, 40], [1, 55, 9, 65], [1, 90, 9, 100]]) == set()
+    assert ladder_rungs([[1, 10, 9, 20], [1, 30, 9, 40], [1, 50, 9, 60], [1, 70, 9, 80],
+                         [2, 70, 9, 80]]) == {0, 1, 2, 3}
+    # The swim-pool shape: tapering tiles that settle into an even ladder, all one run.
+    taper = [[250, 268, 320, 296], [250, 296, 320, 320], [250, 320, 320, 340],
+             [250, 340, 320, 356], [250, 356, 320, 372], [250, 372, 320, 388]]
+    assert ladder_rungs(taper + [[250, 600, 320, 640]]) == {0, 1, 2, 3, 4, 5}
+    assert ladder_rungs(taper[:3]) == set(), "three tiles are three children"
+    for bad in (None, {"children": "none"}, {"children": [{"box_2d": [500, 500, 400, 600]}]},
+                {"children": [{"box_2d": [1, 2, 3]}]}, {"children": ["x"]},
+                {"children": [{"box_2d": [1, 2, True, 4]}]}):
+        assert lookalike_candidates(three, bad)[0] != [], f"{bad!r} must refuse"
+    for bad in (None, {"twins": []}, {"twins": [{"crop": "A", "portrait": 4}]},
+                {"twins": [{"crop": "A", "portrait": True}]}, {"twins": [{"crop": "A", "portrait": "1"}]}):
+        assert twin_problems(three, cands, bad, slot_of) != [], f"{bad!r} must refuse"
+    # The marked picture: frames drawn, size unchanged, no network.
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        src, out = os.path.join(d, "s.png"), os.path.join(d, "m.png")
+        Image.new("RGB", (1920, 1080), (40, 120, 40)).save(src)
+        mark_regions(src, [box(1, 100, 100, 200, 300), box(2, 500, 100, 600, 300)], out)
+        m = Image.open(out)
+        assert m.size == (1920, 1080) and m.getpixel((200, 400)) != (40, 120, 40), "frame drawn"
+        assert m.getpixel((1800, 1000)) == (40, 120, 40), "nothing drawn outside the frames"
     print("gutter fitting OK (stacked, side by side, overlap, height floor, head-anchored width)")
+    print("look-alike verdict OK (a near twin refuses; far back and framed pass; unreadable refuses)")
     print("dog placement OK (beside a child kept, touching kept, inside dropped)")
 
 

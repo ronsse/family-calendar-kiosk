@@ -239,8 +239,8 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   scene; a person picks a premise for a week with `scene-week.py --premise X`. Measured
   2026-09-13 (`docs/scene-ideas.md`): `impossible-photo` on gpt-image-2 held the cast and the
   described superhero suit was NOT refused — describe, never name, is the rule; `busy-town`
-  drew a real busy-picture and **the finder tapped a look-alike** (a second braided figure), so
-  at crowd scale the finder needs an ambiguity check before that premise can rotate. A true
+  drew a real busy-picture and **the finder tapped a look-alike** (a second braided figure);
+  the finder refuses look-alikes now (below), but no busy-town has been drawn since. A true
   Waldo (child a tenth of the frame) is under the 77px height floor and is not on the table.
 - **THIS WEEK is frozen per week, and a missing source is a sentence, not a failure.**
   `tools/scene_context.py` turns the forecast (Open-Meteo, 0.1° grid in gitignored
@@ -322,6 +322,17 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   so a far-back eldest got swapped with her sister and the verifier refused the picture. Fixed
   in `locate()` on 2026-10-12. A run of `box holds portrait 2, expected 1` refusals is the
   locator, not the art — look at the picture before believing it.
+- **The finder refuses a LOOK-ALIKE, in two questions, and code sits between them**
+  (2026-10-20, `check_lookalikes`, every premise). One call NOMINATES unframed children on the
+  marked picture; code drops the framed, anything under half the height of the child it would
+  be mistaken for, and **ladders** — a run of boxes sharing a top and bottom that tile or step
+  evenly, which is the model counting a bleacher, not seeing children (empty-bench crops were
+  judged "the eldest" every run). Each survivor is then asked ALONE, our three greyed out of
+  it, the identity question: *which portrait is this?* One crop per call because a batch of
+  them swayed each other; a hidden head is `null`, or a dinosaur hood is a twin. Uploads are
+  JPEG (PNG timed out) and answers are capped at 3000 tokens (a crowd looped past 120 s).
+  Measured on 10 real scenes and 3 pasted twins: twins at 92% and 64% of a child's height
+  refuse, 30% passes, and one real scene refuses — `book-fair-nb2`'s blond toddler, correctly.
 - **Upside-down poses are refused.** The finder's facing check read a handstand as "head on
   backwards" (2026-09-13). The handstand is gone from the table; "doing a cartwheel" is still in
   it and carries the same risk.

@@ -2,7 +2,6 @@
 
 Open items only. Decisions and their reasoning live in `docs/decisions/` and `docs/design-review/`.
 
-- **Finder ambiguity check.** At crowd scale (`busy-town`) the finder can tap a look-alike; the premise cannot rotate until it refuses ambiguous matches.
 - **Swimwear for more settings.** Only `swim-pool` opts in; a lake or beach day should copy that pattern, never loosen the clothed check.
 - **Fewer than three children.** Scene quality with a one- or two-child cast is untested; such a household boots onto `backdrop`.
 - **Picture readout.** Whether the idle picture needs an at-a-glance chip waits on the door-tap counter (H10).
