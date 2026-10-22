@@ -836,6 +836,10 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
 - [`docs/runbook.md`](docs/runbook.md) — **bringing the wall up, and fixing it when it is
   wrong.** Written to be followed at 6:05 AM by someone who did not build this. Start here for
   anything operational.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) §"Keeping a private copy and a public one": **ship
+  to the public repo with `tools/release/sync-public.sh`.** Commit here first, because it
+  builds from HEAD. Run `--dry-run`, then `"<message>"`, then `--push` only when asked.
+  Never copy files across by hand: a hand copy cannot see a deletion.
 - [`docs/build-plan.md`](docs/build-plan.md) — how M1 is decomposed for parallel agents: the
   contracts-first rule, per-unit file ownership, and the redaction rule for anything sent to a
   third-party model. **Read before delegating any work in this repo.**

@@ -54,6 +54,41 @@ If you maintain a fork for your own household, run `--full` before every push. A
 `verify:release` alone only proves the tree has no generic secret shapes; it knows nothing
 about your family.
 
+## Keeping a private copy and a public one
+
+If your own household runs from a private repository and you also publish a clean copy, two
+scripts in `tools/release/` keep the two apart. You never copy files by hand:
+
+- `build-public.sh <empty-dir>` builds the public tree from your committed `HEAD`. It removes
+  the paths in `private-only.txt`, swaps in the synthetic art from `public-assets/`, and runs
+  both gates above. It makes a fresh repository, and is meant for a first release.
+- `sync-public.sh` brings an existing public checkout up to date as one ordinary commit on top
+  of its history:
+
+```bash
+tools/release/sync-public.sh --dry-run                    # what would change, per file
+tools/release/sync-public.sh "feat: what this release does"  # apply, re-check, test, commit
+tools/release/sync-public.sh --push "feat: …"             # and push, then watch CI
+```
+
+`sync-public.sh` makes the public checkout's tracked files exactly the built tree, including
+deletions and executable bits. It leaves untracked and ignored files such as `node_modules`
+alone. It refuses to run if the public checkout is dirty, is not on `main`, or is behind its
+remote. A failed check or test puts the checkout back as it was. Without `--push`, nothing
+leaves your machine.
+
+It reads two local, gitignored inputs:
+
+- `PUBLIC_REPO` or `local/public-repo.txt`: the public checkout's path.
+- `RELEASE_AUTHOR` or `local/release-author.txt`: the author for the commit, in the form
+  `Name <id+user@users.noreply.github.com>`.
+
+What the scripts publish is whatever is committed and not listed as private. A new
+household-specific file therefore needs one of two things before you sync:
+
+- a `.gitignore` entry plus a committed `*.example.*` twin, or
+- a line in `private-only.txt` plus a synthetic replacement.
+
 ## Screenshots
 
 The images in `docs/images/` are captured from the example household, never drawn by hand.
