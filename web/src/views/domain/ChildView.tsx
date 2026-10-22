@@ -48,12 +48,15 @@ import { WeekView } from './WeekView.tsx';
  * The two chore destinations, in words — for the bands that read them.  The pre-reader gets
  * neither: `typo.showsText` is false for her and the circles carry the whole distinction.
  *
- * "Jobs" and "Extras" rather than "Duties" and "Paid extras". A five-year-old reads the short
- * one, and "duty" is a word she does not have; "jobs" is what this household already calls
- * them out loud. "Extras" carries the optional half without needing the word "paid" — the star
- * on the circle and the points on the tiles say the rest.
+ * "Family helpers" and "Extras" rather than "Duties" and "Paid extras" (ADR-0006 §1,
+ * 2026-10-22). The heading names who the child is while doing them, a helper in this family,
+ * rather than a list of tasks: the noun framing ("be a helper") is a cheap nudge with one small
+ * study behind it, and the household chose the words. "Duty" stays on the grown-up screens.
+ * It was "Jobs" until then, chosen for length; the switch row has room for the longer label.
+ * "Extras" carries the optional half without needing the word "paid" — the star on the
+ * circle and the points on the tiles say the rest.
  */
-const DUTIES_WORD = 'Jobs';
+const DUTIES_WORD = 'Family helpers';
 const EXTRAS_WORD = 'Extras';
 
 function currentRun(runs: RoutineRunView[], localTime: string): RoutineRunView | null {
@@ -73,8 +76,8 @@ export function ChildView({ child }: { child: Child }) {
   const { snapshot, clock, gate } = useWall();
   const { frame } = useWallLayout();
   // The household's surfaces (`household.features`). The server already ships an off surface's
-  // lists empty; these decide which DESTINATIONS exist, because "Jobs" with nothing behind it is
-  // still a button.
+  // lists empty; these decide which DESTINATIONS exist, because a duties door with nothing
+  // behind it is still a button.
   const choresOn = featureOn(snapshot.household, 'chores');
   const moneyOn = featureOn(snapshot.household, 'money');
   const countdownsOn = featureOn(snapshot.household, 'countdowns');
@@ -84,7 +87,7 @@ export function ChildView({ child }: { child: Child }) {
   const run = currentRun(runs, clock.localTime);
   const accent = childAccentForSlot(child.sortOrder);
 
-  // One option per routine, then Jobs. Every routine gets its own button now: the old
+  // One option per routine, then the duties. Every routine gets its own button now: the old
   // two-value switch could only show whichever run the clock had picked, so a bedtime routine
   // was unreachable all morning and a morning routine unreachable all evening.
   const options: SectionOption[] = useMemo(() => {
@@ -190,7 +193,7 @@ export function ChildView({ child }: { child: Child }) {
       {/*
         The section gets the FULL width, which is what a routine step needs: the alternative
         to a wide tile is a wrapped or truncated label, and "Ge…" is not a step anyone can
-        follow. Points live inside Jobs rather than in a column of their own — that is where
+        follow. Points live inside the chores sections rather than in a column of their own — that is where
         they are earned, and a permanent right-hand column cost the section 200px of width to
         show a number that is zero most of the day.
 

@@ -246,6 +246,32 @@ once.
 
 ---
 
+### 1.8 Adding a routine step
+
+A new step in a routine (bedtime's "Toys away", say) goes in **a file**, `db/routine-steps.json`
+(gitignored; the template is `db/routine-steps.example.json`). The wall's own screen can add a
+step that exists to a child and move it, but it cannot create one. Until this file, the only
+way to create a step was to re-apply the household SQL, which deletes the ledger.
+
+```bash
+docker exec -i family-calendar-wall node --experimental-strip-types \
+  stacks/wall/entry/provision.ts --db /data/wall.db --routine-steps - < db/routine-steps.json
+```
+
+- **What each entry does.** It adds or updates one step by `id`. Then it gives the step to every
+  child in `children`, at `position` (1 = first; leave it out or `null` to append).
+- **Success.** It prints `routine steps: N added, N updated, N unchanged; N child sequence(s)
+  changed` and exits 0. Re-applying an unchanged file changes nothing.
+- **Takes effect today.** Today's routine card gets the step at once, as an assignment from the
+  wall's screen does. Restart `kiosk.service` to see it without waiting for a refetch.
+- **Refused.** One bad entry, or an unknown routine, icon or child, refuses the whole file and
+  prints `Nothing was written.`, exiting 2.
+- **It never removes anything.** A child left out of `children` keeps their sequence as it is.
+  `"active": false` retires the step and keeps the row. To take a step away from one child, use
+  the wall's screen.
+- **After a household re-apply that uncomments the reset block**, apply this file again:
+  the reset deletes every routine step.
+
 ## 2. The Pi
 
 ```bash

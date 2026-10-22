@@ -40,7 +40,8 @@ export {
 } from './transitions.ts';
 
 export { evaluateRrule, occursOn, type RruleEvaluation } from './recurrence.ts';
-export { rotationAssignee, type RotationMember } from './rotation.ts';
+export { rotationAssignee, rotationAssigneeSkipping, type RotationMember } from './rotation.ts';
+export { JOB_MINUTES, awayForJob, awaySpans, childrenAwayForJob, childrenNamed } from './away.ts';
 export { EPOCH, dayIndex } from './localdays.ts';
 
 export {

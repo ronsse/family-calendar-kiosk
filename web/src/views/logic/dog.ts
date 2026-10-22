@@ -142,7 +142,8 @@ export function askLine(asks: readonly DogAsk[]): string {
   // "Left" is an ask NOBODY has done. One child walking the dog does not close the row — the
   // other two may still have walked him too, and the row is a log, not a race.
   const left = asks.filter((a) => a.doneCount === 0).length;
-  if (left === 0) return 'All done. You are the best.';
+  // The act, never the child: "you are the best" grades the person (ADR-0006 §1).
+  if (left === 0) return 'All done. You looked after me today.';
   return 'Tap the face of whoever did it.';
 }
 

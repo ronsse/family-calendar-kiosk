@@ -152,6 +152,7 @@ check_blobs() {
 HOUSEHOLD_PATHS=(
   db/household.sql db/household.json db/cast.json db/calendars.sql db/chores.json
   db/scene-place.json db/fal-ledger.jsonl stacks/wall/op.env tools/op.env CLAUDE.local.md
+  db/countdowns.json db/routine-steps.json
   db/scene-context/ db/scene-activities/ local/ docs/local/
 )
 check_paths() {

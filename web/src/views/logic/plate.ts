@@ -48,7 +48,7 @@ export const CARD_PLATE: Plate = {
 };
 
 /**
- * A section door (Bedtime, Jobs, Extras) on a child's screen.
+ * A section door (Bedtime, Family helpers, Extras) on a child's screen.
  *
  * Unchosen, it is a raised KEY in the theme's language: the card's fill and edge, on the key's
  * ledge. Chosen, it is pressed in — the heavy focus edge and no ledge — so the choice reads by

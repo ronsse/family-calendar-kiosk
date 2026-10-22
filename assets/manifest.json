@@ -233,6 +233,12 @@
       "rel_path": "icons/toybox.png"
     },
     {
+      "id": "ico-glass",
+      "kind": "icon",
+      "category": "tidy",
+      "rel_path": "icons/glass.png"
+    },
+    {
       "id": "ico-fetch",
       "kind": "icon",
       "category": "pet",

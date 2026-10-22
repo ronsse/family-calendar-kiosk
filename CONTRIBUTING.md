@@ -15,8 +15,8 @@ Everything that describes a real family lives in gitignored files and in the run
 container's volume, never in git:
 
 - `db/household.json`, `db/household.sql`, `db/calendars.sql`, `db/chores.json`,
-  `db/cast.json`, `db/scene-place.json`, `db/fal-ledger.jsonl`, `db/scene-context/`,
-  `db/scene-activities/`
+  `db/cast.json`, `db/countdowns.json`, `db/routine-steps.json`, `db/scene-place.json`,
+  `db/fal-ledger.jsonl`, `db/scene-context/`, `db/scene-activities/`
 - `stacks/wall/op.env`, `tools/op.env` (secret references), `CLAUDE.local.md`
 - `local/` and `docs/local/` (private notes and release-prep inputs)
 

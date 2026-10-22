@@ -124,11 +124,15 @@ test('db/chores.json, where it exists, still satisfies both properties', (t) => 
   const chores = (parsed as { chores?: unknown }).chores;
   assert.ok(Array.isArray(chores), 'chores must be an array');
 
+  // Only the dinner jobs must be pairwise distinct. Another rotation may share a child with
+  // one of them on purpose (since 2026-10-22 the dog's walk follows whoever clears the table).
+  const dinnerIds = new Set(DINNER.map(([id]) => id));
   const rotations = (chores as Record<string, unknown>[])
     .filter((c) => c['assignmentModel'] === 'rotation' && Array.isArray(c['rotation']))
+    .filter((c) => dinnerIds.has(String(c['id'])))
     .map((c) => [String(c['id']), c['rotation'] as string[]] as const);
 
-  assert.equal(rotations.length, 3, 'expected exactly the three dinner rotations');
+  assert.equal(rotations.length, 3, 'expected all three dinner rotations');
   for (const date of dates('2026-09-01', 400)) {
     const who = rotations.map(([id, order]) => rotationAssignee(id, date, members(order)));
     assert.equal(new Set(who).size, 3, `${date}: real roster collided — ${who.join(', ')}`);

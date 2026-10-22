@@ -1,7 +1,9 @@
 # ADR-0005 — What a streak counts, and what it shows a child
 
 **Date:** 2026-08-29
-**Status:** Accepted
+**Status:** Accepted. §2 (what a child sees) superseded by [ADR-0006](0006-motivation.md) on
+2026-10-22: the week is shown as dots, and nothing on the wall can break. §1 still decides what
+counts as done.
 **Context:** `WallSnapshot` carried `streakDays` from the day the contract froze and it was
 hardcoded `null`. Wiring it up is one query; deciding what it *means* is the work.
 

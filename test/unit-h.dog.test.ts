@@ -137,7 +137,7 @@ test('all three can do the same ask, and each face answers only for that child',
   );
   // The DOG's need is met the moment one of them walks him, so the line says so — but the row
   // is not closed: child-b is still open and still tappable, and may log a walk of her own.
-  assert.equal(askLine(asks), 'All done. You are the best.');
+  assert.equal(askLine(asks), 'All done. You looked after me today.');
   assert.equal(walk?.faces.filter((f) => !f.done && !f.inert).length, 1);
 });
 
@@ -148,7 +148,7 @@ test('the words follow the count, and an ask nobody did is what is left', () => 
   );
   assert.equal(asks[0]?.doneCount, 2);
   assert.equal(askLine([]), 'Nothing today. Just pet me.');
-  assert.equal(askLine(asks), 'All done. You are the best.');
+  assert.equal(askLine(asks), 'All done. You looked after me today.');
   assert.equal(
     askLine([...asks, ...dogAsks([row(3, 'ch-fetch', 'child-a', 'pending')], CHILDREN)]),
     'Tap the face of whoever did it.',

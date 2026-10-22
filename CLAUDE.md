@@ -295,6 +295,9 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   birthdays live in gitignored `db/countdowns.json` (v12 `horizon_days`, 14 for them, the 60-day
   default for the children's), applied additively (runbook §1.7). `household.sql` opens with
   `DELETE FROM countdown`, so re-apply the countdowns file after any household re-apply.
+  **A new routine step works the same way**: `--routine-steps db/routine-steps.json` adds and
+  places steps without touching the ledger (runbook §1.8). Never re-apply the household SQL to
+  get one.
 - **`--season` and `--tags` existed in gen-scene for weeks and nothing passed them.** So the
   activity filter was dead and a sledge turned up on green hills (2026-09-13). scene-week passes
   both now and settings carry `tags`. Fifth instance of the signature bug: an input with no
@@ -753,6 +756,11 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   off" would hand the chore to all three. `setChoreMember` refuses `roster_empty`, the route
   answers 400, and the panel draws that child's check inert (`ToggleKey inert`) rather than
   live-then-refused. The first wall write against an implicit roster spells it out as rows.
+- **A rotation turn can move because a child's NAME is in an event title** (2026-10-22,
+  ADR-0006 §4, `src/domain/chores/away.ts`). A timed event overlapping the 30 minutes before a
+  rotation chore's `due_by_local` passes that child's turn to the next in the roster, decided
+  once at materialization. Every source here has `child_id` NULL, so the title is the only
+  link; renaming a child or an event changes who is away. A "wrong" assignee is this first.
 - **Roster edits reach TODAY; a model change reaches TOMORROW.** Adding a child to a chore at
   17:00 puts a `pending` row on today's already-materialized day (or `superseded` if a
   first_complete race is won); removing one deletes only a `pending` row, never a claim. A

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "st-toys",
+    "routine": "rt-bed",
+    "labelShort": "Toys away",
+    "labelFull": "Put your toys away",
+    "icon": "ico-toybox",
+    "category": "tidy",
+    "children": ["child-a", "child-b", "child-c"],
+    "position": 1
+  }
+]

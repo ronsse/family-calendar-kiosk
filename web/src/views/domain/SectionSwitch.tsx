@@ -16,7 +16,7 @@
  * its OWN header saying the same word again. Between them they spent ~150 of the 420px a
  * child's day gets, to say "Morning" twice.
  *
- * Now it is one circle per section — one per routine, plus Jobs — with a progress ring around
+ * Now it is one circle per section — one per routine, plus the two chores sections — with a progress ring around
  * each. Three things fall out of that, and the third is why it is worth the change:
  *
  *   - **It reads with no words**, which is what the pre-reader needs and what two text pills

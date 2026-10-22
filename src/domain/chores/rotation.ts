@@ -46,11 +46,38 @@ export function rotationAssignee(
   date: LocalDate,
   members: readonly RotationMember[],
 ): string | null {
+  return rotationAssigneeSkipping(choreId, date, members, new Set());
+}
+
+/**
+ * The same turn, passed along the roster past any child in `away` (ADR-0006 §4).
+ *
+ * The child whose turn it is, if they are home; otherwise the NEXT child in roster order who
+ * is, wrapping. It is still pure: who is away is an input, read from the calendar once when
+ * the day is materialized (`away.ts`), and the result is frozen like any other turn. When
+ * every member is away the plain assignee keeps the job, because a day with no assignee is
+ * an authoring gap that retries on every read, and nobody being home is a thing for a
+ * grown-up to sort out rather than a reason to hand the job to nobody.
+ *
+ * Passing the turn along does not move the rotation: tomorrow's assignee is the same child
+ * it would have been, so a weekly activity costs the away child that day's job and nothing
+ * after it.
+ */
+export function rotationAssigneeSkipping(
+  choreId: string,
+  date: LocalDate,
+  members: readonly RotationMember[],
+  away: ReadonlySet<string>,
+): string | null {
   if (members.length === 0) return null;
   const ordered = [...members].sort(
     (a, b) => a.position - b.position || (a.childId < b.childId ? -1 : 1),
   );
   const index = mod(dayIndex(date) + fnv1a(choreId), ordered.length);
+  for (let step = 0; step < ordered.length; step++) {
+    const member = ordered[(index + step) % ordered.length];
+    if (member !== undefined && !away.has(member.childId)) return member.childId;
+  }
   return ordered[index]?.childId ?? null;
 }
 

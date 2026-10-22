@@ -22,6 +22,7 @@
  *   npm run provision -- --calendars db/calendars.sql
  *   npm run provision -- --chores ~/wall-chores.json
  *   npm run provision -- --countdowns db/countdowns.json  # add/update countdowns, never delete ('-' = stdin)
+ *   npm run provision -- --routine-steps db/routine-steps.json  # add/place routine steps, never delete
  *   npm run provision -- --add-scene w37-cozy-painted   # register a generated scene as a candidate
  *   npm run provision -- --add-backdrop ~/porch.jpg --id porch   # a still picture, straight up
  *   npm run provision -- --scenes                       # the catalog, which one is up, how long each was
@@ -70,6 +71,7 @@ import {
 import { REPO_ROOT, registerBaselineAssets, registerCommittedScenes } from './baseline.ts';
 import { seedAssets } from './seed-assets.ts';
 import { applyCountdowns, parseCountdownFile } from '../../../src/domain/countdowns/author.ts';
+import { applyRoutineSteps, parseRoutineStepFile } from '../../../src/domain/routines/author.ts';
 import { issueDeviceToken, listDevices, parentPinIsSet, revokeDevice, setParentPin } from '../../../src/http/index.ts';
 
 const args = process.argv.slice(2);
@@ -97,7 +99,7 @@ function flag(name: string): string | null {
 const KNOWN_FLAGS: readonly string[] = [
   'db', 'device', 'pin', 'revoke', 'household', 'calendars', 'chores', 'taps',
   'add-scene', 'style', 'scenes', 'list', 'force', 'reset-activity', 'band', 'ledger',
-  'settings', 'add-backdrop', 'id', 'scene-events', 'countdowns',
+  'settings', 'add-backdrop', 'id', 'scene-events', 'countdowns', 'routine-steps',
 ];
 
 /** A backdrop is a picture for a wall, not a camera original. */
@@ -416,6 +418,7 @@ async function main(): Promise<void> {
   const addBackdrop = flag('add-backdrop');
   const sceneEvents = flag('scene-events');
   const countdowns = flag('countdowns');
+  const routineSteps = flag('routine-steps');
   const wantsScenes = args.includes('--scenes');
   const wantsReset = args.includes('--reset-activity');
   const wantsList =
@@ -424,6 +427,7 @@ async function main(): Promise<void> {
       addBackdrop === null &&
       sceneEvents === null &&
       countdowns === null &&
+      routineSteps === null &&
       !wantsScenes &&
       !wantsReset &&
       device === null &&
@@ -846,6 +850,41 @@ async function main(): Promise<void> {
       }
       process.stdout.write(
         `countdowns: ${String(r.added)} added, ${String(r.updated)} updated, ${String(r.unchanged)} unchanged\n`,
+      );
+    }
+  }
+
+  /**
+   * Routine steps, additively. Upsert a step by id, then put it in each named child's sequence
+   * (at `position` when given) and reconcile today's run, so it is on tonight's card. Never
+   * deletes, never takes a step away from a child the file does not name. The household SQL
+   * was the only way to make a step before this, and re-applying it erases the ledger.
+   */
+  if (routineSteps !== null) {
+    const refuse = (why: string): never => {
+      process.stderr.write(`${why}\n`);
+      process.exit(2);
+    };
+    if (routineSteps.length === 0) refuse('--routine-steps needs a path, e.g. --routine-steps db/routine-steps.json (or - for stdin)');
+    let raw: unknown;
+    try {
+      raw = JSON.parse(readFileSync(routineSteps === '-' ? 0 : routineSteps, 'utf8'));
+    } catch (err) {
+      refuse(`--routine-steps: not readable JSON (${err instanceof Error ? err.message : String(err)})`);
+    }
+    const parsed = parseRoutineStepFile(raw);
+    if (!parsed.ok) {
+      for (const e of parsed.errors) process.stderr.write(`  ${e}\n`);
+      refuse(`--routine-steps: ${String(parsed.errors.length)} problem(s). Nothing was written.`);
+    } else {
+      const r = applyRoutineSteps(db, parsed.entries);
+      if (r.errors.length > 0) {
+        for (const e of r.errors) process.stderr.write(`  ${e}\n`);
+        refuse(`--routine-steps: ${String(r.errors.length)} problem(s). Nothing was written.`);
+      }
+      process.stdout.write(
+        `routine steps: ${String(r.added)} added, ${String(r.updated)} updated, ${String(r.unchanged)} unchanged; ` +
+          `${String(r.sequencesChanged)} child sequence(s) changed\n`,
       );
     }
   }

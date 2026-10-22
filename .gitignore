@@ -49,6 +49,8 @@ db/chores.json
 db/household.json
 # Countdowns beyond the children's own (grown-ups' birthdays). Template: db/countdowns.example.json
 db/countdowns.json
+# Routine steps added after the household SQL (bedtime's Toys away). Template: db/routine-steps.example.json
+db/routine-steps.json
 
 # fal.ai spend ledger — the household's, not the repo's (tools/fal_api.py)
 db/fal-ledger.jsonl

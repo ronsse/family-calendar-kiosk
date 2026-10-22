@@ -24,7 +24,8 @@ import { inTransaction } from '../../db/connection.ts';
 import { localDate as todayLocal, nowUtc } from '../../time.ts';
 import type { AssignmentModel, LocalDate, MaterializationStatus } from '../../types.ts';
 import { evaluateRrule } from './recurrence.ts';
-import { rotationAssignee, type RotationMember } from './rotation.ts';
+import { childrenAwayForJob } from './away.ts';
+import { rotationAssigneeSkipping, type RotationMember } from './rotation.ts';
 
 export interface MaterializedChoreDay {
   choreDayId: number;
@@ -206,7 +207,8 @@ export function materializeChoresForDate(
  *   first_complete  — one row per eligible child. Every row starts `pending`; the first
  *                     claim wins and supersedes the rest in the same transaction
  *                     (see transitions.ts).
- *   rotation        — exactly one row, for the deterministic assignee.
+ *   rotation        — exactly one row, for the deterministic assignee, passed along the
+ *                     roster past a child who is out when the job is due (`away.ts`).
  *
  * `ON CONFLICT DO NOTHING` on `UNIQUE(chore_day_id, child_id)` keeps a concurrent
  * self-repair from double-inserting.
@@ -224,7 +226,14 @@ function expandAssignments(
   );
 
   if (model === 'rotation') {
-    const assignee = rotationAssignee(choreId, date, rotationMembers(db, choreId));
+    // The due time is read from `chore`, not snapshotted: it decides who is home for the job,
+    // once, here, and the assignment row it produces is the frozen record of that decision.
+    const due = db.prepare(`SELECT due_by_local FROM chore WHERE id = ?`).get(choreId) as
+      | { due_by_local: string | null }
+      | undefined;
+    const away =
+      due?.due_by_local != null ? childrenAwayForJob(db, date, due.due_by_local) : new Set<string>();
+    const assignee = rotationAssigneeSkipping(choreId, date, rotationMembers(db, choreId), away);
     // No active members: the day exists with no assignments and every later read retries
     // the (cheap) repair. An empty rotation is an authoring gap, not a render failure.
     if (assignee === null) return 0;
