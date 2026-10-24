@@ -298,7 +298,7 @@ Goal: it is correct in M1; here it becomes something a 3-year-old reaches for.
   `kiosk-watchdog` had to change. A touch on the dark panel wakes it (swayidle `resume`) and it
   goes dark again after 5 idle minutes; the hold expires after 30 regardless. A malformed time
   fails ON. `pi/scripts/test-screen-power.sh`
-- **Phone admin (after v0.1.0)** — the grown-up screens reachable from a paired phone: pairing by a 6-digit code shown on the wall, the paired phone has no PIN guardrails, served at /admin on the same port. Decided 2026-10; no code yet. It should also carry the adult half of [ADR-0006](decisions/0006-motivation.md) §8: approval reminders, the why behind each rule, and words for talking about duties and money.
+- **Phone admin (after v0.1.0)** — the grown-up screens reachable from a paired phone: pairing by a 6-digit code shown on the wall, the paired phone has no PIN guardrails, served at /admin on the same port. Decided 2026-10; no code yet. The build plan is [phone-admin-plan.md](phone-admin-plan.md). It should also carry the adult half of [ADR-0006](decisions/0006-motivation.md) §8: approval reminders, the why behind each rule, and words for talking about duties and money.
 
 ## Icebox
 

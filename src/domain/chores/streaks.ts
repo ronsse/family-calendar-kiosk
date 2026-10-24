@@ -7,7 +7,7 @@
  * not a new kind of state. Nothing is stored: a stored streak is a second copy of a truth the
  * assignments already hold, and it would need a nightly job to stay true.
  *
- * Five rules, and each one is a decision that could reasonably have gone the other way.
+ * Six rules, and each one is a decision that could reasonably have gone the other way.
  *
  * 1. **DUTIES ONLY.** Extras are optional and pay points; requiring them would break a
  *    streak because a child declined something the product calls optional, which is the
@@ -33,6 +33,12 @@
  * 5. **Today can never break the streak, only extend it.** An unfinished today is unfinished,
  *    not failed — at 06:30 nothing has been done yet by anyone. So the number reads through
  *    yesterday until today completes, and never falls while a child is looking at it.
+ *
+ * 6. **A day counts with one duty left undone** (ADR-0006 §4, the household's call on
+ *    2026-10-24). "Every duty, every day" made the day hardest for the child with the most
+ *    asked of her, and one miss already costs nothing at the WEEK's scale (Lally); the day
+ *    gets the same allowance. At least one duty must be done, so a day with a single duty
+ *    still needs it. `dayCounts` is the one definition; the week dots must use it too.
  */
 
 import type { Database as Db } from 'better-sqlite3';
@@ -50,6 +56,14 @@ import type { LocalDate } from '../../types.ts';
  * NOT solved: a streak vanishing after a long run is itself a visible signal.
  */
 export const STREAK_DISPLAY_MIN = 3;
+
+/** How many of a day's duties may be left undone and the day still count (rule 6). */
+export const DUTIES_A_DAY_MAY_MISS = 1;
+
+/** Whether a day with `asked` duties, `done` of them finished, counts as a full day. */
+export function dayCounts(done: number, asked: number): boolean {
+  return asked > 0 && done >= Math.max(1, asked - DUTIES_A_DAY_MAY_MISS);
+}
 
 interface DayRow {
   local_date: string;
@@ -88,7 +102,7 @@ export function choreStreakDays(db: Db, childId: string, today: LocalDate): numb
     // A day whose only duties were superseded groups to zero rows and never appears here;
     // this guard is for safety, not for a case the query produces.
     if (row.qualifying === 0) continue;
-    if (row.done === row.qualifying) {
+    if (dayCounts(row.done, row.qualifying)) {
       streak += 1;
       continue;
     }

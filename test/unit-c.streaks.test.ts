@@ -21,7 +21,9 @@ import { openDatabase } from '../src/db/connection.ts';
 import { migrate, seedDev } from '../src/db/migrate.ts';
 import {
   choreStreakDays,
+  dayCounts,
   displayStreak,
+  DUTIES_A_DAY_MAY_MISS,
   STREAK_DISPLAY_MIN,
 } from '../src/domain/chores/streaks.ts';
 import type { LocalDate } from '../src/types.ts';
@@ -124,18 +126,35 @@ test('no history at all is zero, not a crash', () => {
   }
 });
 
-test('every duty that day must be done, not just one of them', () => {
+test('a day counts with one duty left undone, and not with two', () => {
+  // ADR-0006 §4, 2026-10-24: one miss a day, the same allowance the week already gives.
   const { db, cleanup } = freshDb();
   try {
     assign(db, '2026-03-01', 'approved');
     assign(db, '2026-03-02', 'approved', { slot: 0 });
     assign(db, '2026-03-02', 'pending', { slot: 1 });
     assign(db, '2026-03-03', 'approved');
-    // Asked from the 3rd, so the 2nd is a finished day in the past and rule 5 does not apply.
-    assert.equal(streak(db, '2026-03-03'), 1, 'one of two duties is not a finished day');
+    assert.equal(streak(db, '2026-03-03'), 3, 'one of two duties done is a full day');
+
+    assign(db, '2026-03-04', 'approved', { slot: 0 });
+    assign(db, '2026-03-04', 'pending', { slot: 1 });
+    assign(db, '2026-03-04', 'pending', { slot: 2 });
+    assign(db, '2026-03-05', 'approved');
+    // Asked from the 5th, so the 4th is a finished day in the past and rule 5 does not apply.
+    assert.equal(streak(db, '2026-03-05'), 1, 'one of three is two misses, and ends the run');
   } finally {
     cleanup();
   }
+});
+
+test('the day rule: one miss allowed, but never zero done', () => {
+  assert.equal(DUTIES_A_DAY_MAY_MISS, 1);
+  assert.equal(dayCounts(0, 0), false, 'nothing asked is neutral, not full');
+  assert.equal(dayCounts(0, 1), false, 'a lone duty still has to be done');
+  assert.equal(dayCounts(1, 1), true);
+  assert.equal(dayCounts(1, 2), true);
+  assert.equal(dayCounts(3, 5), false);
+  assert.equal(dayCounts(4, 5), true);
 });
 
 // ---------------------------------------------------------------------------

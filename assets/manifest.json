@@ -255,6 +255,18 @@
       "kind": "icon",
       "category": "pet",
       "rel_path": "icons/dogear.png"
+    },
+    {
+      "id": "ico-homework",
+      "kind": "icon",
+      "category": "school",
+      "rel_path": "icons/homework.png"
+    },
+    {
+      "id": "ico-eyes",
+      "kind": "icon",
+      "category": "medical",
+      "rel_path": "icons/eyes.png"
     }
   ]
 }

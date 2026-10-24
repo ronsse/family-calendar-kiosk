@@ -151,8 +151,14 @@ usually between five and six. So:
   An agent is the wrong tool for a decision made every day at five. Where an agent does help is
   offline: a grown-up asks one to draft or rebalance `db/chores.json` against a month of the
   calendar, then reviews the diff and applies it with `--chores`.
-- **A full day** = the morning routine (on days it runs) + that day's duties + the bedtime
-  routine. Extras never count. ADR-0005 §1 still decides what counts as done:
+- **A full day** = the morning routine (on days it runs) + that day's duties, **with one duty
+  allowed to stay undone**, + the bedtime routine. Extras never count. The allowance was the
+  household's call on 2026-10-24, the day the eldest got two daily duties of her own: "every
+  duty, every day" made the day hardest for the child with the most asked of her. One miss is
+  the same allowance the week already gives (Lally), applied a level down. At least one duty
+  must be done, so a day with a single duty still needs it. `dayCounts` in
+  `src/domain/chores/streaks.ts` is the one definition, and the live streak already uses it.
+  ADR-0005 §1 still decides what counts as done:
   - a `claimed` duty counts, without a grown-up's approval;
   - a day with nothing asked is neutral;
   - `superseded` leaves the day;
@@ -183,10 +189,12 @@ The longer view **only goes up**:
 
 ## 6. Celebrate after the fact, never promise in advance
 
-- **All done.** When a child finishes a routine, or the day's duties, the wall plays a short
-  celebration: motion for everyone, plus words for the act (§1). It varies, so it stays a little
-  unpredictable. Nothing like this exists in `web/src` yet. `docs/calendar-structure.md` already
-  calls the completion animation the youngest's reward.
+- **All done.** When a child finishes a routine, or does enough of the day's duties for the
+  day to count (§4: one may stay undone), the wall plays a short celebration: motion for
+  everyone, plus words for the act (§1). It fires once per section a day, so finishing the last
+  duty as well does not play it again. It varies, so it stays a little unpredictable. Nothing
+  like this exists in `web/src` yet. `docs/calendar-structure.md` already calls the completion
+  animation the youngest's reward.
 - **A good week** is announced on the child's own screen. When every child has one, it is
   announced for the family as well.
 - **Treats are chosen by the grown-ups, off the wall.** No prize ladder, no "7 days = a toy",

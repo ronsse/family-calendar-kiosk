@@ -29,6 +29,8 @@ later changed; the documents above describe the code as it is.
 - [ROADMAP.md](ROADMAP.md): the milestones, what is done and what is next.
 - [build-plan.md](build-plan.md): how the first build was split across parallel agents.
 - [work-packages.md](work-packages.md): the same split for the work after the first build.
+- [phone-admin-plan.md](phone-admin-plan.md): the build plan for the grown-ups' phone app,
+  cut into packages for implementing agents.
 - [decisions/](decisions/): the architecture decision records, including why this is a custom
   app rather than a Home Assistant dashboard.
 - [design-review/](design-review/): the reviews, tournaments and panel measurements behind the
