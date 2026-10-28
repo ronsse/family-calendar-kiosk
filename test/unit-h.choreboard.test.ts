@@ -33,6 +33,7 @@ function chore(over: Partial<ChoreAssignmentView> = {}): ChoreAssignmentView {
     localDate: TODAY,
     state: 'pending' as ChoreState,
     kind: 'duty' as ChoreKind,
+    countsTowardDay: true,
     dueByLocal: null,
     claimedAtUtc: null,
     points: 3,

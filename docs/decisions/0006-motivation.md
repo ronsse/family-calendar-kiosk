@@ -57,7 +57,7 @@ praise of the person. Which one fits depends on whether the thing took effort:
 | What happened | Praise | Example |
 |---|---|---|
 | A quick tap, a two-minute duty | The act and its effect | "The table's ready, so we can all eat." |
-| A whole routine, a whole week, a hard job | The effort and the persistence | "You did bedtime every night this week. You kept at it." |
+| A whole routine, a whole week, a hard job | The effort and the persistence | "You cleared your plate after every dinner this week. You kept at it." |
 | A child stuck at it, or came back to it | The strategy | "You went back for the last toy. That's how a room gets done." |
 | Never | The person | "You're the best." "Such a good girl." |
 
@@ -151,9 +151,9 @@ usually between five and six. So:
   An agent is the wrong tool for a decision made every day at five. Where an agent does help is
   offline: a grown-up asks one to draft or rebalance `db/chores.json` against a month of the
   calendar, then reviews the diff and applies it with `--chores`.
-- **A full day** = the morning routine (on days it runs) + that day's duties, **with one duty
-  allowed to stay undone**, + the bedtime routine. Extras never count. The allowance was the
-  household's call on 2026-10-24, the day the eldest got two daily duties of her own: "every
+- **A full day** = that day's duties, **with one duty allowed to stay undone**. Extras never
+  count, and neither do **reminders** or **routines** (both 2026-10-27, below). The allowance
+  was the household's call on 2026-10-24, the day the eldest got two daily duties of her own: "every
   duty, every day" made the day hardest for the child with the most asked of her. One miss is
   the same allowance the week already gives (Lally), applied a level down. At least one duty
   must be done, so a day with a single duty still needs it. `dayCounts` in
@@ -163,6 +163,22 @@ usually between five and six. So:
   - a day with nothing asked is neutral;
   - `superseded` leaves the day;
   - an unfinished today never counts against the child.
+- **Reminders and routines do not count** (the household's call, 2026-10-27). Some
+  duties are on the board to remind, not because the child is asked every day in fact.
+  Homework is the first: not every school day has homework, so an unchecked box may mean "there
+  was none". Eye exercises are the second. Such a duty carries `countsTowardDay: false` in
+  `db/chores.json` (schema v13, `chore.counts_toward_day`). It stays on the board, claimable and
+  paid as before, and it leaves the day's count on both sides, done or not, as `superseded`
+  does; a day whose only duties are reminders is neutral. Routines are the same kind of thing
+  one level up. Morning and bedtime happen every day, but the boxes go unchecked: bedtime is
+  upstairs and the wall is downstairs, and nobody should come down to press a button after
+  getting ready for bed. An unticked routine says nothing about the child, so neither routine
+  counts toward the full day. The full day is about the duties, the things that are hard to
+  do. This was first decided for the morning routine alone and widened to bedtime the same day.
+  A finished routine is still celebrated (§6); it just does not decide the day.
+  **Open, left for now:** the routine checklists may not belong on the wall at all. The
+  household floated moving them off it (2026-10-27) and chose to leave them where they are
+  until there is a reason to move them.
 - **A day off.** A grown-up can mark a day off for one child, for example when they are away,
   ill, or out all day. That day becomes neutral, the same as a day with nothing asked. *To
   build.*
@@ -190,7 +206,7 @@ The longer view **only goes up**:
 ## 6. Celebrate after the fact, never promise in advance
 
 - **All done.** When a child finishes a routine, or does enough of the day's duties for the
-  day to count (§4: one may stay undone), the wall plays a short celebration: motion for
+  day to count (§4: one may stay undone, and reminders never count), the wall plays a short celebration: motion for
   everyone, plus words for the act (§1). It fires once per section a day, so finishing the last
   duty as well does not play it again. It varies, so it stays a little unpredictable. Nothing
   like this exists in `web/src` yet. `docs/calendar-structure.md` already calls the completion

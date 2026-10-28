@@ -134,7 +134,8 @@ def parse_week(text: str) -> dt.date:
 
 def choose(monday: dt.date, forced: str | None = None,
            forced_style: str | None = None,
-           forced_camera: str | None = None) -> tuple[dict, dict, dict]:
+           forced_camera: str | None = None, avoid: list[str] = (),
+           exclude: list[str] = ()) -> tuple[dict, dict, dict]:
     """Style, setting and CAMERA for a week — a pure function of the date, deliberately.
 
     A re-run after a failed generation must produce the SAME brief, or "try it again" would
@@ -157,6 +158,11 @@ def choose(monday: dt.date, forced: str | None = None,
     put camera and style in permanent lockstep, and the whole point of adding a third axis is
     that it moves independently of the other two. Added 2026-09-10 on the observation that every
     scene looked like the same photograph of a different place.
+
+    THE WALL (2026-10-28): `avoid` is the settings it showed last, and the rotation steps past
+    them unless that would leave nothing in season; `exclude` is never chosen (the run's other
+    picture). Still a pure function of its arguments, so a retry is the same brief as long as
+    the caller leaves the run's own pictures out of `avoid`.
     """
     _, week, _ = monday.isocalendar()
     pin_style = next((x for x in STYLES if x["id"] == forced_style), None)
@@ -175,6 +181,8 @@ def choose(monday: dt.date, forced: str | None = None,
         # below — but a silent fallback to "whatever is first" would put a snowy hill in July
         # and look like a model failure rather than a data one.
         raise SystemExit(f"no setting is in season for month {monday.month}; fix scene-settings.json")
+    eligible = [s for s in eligible if s["id"] not in exclude] or eligible
+    eligible = [s for s in eligible if s["id"] not in avoid] or eligible
     eligible.sort(key=lambda s: s["id"])
     at = week % len(eligible)
     style_at = (week + at) % len(STYLES)
@@ -268,6 +276,15 @@ def check_tables(children: int = 3, written: bool = False) -> None:
     bad_swim = sorted(st["id"] for st in SETTINGS if "swimwear" in st and st["swimwear"] is not True)
     if bad_swim:
         raise SystemExit(f"{bad_swim}: swimwear is `true` or absent, nothing else")
+    # A `manual` setting (2026-10-28) is drawn only by --setting: this year's costumes, a one-off.
+    # The director never sees it; a season on it would hand it to the rotation instead.
+    timer_manual = sorted(st["id"] for st in SETTINGS if st.get("manual") and st.get("season"))
+    if timer_manual:
+        raise SystemExit(f"{timer_manual} are `manual` AND carry a season, so the timer could draw "
+                         "them unasked. A manual setting is forced-only: give it \"season\": [].")
+    bad_manual = sorted(st["id"] for st in SETTINGS if "manual" in st and st["manual"] is not True)
+    if bad_manual:
+        raise SystemExit(f"{bad_manual}: manual is `true` or absent, nothing else")
     if not any(c.get("crowd") for c in COMPOSITIONS):
         raise SystemExit("no composition can carry a crowd; every scene would be a portrait")
     # NO PHOTOREAL. Decided 2026-09-18 after a week of it: the children came out as near-misses
@@ -365,7 +382,7 @@ def budget(cfg: dict, provider: str, models: list[str | None],
 
 def ask_director(run_id: str, ctx: dict | None, guests: list[dict], cfg: dict, monday: dt.date,
                  wall_rows: list[dict], written_mode: bool, n_children: int,
-                 freeze: bool = True) -> dict | None:
+                 freeze: bool = True, pictures: int = 1) -> dict | None:
     """The director's decision for this run, or None for the rotation. Everything it may choose
     from is the household's allowlisted tables; everything it is told comes from the frozen brief."""
     table = scene_activities.load()
@@ -388,7 +405,7 @@ def ask_director(run_id: str, ctx: dict | None, guests: list[dict], cfg: dict, m
         premises=PREMISES, places=table.get("places") or {}, wall_rows=wall_rows,
         recent_styles=recent, guests=guests, cast=load_cast(),
         share_titles=bool(cfg.get("shareTitles")), month=monday.month, names=names,
-        freeze=freeze, extra_check=fillable, dog_moods=scene_dog.load())
+        freeze=freeze, extra_check=fillable, dog_moods=scene_dog.load(), pictures=pictures)
 
 
 def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
@@ -513,7 +530,39 @@ def main() -> int:
     except SystemExit as err:
         print(err, file=sys.stderr)
         return 2
-    style, setting, composition = choose(monday, args.setting, args.style, args.camera)
+    # THE WALL, before anything is chosen: the rotation steps past the settings it showed last
+    # (docs/scene-variety-plan.md F), the director is told them, and the style settle reads it.
+    # This run's OWN pictures are left out of "recent", or a retry would step past itself.
+    try:
+        wall_rows = scene_memory.wall_scenes()
+    except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as err:
+        wall_rows = None
+        wall_error = err
+    run_prefix = run_id.lower().replace("-", "") + "-"
+    prior_rows = [r for r in wall_rows or [] if not r["id"].startswith(run_prefix)]
+    recent = scene_memory.recent_settings(prior_rows, [s["id"] for s in SETTINGS])
+
+    # TWO DIFFERENT PICTURES A RUN (2026-10-28). The pair used to be one brief drawn by two
+    # models — a comparison, settled 2026-09-12 — and the household reported "the same picture
+    # twice". Now each candidate is its own brief: its own place, style, seed, activities and
+    # dog, and ONE model each. Only on fal with the default two candidates; a person's
+    # --setting is still a deliberate comparison pair, and a run frozen with one decision
+    # before this keeps the shape it was drawn in.
+    pair = args.provider == "fal" and args.candidates == 2 and args.setting is None
+
+    def rotation(first: dict | None = None) -> tuple[dict, dict, dict] | None:
+        """The week-number rotation, stepping past the wall's recent settings and, for the
+        second picture, the first one's. None when there is no second setting in season."""
+        if first is None:
+            return choose(monday, args.setting, args.style, args.camera, avoid=recent)
+        if not [s for s in SETTINGS if monday.month in s["season"] and s["id"] != first["id"]]:
+            return None
+        got = choose(monday, None, args.style, args.camera, avoid=recent, exclude=[first["id"]])
+        return got
+
+    # Each brief: (style, setting, camera, the director's decision or None, a note).
+    briefs: list[tuple[dict, dict, dict, dict | None, str]] = []
+    style, setting, composition = rotation()
     setting_note = "forced by --setting" if args.setting else ""
 
     # THE DIRECTOR. A person's --setting is a choice already made; otherwise a text model reads
@@ -522,11 +571,6 @@ def main() -> int:
     director, director_called = None, False
     use_director = (args.setting is None and not args.no_director
                     and cfg.get("director", "ai") == "ai")
-    try:
-        wall_rows = scene_memory.wall_scenes()
-    except (RuntimeError, OSError, subprocess.TimeoutExpired, ValueError) as err:
-        wall_rows = None
-        wall_error = err
     if use_director:
         director = scene_director.load_frozen(scene_director.path_for(run_id))
         if director is not None:
@@ -535,145 +579,193 @@ def main() -> int:
             setting_note = "rotation's pick for now; the director chooses at run time (--ask-director)"
         else:
             director_called = True
-            director = ask_director(run_id, ctx, guests, cfg, monday, wall_rows or [],
-                                    written_mode, n_children, freeze=not args.dry_run)
+            director = ask_director(run_id, ctx, guests, cfg, monday, prior_rows,
+                                    written_mode, n_children, freeze=not args.dry_run,
+                                    pictures=2 if pair else 1)
             if director is None:
                 setting_note = "rotation (the director gave no usable answer)"
     if director is not None:
-        setting = director["setting"]
-        if args.style is None:
-            style = next((x for x in STYLES if x["id"] == director["style"]), style)
-        if args.camera is None:
-            composition = next((c for c in COMPOSITIONS if c["id"] == director["camera"]),
-                               composition)
-        if not premise_forced and any(p["id"] == director["premise"] for p in PREMISES):
-            args.premise = director["premise"]
-        setting_note = "director: " + director["why"]
-    premise = next(p for p in PREMISES if p["id"] == args.premise)
-    # A premise that names its camera or is not drawn in this week's style family is settled
-    # here, in the plan, rather than as a refusal after the key has been read.
-    if premise.get("camera"):
-        composition = next(c for c in ALL_COMPOSITIONS if c["id"] == premise["camera"])
-    for kind, entry in (("premise", premise), ("camera", composition)):
-        if not cast_fits(entry, n_children):
-            print(f"{kind} {entry['id']!r} is written for a cast of {entry['cast']}, and this "
-                  f"cast has {n_children}", file=sys.stderr)
-            return 2
-    if style.get("family", "illustration") not in premise["families"]:
-        allowed = [s for s in STYLES if s.get("family", "illustration") in premise["families"]]
-        _, wk, _ = monday.isocalendar()
-        at = (SETTINGS.index(setting) if setting in SETTINGS
-              else zlib.crc32(setting["id"].encode()))
-        style = allowed[(wk + at) % len(allowed)]
-    scene_id = f"{run_id.lower().replace('-', '')}-{setting['id']}"
-    if args.premise != "plain":
-        scene_id += f"-{args.premise}"
-    # A FORCED STYLE IS PART OF THE NAME. Without this, drawing the same place twice in one
-    # week — the whole reason --style exists beside --setting — builds the same id twice and
-    # the second run silently overwrites the first candidate's files in the volume. The id
-    # carries every axis a person pinned by hand; the ones the WEEK chose stay out of it,
-    # because the week already varies them.
-    if args.style is not None:
-        scene_id += f"-{args.style}"
-    if args.camera is not None:
-        scene_id += f"-{args.camera}"
-
-    # NOT THE STYLE THE WALL JUST SHOWED. The rotation above is arithmetic on the week number
-    # and cannot see the wall, so two pictures in a row came out claymation (2026-10-04). The
-    # wall has always recorded every picture's style; scene_memory reads it and steps past the
-    # recent ones. A person's --style is never second-guessed.
-    style_note = "forced by --style"
-    if args.style is None:
-        pool = [s for s in STYLES if s.get("family", "illustration") in premise["families"]]
-        if wall_rows is None:
-            style_note = f"COULD NOT READ THE WALL ({wall_error}) — rotation's pick, may repeat"
-        else:
-            style, style_note = scene_memory.settle(
-                style, pool, wall_rows, scene_id, set(SHORT.values()))
-            if director is not None:
-                style_note = "director's choice; " + style_note
-
-    # Decided here, in the plan, rather than down in the generate path: `--dry-run` exists to
-    # show for free exactly what a paid run would draw, and the one thing on this page most
-    # worth reading before spending is which book moment it is about to put on the wall.
-    seed = monday.toordinal() ^ zlib.crc32(scene_id.encode())
-    # An explicitly requested moment wins over the story table: a person who typed what
-    # they want has already made the choice the table exists to make.
-    moment = args.moment or scene_story.pick(setting, random.Random(seed))
-    # WHAT THE DOG IS UP TO (2026-10-18): "not just hiding in every picture... playing on his
-    # own, or doing something funny." The director's choice wins; a decision frozen before the
-    # director could choose has no `dog` key and means hiding, so a retry of an earlier run
-    # draws the prompt it already paid for. Otherwise a seeded draw from the moods that fit
-    # the setting's places — salted, so the dog's draw does not move the moment's.
-    dog_moods = scene_dog.load()
-    if director is not None and "dog" not in director:
-        dog_mood = scene_dog.by_id(dog_moods, scene_dog.HIDING)    # frozen before the choice
-    elif director is not None and scene_dog.by_id(dog_moods, director["dog"]):
-        dog_mood = scene_dog.by_id(dog_moods, director["dog"])
+        decided = scene_director.decisions(director)
+        pair = pair and len(decided) == 2
+        for d in decided[:2 if pair else 1]:
+            st = (style if args.style is not None else
+                  next((x for x in STYLES if x["id"] == d["style"]), style))
+            cam = (composition if args.camera is not None else
+                   next((c for c in COMPOSITIONS if c["id"] == d["camera"]), composition))
+            briefs.append((st, d["setting"], cam, d, "director: " + d["why"]))
     else:
-        dog_mood = scene_dog.draw(dog_moods, setting.get("tags", []),
-                                  random.Random(seed ^ zlib.crc32(b"dog")),
-                                  scene_activities.SEASON_OF_MONTH[monday.month])
-    dog_doing = scene_dog.doing(dog_mood)
+        briefs.append((style, setting, composition, None, setting_note))
+        second = rotation(setting) if pair else None
+        if second is None:
+            pair = False
+        else:
+            st2, set2, cam2 = second
+            if args.camera is None and cam2["id"] == composition["id"] and len(COMPOSITIONS) > 1:
+                cam2 = COMPOSITIONS[(COMPOSITIONS.index(cam2) + 1) % len(COMPOSITIONS)]
+            briefs.append((st2, set2, cam2, None, "rotation's second picture: the next "
+                           "setting in season, not the first and not recently on the wall"))
+
+    dog_moods = scene_dog.load()
+    season = scene_activities.SEASON_OF_MONTH[monday.month]
+    week_lines = [ln for ln in ((ctx["weather_line"], ctx["props_line"], *ctx["hints"])
+                                if context_path else ()) if ln]
+
+    def plan(i: int, style: dict, setting: dict, composition: dict, decision: dict | None,
+             setting_note: str, other_style: str | None) -> dict | int:
+        """Everything one picture needs, printed as it is decided. An int is an exit code."""
+        premise_id = args.premise
+        if decision is not None and not premise_forced and any(
+                p["id"] == decision["premise"] for p in PREMISES):
+            premise_id = decision["premise"]
+        premise = next(p for p in PREMISES if p["id"] == premise_id)
+        # A premise that names its camera or is not drawn in this week's style family is settled
+        # here, in the plan, rather than as a refusal after the key has been read.
+        if premise.get("camera"):
+            composition = next(c for c in ALL_COMPOSITIONS if c["id"] == premise["camera"])
+        for kind, entry in (("premise", premise), ("camera", composition)):
+            if not cast_fits(entry, n_children):
+                print(f"{kind} {entry['id']!r} is written for a cast of {entry['cast']}, and this "
+                      f"cast has {n_children}", file=sys.stderr)
+                return 2
+        if style.get("family", "illustration") not in premise["families"]:
+            allowed = [s for s in STYLES if s.get("family", "illustration") in premise["families"]]
+            _, wk, _ = monday.isocalendar()
+            at = (SETTINGS.index(setting) if setting in SETTINGS
+                  else zlib.crc32(setting["id"].encode()))
+            style = allowed[(wk + at) % len(allowed)]
+        scene_id = f"{run_id.lower().replace('-', '')}-{setting['id']}"
+        if premise_id != "plain":
+            scene_id += f"-{premise_id}"
+        # A FORCED STYLE IS PART OF THE NAME. Without this, drawing the same place twice in one
+        # week — the whole reason --style exists beside --setting — builds the same id twice and
+        # the second run silently overwrites the first candidate's files in the volume. The id
+        # carries every axis a person pinned by hand; the ones the WEEK chose stay out of it,
+        # because the week already varies them.
+        if args.style is not None:
+            scene_id += f"-{args.style}"
+        if args.camera is not None:
+            scene_id += f"-{args.camera}"
+
+        # NOT THE STYLE THE WALL JUST SHOWED. The rotation above is arithmetic on the week number
+        # and cannot see the wall, so two pictures in a row came out claymation (2026-10-04). The
+        # wall has always recorded every picture's style; scene_memory reads it and steps past the
+        # recent ones — and past the style this run already gave its other picture. A person's
+        # --style is never second-guessed.
+        style_note = "forced by --style"
+        if args.style is None:
+            pool = [s for s in STYLES if s.get("family", "illustration") in premise["families"]]
+            if wall_rows is None:
+                style_note = f"COULD NOT READ THE WALL ({wall_error}) — rotation's pick, may repeat"
+            else:
+                mine = [r for r in wall_rows if not r["id"].startswith(run_prefix)
+                        or scene_memory.belongs(r["id"], scene_id, set(SHORT.values()))]
+                style, style_note = scene_memory.settle(
+                    style, pool, mine, scene_id, set(SHORT.values()),
+                    extra_avoid=[other_style] if other_style else ())
+                if decision is not None:
+                    style_note = "director's choice; " + style_note
+
+        # Decided here, in the plan, rather than down in the generate path: `--dry-run` exists to
+        # show for free exactly what a paid run would draw, and the one thing on this page most
+        # worth reading before spending is which book moment it is about to put on the wall.
+        seed = monday.toordinal() ^ zlib.crc32(scene_id.encode())
+        # An explicitly requested moment wins over the story table: a person who typed what
+        # they want has already made the choice the table exists to make.
+        moment = args.moment or scene_story.pick(setting, random.Random(seed))
+        # WHAT THE DOG IS UP TO (2026-10-18): "not just hiding in every picture... playing on his
+        # own, or doing something funny." The director's choice wins; a decision frozen before
+        # the director could choose has no `dog` key and means hiding, so a retry of an earlier
+        # run draws the prompt it already paid for. Otherwise a seeded draw from the moods that
+        # fit the setting's places — salted, so the dog's draw does not move the moment's.
+        if decision is not None and "dog" not in decision:
+            dog_mood = scene_dog.by_id(dog_moods, scene_dog.HIDING)    # frozen before the choice
+        elif decision is not None and scene_dog.by_id(dog_moods, decision["dog"]):
+            dog_mood = scene_dog.by_id(dog_moods, decision["dog"])
+        else:
+            dog_mood = scene_dog.draw(dog_moods, setting.get("tags", []),
+                                      random.Random(seed ^ zlib.crc32(b"dog")), season)
+        dog_doing = scene_dog.doing(dog_mood)
+
+        if len(briefs) > 1:
+            print(f"\npicture : {i + 1} of {len(briefs)}")
+        print(f"id      : {scene_id}")
+        print(f"style   : {style['id']}  ({style_note})")
+        print(f"setting : {setting['id']}"
+              + ("  (invented by the director)" if setting.get("invented") else ""))
+        if setting_note:
+            print(f"          {setting_note}")
+        print(f"camera  : {composition['id']}")
+        print(f"premise : {premise_id}")
+        if moment:
+            story = setting.get("story")
+            print(f"moment  : {moment}")
+            if story and not args.moment:
+                print(f"          (read_through {story['read_through']}; "
+                      f"{len(scene_story.eligible(setting))} of {len(story['moments'])} in range)")
+        print(f"dog     : {dog_mood['id']}" + (f"  ({dog_doing})" if dog_doing else ""))
+
+        # WHAT THEY ARE DOING. A story moment and a premise's own list win, as they do in
+        # gen-scene; otherwise `scenes.activities` says whether a text model writes a set for this
+        # scene or the table deals one. A written set is frozen under the BASE id, so a re-run
+        # never calls the writer again (and a comparison pair draws the same activities).
+        activities_path = scene_activity_writer.path_for(scene_id)
+        uses_writer = written_mode and not moment and not premise.get("activities")
+        frozen = scene_activity_writer.load_frozen(activities_path) if uses_writer else None
+        if moment:
+            activities_from = "none: the story moment is what they are doing"
+        elif premise.get("activities"):
+            activities_from = "the premise's own list"
+        elif not written_mode:
+            activities_from = "table (picked at draw time; scenes.activities is table)"
+        elif frozen is None:
+            activities_from = "written at draw time"
+        elif frozen.get("source") == "written":
+            activities_from = f"written, frozen in {activities_path}"
+        else:
+            activities_from = f"table (the writer was refused twice; frozen in {activities_path})"
+        print(f"activities: {activities_from}")
+        if frozen and frozen.get("source") == "written":
+            for line in scene_activity_writer.phrase(frozen, n_children).splitlines():
+                print(f"          {line.strip()}")
+        return {"id": scene_id, "style": style, "setting": setting, "composition": composition,
+                "premise": premise, "premise_id": premise_id, "seed": seed, "moment": moment,
+                "dog_doing": dog_doing, "uses_writer": uses_writer, "frozen": frozen,
+                "activities_path": activities_path, "activities_from": activities_from}
 
     print(f"run     : {run_id}  ({ctx['from']}..{ctx['to']})" if ctx and ctx.get("from")
           else f"run     : {run_id}")
-    print(f"id      : {scene_id}")
-    print(f"style   : {style['id']}  ({style_note})")
-    print(f"setting : {setting['id']}" + ("  (invented by the director)" if setting.get("invented") else ""))
-    if setting_note:
-        print(f"          {setting_note}")
-    print(f"camera  : {composition['id']}")
-    print(f"premise : {args.premise}")
-    if moment:
-        story = setting.get("story")
-        print(f"moment  : {moment}")
-        if story and not args.moment:
-            print(f"          (read_through {story['read_through']}; "
-                  f"{len(scene_story.eligible(setting))} of {len(story['moments'])} in range)")
     print(f"context : {context_path.relative_to(HERE.parent) if context_path else 'none'}")
     if context_path:
         for note in ctx["notes"]:
             print(f"          {note}")
     print("guests  : " + (", ".join(g["id"] for g in guests) if guests else "none"))
-    print(f"dog     : {dog_mood['id']}" + (f"  ({dog_doing})" if dog_doing else ""))
+    plans: list[dict] = []
+    for i, (st, se, cam, dec, note) in enumerate(briefs):
+        got = plan(i, st, se, cam, dec, note, plans[0]["style"]["id"] if plans else None)
+        if isinstance(got, int):
+            return got
+        plans.append(got)
 
-    # WHAT THEY ARE DOING. A story moment and a premise's own list win, as they do in gen-scene;
-    # otherwise `scenes.activities` says whether a text model writes a set for this scene or the
-    # table deals one. A written set is frozen under the BASE id, so both candidates of the pair
-    # draw the same activities and a re-run never calls the writer again.
-    season = scene_activities.SEASON_OF_MONTH[monday.month]
-    week_lines = [ln for ln in ((ctx["weather_line"], ctx["props_line"], *ctx["hints"])
-                                if context_path else ()) if ln]
-    activities_path = scene_activity_writer.path_for(scene_id)
-    uses_writer = written_mode and not moment and not premise.get("activities")
-    frozen = scene_activity_writer.load_frozen(activities_path) if uses_writer else None
-    if moment:
-        activities_from = "none: the story moment is what they are doing"
-    elif premise.get("activities"):
-        activities_from = "the premise's own list"
-    elif not written_mode:
-        activities_from = "table (picked at draw time; scenes.activities is table)"
-    elif frozen is None:
-        activities_from = "written at draw time"
-    elif frozen.get("source") == "written":
-        activities_from = f"written, frozen in {activities_path}"
+    print()
+    if len(plans) == 2:
+        # ONE MODEL EACH: each picture's family default, and when both families want the same
+        # model the run's parity says which picture keeps it, so neither model always draws
+        # "the week's answer".
+        models = pair_models([p["style"] for p in plans], parity=1 if part == "b" else 0)
+        planned = [(f"{p['id']}-{SHORT.get(m, m.split('/')[-2])}", m, p)
+                   for p, m in zip(plans, models)]
     else:
-        activities_from = f"table (the writer was refused twice; frozen in {activities_path})"
-    print(f"activities: {activities_from}")
-    if frozen and frozen.get("source") == "written":
-        for line in scene_activity_writer.phrase(frozen, n_children).splitlines():
-            print(f"          {line.strip()}")
-    planned = candidates(scene_id, style, args.provider, args.candidates)
-    for cid, model in planned:
+        planned = [(cid, m, plans[0]) for cid, m in
+                   candidates(plans[0]["id"], plans[0]["style"], args.provider, args.candidates)]
+    for cid, model, _ in planned:
         print(f"candidate: {cid}" + (f"  ({model})" if model else ""))
     # The writer is paid only when it will actually run: written mode, no story moment or premise
     # list, and nothing frozen yet under the base id (a refused-twice table fallback is frozen too).
-    text_calls = 1 if uses_writer and frozen is None else 0
+    text_calls = sum(1 for p in plans if p["uses_writer"] and p["frozen"] is None)
     # The director's call, when it is still to come (a dry run that did not ask). A call already
     # made this run is in the ledger, so the budget line counts it as spent, not as projected.
     director_calls = 1 if use_director and director is None and not director_called else 0
-    budget_line, over_budget = budget(cfg, args.provider, [m for _, m in planned], text_calls,
+    budget_line, over_budget = budget(cfg, args.provider, [m for _, m, _ in planned], text_calls,
                                       director_calls)
     print(f"budget  : {budget_line}")
     if over_budget:
@@ -681,11 +773,14 @@ def main() -> int:
               "keeps the picture it has.", file=sys.stderr)
         return 3
     if args.dry_run:
-        print("\n--- setting ---\n" + setting["setting"])
-        print("\n--- camera ---\n" + fill_children(composition["camera"], n_children))
-        print("\n--- crowd ---\n" + setting["crowd"])
-        if premise.get("brief"):
-            print("\n--- premise ---\n" + fill_children(premise["brief"], n_children))
+        for p in plans:
+            if len(plans) > 1:
+                print(f"\n=== {p['id']}")
+            print("\n--- setting ---\n" + p["setting"]["setting"])
+            print("\n--- camera ---\n" + fill_children(p["composition"]["camera"], n_children))
+            print("\n--- crowd ---\n" + p["setting"]["crowd"])
+            if p["premise"].get("brief"):
+                print("\n--- premise ---\n" + fill_children(p["premise"]["brief"], n_children))
         if guests:
             print("\n--- visiting family ---\n" + scene_guests.prompt_section(guests, load_cast()))
         if context_path:
@@ -699,22 +794,25 @@ def main() -> int:
         if not written_mode:
             print("scenes.activities is table: there is nothing to write", file=sys.stderr)
             return 2
-        if not uses_writer:
-            print(f"this scene's activities come from {activities_from}; nothing to write")
-            return 0
         if not os.environ.get("FAL_KEY"):
             print("FAL_KEY is not set (tools/op.env.example shows the 1Password form)",
                   file=sys.stderr)
             return 2
-        got = scene_activity_writer.written_set(
-            scene_id, setting=setting, season=season, week_lines=week_lines, n=n_children,
-            seed=seed, premise=premise)
-        print(json.dumps(got, indent=2, ensure_ascii=False))
-        if got.get("source") == "written":
-            print("\n" + scene_activity_writer.phrase(got, n_children))
-            return 0
-        # Refused twice is a verdict (frozen, exit 1); unreachable is an error (exit 2).
-        return 1 if activities_path.exists() else 2
+        worst = 0
+        for p in plans:
+            if not p["uses_writer"]:
+                print(f"{p['id']}: activities come from {p['activities_from']}; nothing to write")
+                continue
+            got = scene_activity_writer.written_set(
+                p["id"], setting=p["setting"], season=season, week_lines=week_lines,
+                n=n_children, seed=p["seed"], premise=p["premise"], camera=p["composition"])
+            print(json.dumps(got, indent=2, ensure_ascii=False))
+            if got.get("source") == "written":
+                print("\n" + scene_activity_writer.phrase(got, n_children))
+            else:
+                # Refused twice is a verdict (frozen, exit 1); unreachable is an error (exit 2).
+                worst = max(worst, 1 if p["activities_path"].exists() else 2)
+        return worst
 
     # The API keys, from the environment. Checked here rather than in each child process so a
     # missing one fails before anything is generated, instead of after the image has been paid
@@ -728,25 +826,25 @@ def main() -> int:
 
     out = pathlib.Path(os.environ.get("SCENE_OUT_DIR", "/tmp")) / "scene-week"
     out.mkdir(parents=True, exist_ok=True)
-    # Who is visiting, for gen-scene and the finder. Written every run (it is a function of the
-    # frozen brief), and absent when nobody is, so the prompt is byte-identical to before.
-    guests_file = None
-    if guests:
-        guests_file = out / f"{scene_id}.guests.json"
-        guests_file.write_text(json.dumps(guests, indent=2) + "\n", encoding="utf-8")
-
-    # Written once, before either candidate, so the pair shares it. A writer that could not be
-    # reached, or was refused twice, means the table deals the activities, as it always did.
-    activities_file = None
-    if uses_writer:
-        got = scene_activity_writer.written_set(
-            scene_id, setting=setting, season=season, week_lines=week_lines, n=n_children,
-            seed=seed, premise=premise)
-        if got.get("source") == "written":
-            activities_file = activities_path
+    for p in plans:
+        # Who is visiting, for gen-scene and the finder. Written every run (it is a function of
+        # the frozen brief), and absent when nobody is, so the prompt is byte-identical to before.
+        p["guests_file"] = None
+        if guests:
+            p["guests_file"] = out / f"{p['id']}.guests.json"
+            p["guests_file"].write_text(json.dumps(guests, indent=2) + "\n", encoding="utf-8")
+        # Written once per brief, before its candidate(s). A writer that could not be reached, or
+        # was refused twice, means the table deals the activities, as it always did.
+        p["activities_file"] = None
+        if p["uses_writer"]:
+            got = scene_activity_writer.written_set(
+                p["id"], setting=p["setting"], season=season, week_lines=week_lines,
+                n=n_children, seed=p["seed"], premise=p["premise"], camera=p["composition"])
+            if got.get("source") == "written":
+                p["activities_file"] = p["activities_path"]
 
     offered, refused, errored = [], [], []
-    # THE SEED IS THE WEEK AND THE SCENE, not the week alone. (Computed in the plan above, so
+    # THE SEED IS THE RUN AND THE SCENE, not the week alone. (Computed in the plan above, so
     # --dry-run reports the same draw a paid run would make.)
     #
     # It was `monday.toordinal()` for the idempotence the weekly timer needs: a Tuesday re-run
@@ -760,14 +858,17 @@ def main() -> int:
     # seed and so the same picture on a re-run; a different setting, style or premise is a
     # different scene and gets its own draw. crc32 rather than hash(): `hash()` on a str is
     # salted per process, so the "idempotent" half would have been random across runs.
-    for scene_id, model in candidates(scene_id, style, args.provider, args.candidates):
-        # Both candidates share it deliberately — two models drawing the SAME brief is the
-        # whole point of offering a pair, and a pair that differed in activity too would not
-        # be a comparison of anything.
-        verdict = offer(scene_id, model, style, setting, composition, monday, out, env, args,
-                        premise_id=args.premise, context_path=context_path, seed=seed,
-                        moment=moment or "", activities_file=activities_file,
-                        guests_file=guests_file, dog_doing=dog_doing)
+    #
+    # Two candidates of ONE brief (a person's --setting, or a run frozen before 2026-10-28) still
+    # share the seed and the activities: two models drawing the same brief is a comparison. The
+    # household chose variety over comparison for the timer's pair, which is why it has two
+    # briefs and therefore two seeds.
+    for scene_id, model, p in planned:
+        verdict = offer(scene_id, model, p["style"], p["setting"], p["composition"], monday, out,
+                        env, args, premise_id=p["premise_id"], context_path=context_path,
+                        seed=p["seed"], moment=p["moment"] or "",
+                        activities_file=p["activities_file"], guests_file=p["guests_file"],
+                        dog_doing=p["dog_doing"])
         {"offered": offered, "refused": refused, "errored": errored}[verdict].append(scene_id)
 
     print()
@@ -825,6 +926,27 @@ def candidates(base_id: str, style: dict, provider: str, count: int) -> list[tup
     if count == 1:
         return [(base_id, chosen[0])]
     return [(f"{base_id}-{SHORT.get(m, m.split('/')[-2])}", m) for m in chosen]
+
+
+def pair_models(styles: list[dict], parity: int) -> list[str]:
+    """One fal model for each of a run's two pictures: each style's own default. When both want
+    the same model, the picture at index `parity` keeps it and the other takes its next allowed
+    one, so the two candidates are still two models and neither always draws the first brief."""
+    sys.path.insert(0, str(HERE))
+    import fal_api  # noqa: E402  (a sibling module; imported here so --dry-run needs no key)
+    orders = []
+    for st in styles:
+        ordered = fal_api.allowed_for(st.get("family", "illustration"))
+        if st.get("model"):
+            ordered = [st["model"]] + [m for m in ordered if m != st["model"]]
+        orders.append(ordered)
+    first = [o[0] for o in orders]
+    if first[0] != first[1]:
+        return first
+    other = 1 - parity
+    out = list(first)
+    out[other] = next((m for m in orders[other] if m != first[parity]), first[parity])
+    return out
 
 
 def offer(scene_id: str, model: str | None, style: dict, setting: dict, composition: dict,

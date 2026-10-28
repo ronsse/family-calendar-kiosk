@@ -487,7 +487,7 @@ Three failure modes worth knowing:
 
 | Message | Means | Do |
 |---|---|---|
-| `REFUSED by the region finder` | The gate worked. A child was under the tap floor, too small, inside the gutter, facing wrong, or matched to the wrong portrait | Nothing, if the other candidate was offered. The image is kept in `/tmp/scene-week/`; delete it and re-run to buy another, or wait for next week |
+| `REFUSED by the region finder` | The gate worked. A child was under the tap floor, too small, overlapping another child's target by more than 25%, facing wrong, or matched to the wrong portrait | Nothing, if the other candidate was offered. The image is kept in `/tmp/scene-week/`; delete it and re-run to buy another, or wait for next week |
 | `ERRORED — not judged` | It never got an answer — an upstream 5xx, not a judgement | Re-run. Generated images are reused, so this costs only the vision passes |
 | `fal submit 402` / `403` | The fal balance is out, or the key is wrong | Top up at fal.ai; the key is the `op://` reference in `tools/op.env` |
 | `registration reported success but … is NOT in the catalog` | The container is older than the script | `cd stacks/wall && op run --env-file=op.env -- docker compose up -d --build` |

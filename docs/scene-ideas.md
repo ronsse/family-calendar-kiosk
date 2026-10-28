@@ -21,7 +21,7 @@ That gives five limits that decide which ideas survive, and they are physics, no
 | 1 | Each child ≥ 1.5 in tall on the glass (14.2 % of frame height, 77 logical px) | `scene-regions.py` height floor; the 64 px absolute tap floor | A true Waldo, where the child is 1/10 of the frame (54 px). **Not possible on this wall.** |
 | 2 | Hair uncovered | Identity = count + height order + hair (`docs/scene-imagery-plan.md`) | Masks, helmets, hoods. Spider-suit → *no mask*; astronaut → *helmet under the arm*. |
 | 3 | Face to the viewer, head and body the same way | The finder's facing check | Upside-down poses: the handstand was **refused** ("head reads as on backwards") on 2026-09-13. Cartwheels carry the same risk. |
-| 4 | Clear ground between the three (≥ 1/10 width; 16 px inert gutter) | `fit_gutters`, the tap gutter | Three on one dragon; two carrying one basket in a crowd picture. |
+| 4 | Clear ground between the three (≥ 1/10 width; 16 px inert gutter) | `fit_overlaps` (at most 25% overlap, split) | Three on one dragon; two carrying one basket in a crowd picture. |
 | 5 | Riding or driving → ON it, in the open | A child inside a cab is a windscreen, not a tap target | Driving a monster truck → *standing on its roof holding a rail*. Cockpits, submarines. |
 
 Two more come from the models rather than the mechanic:

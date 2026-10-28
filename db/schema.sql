@@ -272,7 +272,14 @@ CREATE TABLE chore (
   due_by_local     TEXT CHECK (due_by_local IS NULL OR due_by_local GLOB '[0-2][0-9]:[0-5][0-9]'),
   -- Recurrence, expanded ONLY in local-date space (H3 finding #6).
   rrule            TEXT NOT NULL,
-  active           INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1))
+  active           INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+  -- Does finishing this duty count toward a FULL DAY (ADR-0006 s4)? 1 for almost every duty.
+  -- 0 for a reminder that is not asked of the child every single day in fact: homework on a
+  -- day with none or eye exercises. Leaving one undone must not cost the day; it leaves the
+  -- count on both sides like superseded. Extras never count whatever this says. v13.
+  -- NO COMMAS in this comment: SQLite drops a LAST column by cutting back to the nearest
+  -- comma before it and finds one inside a comment just as readily.
+  counts_toward_day INTEGER NOT NULL DEFAULT 1 CHECK (counts_toward_day IN (0,1))
 ) STRICT;
 
 CREATE TABLE chore_rotation_member (
@@ -629,3 +636,4 @@ INSERT INTO schema_migration(version, applied_at_utc) VALUES (9, '2026-09-15T00:
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (10, '2026-09-15T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (11, '2026-10-18T00:00:00Z');
 INSERT INTO schema_migration(version, applied_at_utc) VALUES (12, '2026-10-20T00:00:00Z');
+INSERT INTO schema_migration(version, applied_at_utc) VALUES (13, '2026-10-27T00:00:00Z');

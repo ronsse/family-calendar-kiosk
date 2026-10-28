@@ -191,12 +191,26 @@
       "id": "halloween-book-fair",
       "_comment": "Asked for 2026-10-04 for the week of the school book fair, with each child's own costume choice. Season [] on purpose: never drawn by the timer (the costumes are this year's), only by --setting.",
       "season": [],
+      "manual": true,
       "setting": "a school library turned into a Halloween book fair, long folding tables piled with brightly coloured picture books and chapter books, tall spinning wire racks of paperbacks, strings of orange and purple paper bats and paper pumpkin garlands across the shelves, carved jack-o'-lanterns grinning on the end of each table, a reading tent made from a big cardboard castle draped with cotton-wool cobwebs, bean bags on a rug, warm late-afternoon light through tall classroom windows",
       "crowd": "other children in Halloween costumes — a little dinosaur, a pirate, a bumblebee, a ghost made from a sheet — parents with tote bags, a teacher in a witch's hat at a little table with a cash box, a bowl of wrapped sweets, a basket of bookmarks and pencils with fluffy toppers, a cardboard skeleton reading a book, a cart of books being wheeled in, a dog waiting just outside the door",
       "tags": [
         "indoor"
       ],
       "wardrobe": "Halloween costumes, a different one each. Child 1 is dressed as a clever young witch from a boarding-school story — a long black school robe open over a grey knitted jumper, white collared shirt, a red-and-gold striped tie and a grey pleated skirt, a thin wooden wand in one hand and a tall stack of heavy books hugged in the other arm; no hat; her own long wavy hair loose exactly as it always is. Child 2 is dressed as a big fluffy ginger cat — a soft orange-ginger furry costume with darker ginger stripes, a fat bottle-brush tail, and a headband of pointed ginger cat ears worn on top of her own loose long hair, whiskers and a little pink nose drawn on her cheeks in face paint; no hood and no mask. Child 3 is dressed as a wizard king — a small shiny gold crown sitting on top of his blond fringe, a long royal-purple velvet cape with a white fluffy trim and little gold stars sewn on it, and a wooden wand with a gold star on its tip held up high."
+    },
+    {
+      "id": "halloween-party",
+      "_comment": "Asked for 2026-10-27 for this year's Halloween party, with each child's own costume. Season [] and this year's costumes: draw it by --setting, and re-dress it before reusing it another year. Spooky-ish, never scary. The crowd's costumes are chosen to be UNLIKE the children's (no other witch, cat or dragon, no small dinosaur): the finder refuses a look-alike.",
+      "season": [],
+      "manual": true,
+      "setting": "a back-garden Halloween party at dusk behind a big old wooden house, a deep blue-violet sky with a huge round orange moon low behind bare twisty trees, a few small black bats against the moon, wisps of low mist curling over the lawn, dozens of glowing carved jack-o'-lanterns on the porch steps and along the fence, strings of warm orange lights and paper lanterns criss-crossing overhead, a big wooden tub of water full of floating red apples, a table of caramel apples, popcorn balls and cupcakes with orange icing, a hay-bale corner with a scarecrow, friendly cartoon cobwebs on the porch rail, a smiling sheet-ghost decoration swinging from a branch; cosy and a little spooky, never frightening",
+      "crowd": "lots of party guests of every age in costume, every costume clearly different from the children's: grown-ups as a pirate, a vampire with a friendly grin, a mummy, a scarecrow and a knight in cardboard armour with a pumpkin bucket, bigger children as an astronaut, a skeleton, a superhero and a bumblebee, a grandparent handing out sweets from a cauldron, children holding doughnuts on strings with their hands behind their backs, a pumpkin-carving table with a grown-up scooping seeds, a small costume parade with a cardboard trophy, a toddler in a pumpkin suit on a parent's shoulders",
+      "tags": [
+        "party",
+        "park"
+      ],
+      "wardrobe": "Halloween costumes, a different one each. Child 1 is dressed as a clever young witch from a boarding-school story — a long black school robe open over a grey knitted jumper, white collared shirt, a red-and-gold striped tie and a grey pleated skirt, a thin wooden wand in one hand; no hat; her own long wavy hair loose exactly as it always is. Child 2 is dressed as that witch's big fluffy ginger cat — a soft orange-ginger furry costume with darker ginger stripes, a fat bottle-brush tail, and a headband of pointed ginger cat ears worn on top of her own loose long hair, whiskers and a little pink nose drawn on her cheeks in face paint; no hood and no mask. Child 3 is dressed as a little green dragon — a bright green dragon costume with a pale yellow scaly tummy, a row of soft orange spikes down his back, small green felt wings and a long spiky tail, and a headband with two little green dragon horns sitting on top of his own blond fringe; no hood and no mask, his whole face showing."
     },
     {
       "id": "ice-palace",
@@ -342,6 +356,7 @@
       "id": "swim-pool",
       "_comment": "Asked for 2026-10-12, the day the household went swimming (BACKLOG 4.11, option 2). Season [] on purpose and enforced by check_tables: a swimwear picture is only ever drawn because an adult forced it with --setting, never by the timer. `swimwear` swaps the clothing clause in gen-scene AND the clothed check in scene-regions; the check still demands a covered top and covered bottoms.",
       "season": [],
+      "manual": true,
       "setting": "a big bright indoor swimming pool, turquoise water with lane ropes of red and white floats, a shallow end with wide steps going down into it, a curly yellow water slide splashing into the far corner, tall windows along one wall with daylight pouring across the water, white tiles, rippling reflections on the ceiling",
       "crowd": "a lifeguard on a tall white chair with a whistle, swimmers doing lengths in the lanes, a parent in the shallow end with a toddler in armbands, a stack of foam kickboards by the wall, a big round clock, a swimming lesson of small children holding the side, rows of bleachers with towels and bags on them",
       "tags": [

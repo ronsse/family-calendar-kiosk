@@ -56,6 +56,7 @@ function row(
     localDate: '2026-09-15' as LocalDate,
     state,
     kind: 'extra',
+    countsTowardDay: false,
     dueByLocal: null,
     claimedAtUtc: null,
     points: 4,

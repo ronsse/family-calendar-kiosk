@@ -53,6 +53,8 @@ function spec(over: Partial<ChoreSpec> = {}): ChoreSpec {
     assignmentModel: 'individual',
     basePoints: 5,
     kind: 'extra',
+    // The parser's default: a duty counts, an extra never does.
+    countsTowardDay: (over.kind ?? 'extra') !== 'extra',
     rrule: 'FREQ=DAILY',
     dueByLocal: '18:00',
     rotation: null,
@@ -426,6 +428,39 @@ test('rotation membership is only rewritten when it differs', () => {
     .prepare(`SELECT child_id FROM chore_rotation_member WHERE chore_id='ch-table' ORDER BY position`)
     .all() as { child_id: string }[];
   assert.deepEqual(members.map((m) => m.child_id), ['child-b', 'child-a']);
+  db.close();
+});
+
+test('countsTowardDay: a duty may opt out, an extra cannot opt in, and the board says which', () => {
+  // A reminder duty (homework, eye exercises — 2026-10-27) stays on the board and leaves the
+  // full day on both sides. The wall's celebration reads the flag off the view, so it has to
+  // arrive there, not just in the table.
+  const bad = parseChoreFile(JSON.stringify({ chores: [{ ...spec(), countsTowardDay: true }] }));
+  assert.equal(bad.ok, false, 'an extra that claims to count is refused');
+  const notBool = parseChoreFile(
+    JSON.stringify({ chores: [{ ...spec({ kind: 'duty' }), countsTowardDay: 'no' }] }),
+  );
+  assert.equal(notBool.ok, false);
+
+  const duty = { ...spec({ id: 'ch-dutyish', kind: 'duty', basePoints: 0 }) } as Record<string, unknown>;
+  delete duty['countsTowardDay'];
+  const omitted = parseChoreFile(JSON.stringify({ chores: [duty] }));
+  assert.ok(omitted.ok && omitted.authoring.chores[0]?.countsTowardDay === true, 'a duty counts by default');
+
+  const db = fresh();
+  applyChores(
+    db,
+    authoring({ chores: [spec({ id: 'ch-reminder', kind: 'duty', basePoints: 0, countsTowardDay: false })] }),
+  );
+  const view = choresForDate(db, TODAY).assignments.find((a) => a.choreId === 'ch-reminder');
+  assert.equal(view?.countsTowardDay, false);
+  // And flipping it back is an `updated`, like any other field: the file wins.
+  const again = applyChores(db, authoring({ chores: [spec({ id: 'ch-reminder', kind: 'duty', basePoints: 0, countsTowardDay: true })] }));
+  assert.deepEqual(again.map((c) => c.action), ['updated']);
+  assert.equal(
+    choresForDate(db, TODAY).assignments.find((a) => a.choreId === 'ch-reminder')?.countsTowardDay,
+    true,
+  );
   db.close();
 });
 

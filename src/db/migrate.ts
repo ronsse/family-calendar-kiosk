@@ -17,7 +17,7 @@ export const SCHEMA_PATH = resolve(HERE, '../../db/schema.sql');
 export const SEED_DEV_PATH = resolve(HERE, '../../db/seed.dev.sql');
 
 /** The version db/schema.sql declares. Bumping it requires a new migration step. */
-export const TARGET_VERSION = 12;
+export const TARGET_VERSION = 13;
 
 /**
  * Upgrades, keyed by the version they PRODUCE.
@@ -151,6 +151,16 @@ const UPGRADES: readonly { readonly to: number; readonly sql: string }[] = [
     sql: `
       ALTER TABLE countdown ADD COLUMN horizon_days INTEGER
         CHECK (horizon_days IS NULL OR horizon_days BETWEEN 0 AND 366);
+    `,
+  },
+  {
+    // A duty may stay on the board without counting toward a full day (ADR-0006 §4). The
+    // default keeps every existing chore counting, so nothing changes until a file says so
+    // (2026-10-27: homework and eye exercises, which are not asked of a child every day).
+    to: 13,
+    sql: `
+      ALTER TABLE chore ADD COLUMN counts_toward_day INTEGER NOT NULL DEFAULT 1
+        CHECK (counts_toward_day IN (0,1));
     `,
   },
 ];

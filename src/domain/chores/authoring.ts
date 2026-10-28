@@ -42,6 +42,13 @@ export interface ChoreSpec {
   dueByLocal: string | null;
   /** Rotation order / roster. `null` means "leave whatever is already there alone". */
   rotation: string[] | null;
+  /**
+   * Whether finishing this duty counts toward a full day (ADR-0006 §4). Omitted means `true`
+   * for a duty, and that is not "leave it alone": like every other field, the file wins on
+   * re-apply. An extra never counts, so it is always `false` and `true` on one is refused
+   * rather than stored as a promise nothing keeps.
+   */
+  countsTowardDay: boolean;
 }
 
 export interface ChoreAuthoring {
@@ -81,6 +88,7 @@ const CHORE_KEYS = new Set([
   'rrule',
   'dueByLocal',
   'rotation',
+  'countsTowardDay',
 ]);
 const MODELS: ReadonlySet<string> = new Set([
   'individual',
@@ -266,6 +274,19 @@ function parseSpec(entry: unknown, where: string, errors: string[]): ChoreSpec |
     }
   }
 
+  // An extra never counts, so it is stored as not counting and may only say so.
+  let countsTowardDay = kind !== 'extra';
+  const counts = entry['countsTowardDay'];
+  if (counts !== undefined) {
+    if (typeof counts !== 'boolean') {
+      errors.push(`${where}: countsTowardDay must be true or false`);
+    } else if (kind === 'extra' && counts) {
+      errors.push(`${where}: an extra never counts toward a full day; countsTowardDay is for duties`);
+    } else {
+      countsTowardDay = counts;
+    }
+  }
+
   if (errors.length !== before) return null;
   if (
     id === null ||
@@ -292,6 +313,7 @@ function parseSpec(entry: unknown, where: string, errors: string[]): ChoreSpec |
     rrule,
     dueByLocal,
     rotation,
+    countsTowardDay,
   };
 }
 
@@ -483,6 +505,7 @@ interface ChoreRow {
   kind: string;
   due_by_local: string | null;
   rrule: string;
+  counts_toward_day: number;
 }
 
 /** Rewrites membership only when it actually differs. Returns whether it wrote. */
@@ -510,7 +533,7 @@ function upsertChore(db: Db, c: ChoreSpec): ChoreAction {
   const existing = db
     .prepare(
       `SELECT label_short, label_full, icon_asset_id, category, assignment_model,
-              base_points, kind, due_by_local, rrule
+              base_points, kind, due_by_local, rrule, counts_toward_day
          FROM chore WHERE id = ?`,
     )
     .get(c.id) as ChoreRow | undefined;
@@ -521,8 +544,9 @@ function upsertChore(db: Db, c: ChoreSpec): ChoreAction {
     // an existing one keeps whatever it has. Only `retire` and `restore` move it.
     db.prepare(
       `INSERT INTO chore (id, label_short, label_full, icon_asset_id, category,
-                          assignment_model, base_points, kind, due_by_local, rrule, active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                          assignment_model, base_points, kind, due_by_local, rrule, active,
+                          counts_toward_day)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
     ).run(
       c.id,
       c.labelShort,
@@ -534,6 +558,7 @@ function upsertChore(db: Db, c: ChoreSpec): ChoreAction {
       c.kind,
       c.dueByLocal,
       c.rrule,
+      c.countsTowardDay ? 1 : 0,
     );
     action = 'added';
   } else {
@@ -546,14 +571,15 @@ function upsertChore(db: Db, c: ChoreSpec): ChoreAction {
       existing.base_points === c.basePoints &&
       existing.kind === c.kind &&
       existing.due_by_local === c.dueByLocal &&
-      existing.rrule === c.rrule;
+      existing.rrule === c.rrule &&
+      existing.counts_toward_day === (c.countsTowardDay ? 1 : 0);
     if (same) {
       action = 'unchanged';
     } else {
       db.prepare(
         `UPDATE chore SET label_short = ?, label_full = ?, icon_asset_id = ?, category = ?,
                           assignment_model = ?, base_points = ?, kind = ?, due_by_local = ?,
-                          rrule = ?
+                          rrule = ?, counts_toward_day = ?
           WHERE id = ?`,
       ).run(
         c.labelShort,
@@ -565,6 +591,7 @@ function upsertChore(db: Db, c: ChoreSpec): ChoreAction {
         c.kind,
         c.dueByLocal,
         c.rrule,
+        c.countsTowardDay ? 1 : 0,
         c.id,
       );
       action = 'updated';

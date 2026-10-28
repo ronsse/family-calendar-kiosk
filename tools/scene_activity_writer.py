@@ -53,9 +53,11 @@ import prompt_guard  # noqa: E402
 import scene_activities  # noqa: E402
 from scene_cast import cast_fits, fill_children, together  # noqa: E402
 
-PROMPT_VERSION = 1
+PROMPT_VERSION = 2   # 2 (2026-10-28): the camera, the premise and the place's last kinds are sent
 MAX_CHARS = 140
-RECENT = 3
+# The recent lines quoted back as "do not repeat". Three until 2026-10-28, which with two
+# pictures a run was barely the last run's pair; six is the last three runs.
+RECENT = 6
 TOKENS = ("{the_children}", "{The_children}", "{count}", "{Count}", "{all_of_them}",
           "{All_of_them}", "{are}", "{s}")
 # A shared line may open on the group before its verb: "{all_of_them} rolling ...".
@@ -130,7 +132,7 @@ UNKNOWN_TOKEN = re.compile(r"\{[^}]*\}")
 
 
 def problems(answer, *, n: int, shared: bool, indoor: bool, swimwear: bool,
-             recent: list[str] = ()) -> list[str]:
+             recent: list[str] = (), last_kinds: list[str] = ()) -> list[str]:
     """Every reason this answer may not reach a picture, as sentences. Empty means it may."""
     if not isinstance(answer, dict) or not isinstance(answer.get("lines"), list):
         return ['the answer is not {"lines": [...]}']
@@ -160,6 +162,13 @@ def problems(answer, *, n: int, shared: bool, indoor: bool, swimwear: bool,
                                                           swimwear=swimwear)]
         if _norm(do) in recent_norm:
             out.append(f"{tag}: repeats a line from a recent picture word for word")
+    # THE SAME PLACE, THE SAME KINDS (2026-10-28). Only a word-for-word repeat was refused, so
+    # a library got an animal, a building and a magic line every time it came round, each
+    # reworded. A set may share kinds with the last picture of this place, never be made of them.
+    last = {k.strip().lower() for k in last_kinds}
+    if last and seen_kinds and set(seen_kinds) <= last:
+        out.append(f"every kind here ({', '.join(sorted(seen_kinds))}) was in the last picture of "
+                   "this place; make at least one line a different KIND of thing")
     return out
 
 
@@ -256,7 +265,8 @@ SYSTEM = (
 
 
 def build_request(*, setting: dict, season: str, week_lines: list[str], n: int, shared: bool,
-                  recent: list[str], reasons: list[str] = ()) -> str:
+                  recent: list[str], reasons: list[str] = (), premise: dict | None = None,
+                  camera: dict | None = None, last_kinds: list[str] = ()) -> str:
     tags = setting.get("tags") or []
     indoor = "indoor" in tags
     swim = bool(setting.get("swimwear"))
@@ -270,6 +280,13 @@ def build_request(*, setting: dict, season: str, week_lines: list[str], n: int, 
         parts.append("They are dressed for the place: " + setting["wardrobe"].strip())
     if week_lines:
         parts.append("This week: " + " ".join(line.strip() for line in week_lines if line))
+    # The picture's own shape, so the lines suit it: a giants picture wants giant-sized things to
+    # do, and a picture seen from above wants actions that read from above. Labels only — a
+    # premise's brief carries tokens for gen-scene and is not written for this reader.
+    if premise and premise.get("id", "plain") != "plain":
+        parts.append(f"Kind of picture: {premise.get('label', premise['id'])}.")
+    if camera:
+        parts.append(f"Seen from: {camera.get('label', camera['id']).lower()}.")
     if n == 1:
         parts.append("There is ONE child in the picture.")
     else:
@@ -309,6 +326,9 @@ def build_request(*, setting: dict, season: str, week_lines: list[str], n: int, 
         + (" This is INDOORS: no riding animals, climbing trees, snow, water, boats, kites, "
            "fires or anything else that needs the outdoors." if indoor else ""),
     ]
+    if last_kinds:
+        parts.append("The last picture of this place used these kinds: " + ", ".join(last_kinds)
+                     + ". Use at least one different KIND of thing this time.")
     if recent:
         parts.append("Recent pictures already used these; do NOT repeat them or near-copies:\n"
                      + "\n".join(f"- {r}" for r in recent))
@@ -352,7 +372,7 @@ def parse_answer(raw: str):
 
 
 def inputs_digest(*, setting: dict, season: str, week_lines: list[str], n: int,
-                  shared: bool, model: str) -> str:
+                  shared: bool, model: str, premise: str = "plain", camera: str = "") -> str:
     """What the set was written FROM, minus the recent lines (those change every week and must
     not make a frozen set look stale)."""
     blob = json.dumps({
@@ -360,6 +380,7 @@ def inputs_digest(*, setting: dict, season: str, week_lines: list[str], n: int,
         "tags": setting.get("tags") or [], "crowd": setting.get("crowd"),
         "wardrobe": setting.get("wardrobe") or "", "swimwear": bool(setting.get("swimwear")),
         "season": season, "week": list(week_lines), "n": n, "shared": shared, "model": model,
+        "premise": premise, "camera": camera,
     }, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(blob.encode()).hexdigest()
 
@@ -382,6 +403,35 @@ def recent_lines(where: pathlib.Path, exclude: str, count: int = RECENT) -> list
     return [line["do"] for _, got in sets[:count] for line in got.get("lines", [])]
 
 
+def _same_place(got: dict, stem: str, setting_id: str) -> bool:
+    """Is this frozen set a picture of `setting_id`? Sets written since 2026-10-28 say so; older
+    ones are known by their scene id (`2026w43b-big-library-gpt`)."""
+    if got.get("setting"):
+        return got["setting"] == setting_id
+    rest = re.sub(r"^\d{4}w\d{2}b?-", "", stem)
+    return rest == setting_id or rest.startswith(setting_id + "-")
+
+
+def last_kinds(where: pathlib.Path, exclude: str, setting_id: str) -> list[str]:
+    """The kinds of the most recent OTHER written set for the same place, or [] if none."""
+    if not where.exists():
+        return []
+    best: tuple[str, list[str]] | None = None
+    for p in where.glob("*.json"):
+        if p.stem == exclude:
+            continue
+        try:
+            got = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if got.get("source") != "written" or not _same_place(got, p.stem, setting_id):
+            continue
+        at = str(got.get("written_at", ""))
+        if best is None or at > best[0]:
+            best = (at, [str(ln.get("kind", "")).strip().lower() for ln in got.get("lines", [])])
+    return [k for k in (best[1] if best else []) if k]
+
+
 def fal_writer(prompt: str, purpose: str) -> str:
     import fal_api  # noqa: E402  (imported here so the selftest and dry runs need no key)
     return fal_api.text(prompt, purpose, model=fal_api.TEXT_MODEL, system_prompt=SYSTEM)
@@ -394,7 +444,7 @@ def load_frozen(path: pathlib.Path) -> dict | None:
 
 
 def written_set(scene_id: str, *, setting: dict, season: str, week_lines: list[str], n: int,
-                seed: int | None, premise: dict | None = None,
+                seed: int | None, premise: dict | None = None, camera: dict | None = None,
                 writer: Callable[[str, str], str] | None = None,
                 where: pathlib.Path | None = None, model: str = "google/gemini-2.5-flash",
                 log=sys.stderr) -> dict:
@@ -408,7 +458,9 @@ def written_set(scene_id: str, *, setting: dict, season: str, week_lines: list[s
     season = scene_activities.effective_season(tags, season)
     shared = decide_shared(tags, season, seed, n, premise)
     digest = inputs_digest(setting=setting, season=season, week_lines=week_lines, n=n,
-                           shared=shared, model=model)
+                           shared=shared, model=model,
+                           premise=(premise or {}).get("id", "plain"),
+                           camera=(camera or {}).get("id", ""))
     frozen = load_frozen(path)
     if frozen is not None:
         if frozen.get("inputs_digest") != digest:
@@ -416,6 +468,7 @@ def written_set(scene_id: str, *, setting: dict, season: str, week_lines: list[s
                   "anyway (frozen per scene — delete it to write a new set)", file=log)
         return frozen
     recent = recent_lines(where, scene_id)
+    kinds = last_kinds(where, scene_id, setting.get("id", ""))
     indoor = "indoor" in tags
     swim = bool(setting.get("swimwear"))
     write = writer or fal_writer
@@ -423,7 +476,8 @@ def written_set(scene_id: str, *, setting: dict, season: str, week_lines: list[s
     attempts = 0
     for attempt in range(2):
         request = build_request(setting=setting, season=season, week_lines=week_lines, n=n,
-                                shared=shared, recent=recent, reasons=reasons)
+                                shared=shared, recent=recent, reasons=reasons, premise=premise,
+                                camera=camera, last_kinds=kinds)
         guard = prompt_guard.check(request)
         if guard.findings or guard.advisories:
             # Our own request tripping the guard is a code bug, never a reason to send it.
@@ -441,10 +495,11 @@ def written_set(scene_id: str, *, setting: dict, season: str, week_lines: list[s
         answer = normalize(parse_answer(raw or ""))
         reasons = (["the answer was not JSON"] if answer is None else
                    problems(answer, n=n, shared=shared, indoor=indoor, swimwear=swim,
-                            recent=recent))
+                            recent=recent, last_kinds=kinds))
         if not reasons:
             out = {
-                "scene_id": scene_id, "source": "written", "shared": shared,
+                "scene_id": scene_id, "setting": setting.get("id"), "source": "written",
+                "shared": shared,
                 "lines": [{"do": ln["do"].strip().rstrip("."), "kind": ln["kind"].strip().lower()}
                           for ln in answer["lines"]],
                 "model": model, "prompt_version": PROMPT_VERSION, "inputs_digest": digest,
@@ -564,6 +619,15 @@ def selftest() -> None:
     bad("possessive", [L("walking our dog along the path", "pet")] + good[1:], "prompt guard")
     bad("unknown token", [L("waving to {the_dog} by the gate", "pet")] + good[1:], "unknown token")
     bad("repeat", good, "word for word", recent=[good[1]["do"]])
+    got = problems({"lines": good}, n=3, shared=False, indoor=False, swimwear=False,
+                   last_kinds=["animal", "building", "music", "magic"])
+    if not any("last picture of this place" in g for g in got):
+        fails.append(f"a set made only of the place's last kinds was not refused: {got}")
+    ok(good[:2] + [L("conducting a choir of frogs with a reed", "weather")])
+    if problems({"lines": good[:2] + [L("conducting a choir of frogs with a reed", "weather")]},
+                n=3, shared=False, indoor=False, swimwear=False,
+                last_kinds=["animal", "building", "music"]):
+        fails.append("one new kind among the place's last kinds must pass")
 
     # Phrasing is pick_activities' phrasing.
     solo = phrase({"shared": False, "lines": good}, 3)
@@ -643,6 +707,22 @@ def selftest() -> None:
         recent = recent_lines(where, "s9")
         if not recent:
             fails.append("recent_lines found no written set")
+        # The same place's last kinds reach the next request, with its camera and premise.
+        calls.clear()
+        written_set("s4", setting=setting, season="autumn", week_lines=[], n=3, seed=7,
+                    writer=writer_ok, where=where, log=quiet,
+                    camera={"id": "high-angle", "label": "Looking down from above"},
+                    premise={"id": "giants", "label": "Three giants"})
+        want_kinds = ", ".join(ln["kind"] for ln in first["lines"])
+        if not calls or f"this place used these kinds: {want_kinds}" not in calls[0] \
+                or "Seen from: looking down from above." not in calls[0] \
+                or "Kind of picture: Three giants." not in calls[0]:
+            fails.append("the request lacks the place's last kinds, the camera or the premise")
+        if last_kinds(where, "x", "another-place"):
+            fails.append("last_kinds matched a different place")
+        if last_kinds(where, "x", "") or _same_place({}, "2026w43b-big-library-gpt", "big-library") \
+                is not True or _same_place({}, "2026w43b-big-library-annex-gpt", "big-lib"):
+            fails.append("_same_place reads ids wrongly")
         quiet.close()
 
     if fails:

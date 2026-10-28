@@ -296,14 +296,15 @@ test('the budget projection pays for the activity writer only when it will run',
     assert.equal(t.writer, 0);
     // The director has not been asked yet on a dry run, so its call is projected on its own line.
     assert.match(table.out, /, director \$0\.002\)/);
-    assert.equal(u.writer, 0.002);
+    // Two pictures a run, each its own brief, so two writer calls (2026-10-28).
+    assert.equal(u.writer, 0.004);
     assert.ok(u.total > t.total, `${u.total} > ${t.total}`);
-    assert.equal(Math.round((u.total - t.total) * 1000), 2);
+    assert.equal(Math.round((u.total - t.total) * 1000), 4);
 
-    const id = /^id {6}: (\S+)$/m.exec(unwritten.out)?.[1];
-    assert.ok(id, unwritten.out);
+    const ids = [...unwritten.out.matchAll(/^id {6}: (\S+)$/gm)].map((m) => m[1]);
+    assert.equal(ids.length, 2, unwritten.out);
     mkdirSync(acts);
-    writeFileSync(join(acts, `${id}.json`), JSON.stringify({ ...WRITTEN_SET, scene_id: id }));
+    for (const id of ids) writeFileSync(join(acts, `${id}.json`), JSON.stringify({ ...WRITTEN_SET, scene_id: id }));
     const frozen = sceneWeek({ household: hh, activitiesDir: acts, args });
     assert.equal(frozen.status, 0, frozen.out);
     assert.match(frozen.out, /^activities: written, frozen in /m);
@@ -336,6 +337,49 @@ test('a frozen director decision is used, and its setting wins over the rotation
     assert.match(w.out, /director: a test decision/);
     assert.match(w.out, /^id {6}: 2026w43b-snowy-hill/m);
     assert.match(w.out, /^setting : snowy-hill$/m);
+  });
+});
+
+test('two pictures a run: two places, one model each; a forced --setting is still a comparison pair', () => {
+  withTmp((dir) => {
+    const w = sceneWeek({ household: household(dir, {}), args: ['--week', '2026-W43b'] });
+    assert.equal(w.status, 0, w.out);
+    const settings = [...w.out.matchAll(/^setting : (\S+)$/gm)].map((m) => m[1] ?? '');
+    assert.equal(settings.length, 2, w.out);
+    assert.notEqual(settings[0], settings[1]);
+    const cands = [...w.out.matchAll(/^candidate: (\S+)  \((\S+)\)$/gm)].map((m): [string, string] => [m[1] ?? '', m[2] ?? '']);
+    assert.equal(cands.length, 2, w.out);
+    const a: [string, string] = cands[0] ?? ['', ''];
+    const b: [string, string] = cands[1] ?? ['', ''];
+    assert.ok(a[0].includes(settings[0] ?? '?') && b[0].includes(settings[1] ?? '?'), w.out);
+    assert.notEqual(a[1], b[1], 'one model each');
+
+    const forced = sceneWeek({ household: household(dir, {}), args: ['--week', '2026-W43b', '--setting', 'snowy-hill'] });
+    assert.equal(forced.status, 0, forced.out);
+    assert.equal([...forced.out.matchAll(/^id {6}: /gm)].length, 1, forced.out);
+    assert.equal([...forced.out.matchAll(/^candidate: 2026w43b-snowy-hill-/gm)].length, 2, forced.out);
+  });
+});
+
+test('a frozen pair of decisions draws two pictures, each in its own place and style', () => {
+  withTmp((dir) => {
+    const where = join(dir, 'director');
+    mkdirSync(where);
+    const one = { setting: SNOWY_HILL, style: 'house', camera: 'close-front', premise: 'plain', why: 'the first idea' };
+    const two = {
+      setting: { id: 'ski-lodge', season: [], setting: 'a wooden ski lodge at the foot of a snowy slope, a fire in a stone hearth, big windows onto the runs', crowd: 'skiers stamping snow off their boots, a cat by the fire, mugs of cocoa', tags: ['snow', 'indoor'], invented: true },
+      style: 'anime', camera: 'eye-level', premise: 'plain', why: 'the second idea',
+    };
+    writeFileSync(join(where, '2026-W43b.json'), JSON.stringify({
+      run: '2026-W43b', source: 'director', decisions: [one, two], why: 'the first idea',
+    }));
+    const w = sceneWeek({ household: household(dir, {}), directorDir: where, args: ['--week', '2026-W43b'] });
+    assert.equal(w.status, 0, w.out);
+    assert.match(w.out, /director: the first idea/);
+    assert.match(w.out, /director: the second idea/);
+    assert.match(w.out, /^setting : ski-lodge {2}\(invented by the director\)$/m);
+    assert.deepEqual([...w.out.matchAll(/^candidate: (\S+)/gm)].map((m) => (m[1] ?? '').replace(/-(gpt|nb2)$/, '')),
+      ['2026w43b-snowy-hill', '2026w43b-ski-lodge']);
   });
 });
 

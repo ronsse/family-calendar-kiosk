@@ -75,9 +75,17 @@ seems to need one changed stops and says so. It does not work around the decisio
   - `GET /api/wall/v1/stream` is on the wall surface (`routes.wall.ts:112-119`).
   - It carries only `invalidate {scope}` and `heartbeat` (`src/http/stream.ts`).
   - `InvalidateScope` is a closed union (`stream.ts:37`).
-- **Migrations:** the database is at `TARGET_VERSION = 12` (`src/db/migrate.ts:20`). A new
-  version takes four edits (migrate.ts:24-28): the constant, an `UPGRADES` step, `db/schema.sql`,
-  and its `schema_migration` insert. `npm run verify:schema` checks the result.
+- **Migrations:** the database is at `TARGET_VERSION = 13` (`src/db/migrate.ts`; v13 is
+  `chore.counts_toward_day`, 2026-10-27, so this plan's migrations are v14–v16). A new version
+  takes four edits (migrate.ts:24-28): the constant, an `UPGRADES` step, `db/schema.sql`, and
+  its `schema_migration` insert. `npm run verify:schema` checks the result. Two more things
+  bite:
+  - Every version needs a matching entry at the top of the `UNDO` list in
+    `test/unit-a.persistence.test.ts`, and `test/unit-h.scene-history.test.ts` downgrades to
+    v10 by hand, so its `db.exec` must drop the new column or table too.
+  - A comment in `schema.sql` between the previous column and a new LAST column must contain
+    no comma. SQLite drops a last column by cutting back to the nearest comma, finds one inside
+    the comment, and the downgrade fails with `incomplete input`.
 - **Static serving** (`stacks/wall/entry/static.ts`):
   - `/api/*` never gets HTML (:164).
   - `/` returns `index.html` with `no-store` (:166).
@@ -158,7 +166,7 @@ The rest become rules for every phone screen (§3.6):
 ### 3.1 A phone is a device with a role
 
 `device_token` gains `role TEXT NOT NULL DEFAULT 'wall' CHECK (role IN ('wall','phone'))`
-(migration v13). The changes that follow from it:
+(migration v14). The changes that follow from it:
 
 - **`authenticateDevice`** returns `{ id, label, role }`.
 - **The dispatcher** changes to this, and that line is the whole of the auth change:
@@ -444,7 +452,7 @@ packages below name exists.
 
 **A is done when:**
 
-- Migration v13 adds `role` on both paths, and `npm run verify:schema` passes.
+- Migration v14 adds `role` on both paths, and `npm run verify:schema` passes.
 - `issueDeviceToken(db, label, role = 'wall')` and `authenticateDevice` return the role.
 - An admin route answers a `phone` token without `X-Parent-Pin`.
 - A `wall` token without the PIN is still `401 bad_pin`.
@@ -573,15 +581,15 @@ reports. It does not add it.
 | Package | Owns | Depends on | Done when |
 |---|---|---|---|
 | **H Consistency view** | `src/domain/chores/weeks.ts` (built on `dayCounts` in `streaks.ts`, read-only), the `/children/:id/weeks` route in `routes.adminReads.ts`, `web/src/admin/screens/Weeks.tsx`, `test/unit-c.weeks.test.ts` | F4 | Good weeks per child for the last 4–26 ISO weeks, and which days were not full. It is the same rule the wall's streak uses: a test runs both over one seeded history and they agree. The screen says nothing that grades a child. |
-| **K Treat log** | `src/db/migrate.ts` + `db/schema.sql` (v14), `src/domain/treats.ts`, `src/http/routes.treats.ts` (new; Phase 0 creates it empty), `web/src/admin/screens/Treats.tsx`, `web/src/admin/logic/treats.ts`, `test/unit-f.treats.test.ts`, `test/unit-h.admin-treats.test.ts` | H | See the K list below |
-| **J Daily reminder** | `src/db/migrate.ts` + `db/schema.sql` (v15), `src/domain/reminder.ts`, `src/http/routes.push.ts` (new; Phase 0 creates it empty), `stacks/wall/entry/main.ts` (start the scheduler), `web/public/admin-sw.js`, `web/public/admin.webmanifest`, `web/src/data/push.ts`, `web/src/admin/screens/Reminder.tsx`, `package.json` (the `web-push` dependency), `test/unit-f.reminder.test.ts` | K | See the J list below |
+| **K Treat log** | `src/db/migrate.ts` + `db/schema.sql` (v15), `src/domain/treats.ts`, `src/http/routes.treats.ts` (new; Phase 0 creates it empty), `web/src/admin/screens/Treats.tsx`, `web/src/admin/logic/treats.ts`, `test/unit-f.treats.test.ts`, `test/unit-h.admin-treats.test.ts` | H | See the K list below |
+| **J Daily reminder** | `src/db/migrate.ts` + `db/schema.sql` (v16), `src/domain/reminder.ts`, `src/http/routes.push.ts` (new; Phase 0 creates it empty), `stacks/wall/entry/main.ts` (start the scheduler), `web/public/admin-sw.js`, `web/public/admin.webmanifest`, `web/src/data/push.ts`, `web/src/admin/screens/Reminder.tsx`, `package.json` (the `web-push` dependency), `test/unit-f.reminder.test.ts` | K | See the J list below |
 
 **Phase 3 runs H, then K, then J, one at a time.** K and J both add a migration, and two
 packages editing `migrate.ts` at once is a merge that silently renumbers a version.
 
 **K is done when:**
 
-- Migration v14 adds `treat (id INTEGER PRIMARY KEY, local_date TEXT NOT NULL, title TEXT NOT
+- Migration v15 adds `treat (id INTEGER PRIMARY KEY, local_date TEXT NOT NULL, title TEXT NOT
   NULL CHECK (length(title) BETWEEN 1 AND 80), note TEXT CHECK (note IS NULL OR length(note) <=
   280), created_at_utc TEXT NOT NULL, created_by_device_id INTEGER REFERENCES device_token(id),
   removed_at_utc TEXT) STRICT`, on both paths, and `npm run verify:schema` passes.
@@ -599,7 +607,7 @@ packages editing `migrate.ts` at once is a merge that silently renumbers a versi
 
 **J is done when:**
 
-- Migration v15 adds `push_subscription (id INTEGER PRIMARY KEY, device_id INTEGER NOT NULL
+- Migration v16 adds `push_subscription (id INTEGER PRIMARY KEY, device_id INTEGER NOT NULL
   REFERENCES device_token(id), endpoint TEXT NOT NULL UNIQUE, p256dh TEXT NOT NULL, auth TEXT
   NOT NULL, created_at_utc TEXT NOT NULL) STRICT`. Revoking a device deletes its
   subscriptions in the same transaction.

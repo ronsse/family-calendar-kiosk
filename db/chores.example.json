@@ -25,7 +25,13 @@
     "PETS: a chore with category \"pet\" and kind \"extra\" is one of the pet's own asks, and",
     "shows on the pet's sheet as well as the board - but only when the household has a pet",
     "(`pets` in db/household.json, applied with --settings). With `pets: []`, the default, there",
-    "is no sheet and such a chore is an ordinary extra on the board; keep it, rename it or retire it."
+    "is no sheet and such a chore is an ordinary extra on the board; keep it, rename it or retire it.",
+    "",
+    "REMINDERS: a duty may carry \"countsTowardDay\": false. It stays on the board, is claimed and",
+    "pays exactly as before, but it does not count toward a FULL DAY (ADR-0006 s4): done or not, it",
+    "leaves the day. Use it for a duty that is not really asked every day, such as homework on a",
+    "school night with none. Omitted means true for a duty; an extra never counts, and",
+    "\"countsTowardDay\": true on an extra is refused. Re-applying the file wins over the wall."
   ],
 
   "chores": [

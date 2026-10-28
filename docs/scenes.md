@@ -158,7 +158,8 @@ list price and the purpose. `python3 tools/fal_api.py` prints the total.
 ## 6. Candidates, approval and the baseline
 
 A generated picture is a **candidate** and is never put up automatically. Each Sunday and
-Wednesday at 02:30, `scene-week.timer` offers two pictures, drawn from the same brief by two models. A grown-up
+Wednesday at 02:30, `scene-week.timer` offers two different pictures, each its own place, style and model, and at least one of
+them a place the director invented. A grown-up
 chooses one on the Pictures screen. **Approving is selecting**: the wall shows the most
 recently approved picture, so approving an old one again is how you go back. Approving needs no
 PIN. Retiring a picture needs the PIN.

@@ -112,6 +112,7 @@ function chore(
     localDate: TODAY,
     state,
     kind: 'duty',
+    countsTowardDay: true,
     dueByLocal: null,
     claimedAtUtc: null,
     points,

@@ -39,6 +39,11 @@
  *    asked of her, and one miss already costs nothing at the WEEK's scale (Lally); the day
  *    gets the same allowance. At least one duty must be done, so a day with a single duty
  *    still needs it. `dayCounts` is the one definition; the week dots must use it too.
+ *
+ * 7. **A duty may be on the board and not count** (`chore.counts_toward_day = 0`, 2026-10-27).
+ *    Homework is not set every day and eye exercises get skipped, so the household marked both
+ *    as reminders: done or not, they leave the day on both sides, exactly as `superseded` does.
+ *    A day whose only duties are reminders is therefore neutral, not full.
  */
 
 import type { Database as Db } from 'better-sqlite3';
@@ -90,6 +95,7 @@ export function choreStreakDays(db: Db, childId: string, today: LocalDate): numb
          JOIN chore c      ON c.id  = cd.chore_id
         WHERE ca.child_id = ?
           AND c.kind = 'duty'
+          AND c.counts_toward_day = 1
           AND ca.state <> 'superseded'
           AND cd.local_date <= ?
         GROUP BY cd.local_date

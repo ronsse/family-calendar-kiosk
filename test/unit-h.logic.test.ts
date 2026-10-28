@@ -87,6 +87,7 @@ const chore = (
   localDate: '2026-08-25' as LocalDate,
   state,
   kind: 'duty',
+  countsTowardDay: true,
   dueByLocal: null,
   claimedAtUtc: null,
   points,

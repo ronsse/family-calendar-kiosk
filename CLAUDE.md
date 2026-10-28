@@ -226,9 +226,11 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   now and `--changing hair` drops the matching one — a call with no flag is byte-identical to
   every call made before 2026-09-16. Default provider is fal ($0.053 on `gpt-image-2/edit`,
   ledgered) rather than Nous ($0.15, no ledger, and a dry account 402s only on the real call).
-- **`scene-week.py` offers TWO candidates, from two models, and a refusal of one is not a
-  failed week.** Each goes through the finder on its own; ids are `{week}-{setting}-gpt` and
-  `-nb2`. Exit 1 means neither was offered; exit 2 means something ERRORED (not judged) and a
+- **`scene-week.py` offers TWO candidates, and a refusal of one is not a failed week.**
+  Since 2026-10-28 they are two DIFFERENT pictures (own setting, style, seed, activities, one
+  model each: `{run}-{settingA}-gpt`, `{run}-{settingB}-nb2`); a forced `--setting` or an old
+  single-format frozen decision is still one brief drawn by both models
+  (`docs/scene-variety-plan.md`). Each goes through the finder on its own. Exit 1 means neither was offered; exit 2 means something ERRORED (not judged) and a
   re-run reuses the images. The finder runs on fal too (`any-llm/vision`, Gemini 2.5 Flash) —
   the box order is pinned to Gemini's `[ymin,xmin,ymax,xmax]` and a model change is a
   coordinate-order change; Qwen answered `[xmin,ymin,...]` the same day.
@@ -260,7 +262,12 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   frozen brief and picks a catalog or INVENTED setting, style, camera and premise from the
   household's own tables, validated like the activity writer; a valid answer freezes in
   `db/scene-director/<run>.json`, two refusals fall back to the rotation and freeze NOTHING.
-  A dry run does not ask unless `--ask-director`. It sees titles and visitor descriptions only
+  It picks BOTH pictures and code refuses a pair in one place, in one style, or with no
+  invented place; the rotation fallback skips the wall's six recent settings too.
+  A dry run does not ask unless `--ask-director`. **A `"manual": true` setting is never offered**
+  and **a recent setting is refused in code** (2026-10-28): before that, `season: []` meant both
+  "occasion" and "this year's costumes", and W44 drew a Halloween book fair that was on its own
+  do-not-repeat list. It sees titles and visitor descriptions only
   with `scenes.shareTitles: true` (opt-in; counts otherwise), and the image prompt never
   carries a name either way. The keyword headline table it replaced is deleted.
   **A visit needs a guest's name AND a visit word** ("visiting", "in town", "staying"…) in one
@@ -346,12 +353,12 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   Before adding any rule to the prompt, read it as a list of nouns: each one may get drawn.
 - **The finder locates and FITS tap targets; it is not a taste gate.** The morning's only two
   refusals were a 1px and a 5px gutter between targets it had itself grown to 96px, on the two
-  best pictures of the day. `fit_gutters` trims (never under the absolute floor, never more
-  than `MAX_TRIM_PX` a pair) and refuses beyond that; three of the next four good scenes
-  needed it. Taste is the approver's, choosing between two candidates behind the PIN.
-  **It trims VERTICALLY too since 2026-10-18**: a small child far back stands ABOVE a near
-  one, and sideways-only refused `2026w43-autumn-forest-nb2` for an 8px stacked gap. The upper
-  box's feet go first, never under 48px tall. `npm run verify:finder`.
+  best pictures of the day. **Since 2026-10-27 there is no gutter at all**: targets may touch,
+  and `fit_overlaps` splits an overlap of up to `MAX_OVERLAP` (25% of the smaller target, on
+  the axis they overlap least) down the middle, never under the floors; more is one child
+  drawn across another and is refused. Taste is the approver's, choosing between candidates.
+  Stacked pairs split on the horizontal, because a small child far back stands ABOVE a near
+  one. `npm run verify:finder`.
   **And a target is at most TWO HEAD WIDTHS wide, centred on the child's head** (same day):
   the locator boxed a crouching boy together with the squirrel he was feeding, 324px wide.
   `tighten_to_head` clamps it in code. Do not fix it in the locator's words — telling it to
@@ -535,7 +542,7 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   absolute was 31.7 mm. The household measured the real thing instead (2026-09-18): the children
   "can press and find a dime sized image", and **a dime is 17.9 mm = 36 logical px**. So
   `scene-regions.py` now uses `TAP_FLOOR_PX = 48` (a quarter), `ABS_TAP_FLOOR_PX = 36` (a dime
-  exactly), `GUTTER_PX = 12` and `MIN_CHILD_HEIGHT_IN = 0.9`. The cost of the old floors was
+  exactly) and `MIN_CHILD_HEIGHT_IN = 0.9` (the 12px gutter went on 2026-10-27). The cost of the old floors was
   never comfort, it was composition: nothing smaller than two inches could pass, so every scene
   came out as three big figures near the front.
   **Two floors here are different things and must not be merged.** The tap floors are MOTOR —

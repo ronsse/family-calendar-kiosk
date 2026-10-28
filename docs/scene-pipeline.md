@@ -249,21 +249,41 @@ now, and everything after the choice stays deterministic.
 household's zone (`install.sh` writes `timezone` from `household.json` into the installed
 timer; the server itself runs UTC). The Sunday run is `2026-W43` and looks at Sunday..Tuesday;
 the Wednesday run is `2026-W43b` and looks at Wednesday..Saturday. Each brief is the days its
-picture is actually on the wall, so the two never describe the same day. Each offers two candidates (one per model), so a week has four to choose from, and the
-ids carry the run (`2026w43b-…`). Each run freezes its own brief in `db/scene-context/`.
+picture is actually on the wall, so the two never describe the same day. Each offers two candidates, so a week has four to choose from, and the
+ids carry the run (`2026w43b-…`). **Since 2026-10-28 the two candidates of a run are two
+different pictures**, not one brief drawn by two models: each has its own setting, style,
+camera, seed, dog and activities, and ONE model (`{run}-{settingA}-gpt`, `{run}-{settingB}-nb2`;
+each style's family default, and on a tie the run's parity decides which brief keeps it). The
+household's report was *"two pictures a run, and they are the same picture twice"*; the
+model comparison settled on 2026-09-12 had served its purpose. A forced `--setting`, and a
+frozen decision from before the change, still draw one brief by two models. Each run freezes its own brief in `db/scene-context/`.
 
 **The director** (`tools/scene_director.py`, one Gemini 2.5 Flash call through
-`fal_api.text`, about $0.002) reads the run's brief and answers JSON: a catalog setting or an
+`fal_api.text`, about $0.002) reads the run's brief and answers JSON for BOTH pictures (`{"pictures": [one, one]}`), each a catalog setting or an
 invented one (a place description, a crowd, optional wardrobe, one to three place tags), a
 style, a camera, a premise and a one-line why. It sees the catalog flagged in-season,
 occasion-only (`"season": []`: `birthday-party`, `setting-off`) or out-of-season, the settings
-the wall showed most recently, a random shortlist of three fresh in-season settings to lean
+the wall showed most recently (refused in code, not just named, unless every setting is
+recent), a random shortlist of three fresh in-season settings to lean
 toward when nothing stands out, and the styles not recently on the wall. Everything it may pick
-is an id from the household's own tables, and the answer is validated like the activity
+is an id from the household's own tables, except a `"manual": true` setting
+(`halloween-book-fair`, `halloween-party`, `swim-pool`: this year's costumes, or swimwear),
+which it never sees and only `--setting` draws. Until 2026-10-28 those shared `"season": []`
+with the occasions and were offered as "for an occasion", so anything festive on the calendar
+drew the same hand-authored picture again. The answer is validated like the activity
 writer's (§2.5): word counts, no quotes, no signs or lettering, no names, the prompt guard,
-wardrobe that keeps every face visible, tags from the closed place vocabulary. A refusal is
+wardrobe that keeps every face visible, tags from the closed place vocabulary. Each picture is checked on its own, then the pair: two
+different places, two different styles while two non-recent styles exist, and at least one
+INVENTED place (the prompt asks for a new place at least every other picture, and to reach
+for the catalog only when a row fits this week's event exactly). Around a holiday WEEK
+(Halloween Oct 24–31, the week up to Thanksgiving, Christmas Dec 18–25, New Year) and on an
+autumn snow forecast the brief adds "invent a place for it". `plain` is limited to two runs
+running only when `scenes.premises` offers more than `plain`. A refusal is
 retried once with the reasons quoted back; a second refusal, or no answer at all, falls back
-to the rotation, and nothing is frozen, so the next run asks again. A valid decision is frozen
+to the rotation, and nothing is frozen, so the next run asks again. The rotation is no longer
+blind to the wall: it skips the six most recent settings (`scene_memory.recent_settings`), and
+its second picture is the next in-season setting that is neither the first nor recent, so a
+failed director still yields two different pictures. A valid decision is frozen
 in `db/scene-director/<run>.json`, so a retry of the same run draws the same picture.
 `scenes.director: "rotation"` turns it off; `--setting` and `--no-director` bypass it per run.
 A dry run does not ask unless `--ask-director` is passed.
@@ -290,7 +310,8 @@ anything, or doing something funny."* `tools/scene-dog.json` lists what he may b
 chasing his tail, a stick too big for him, flat on his back in a leaf pile, shaking off after
 a swim, sneaking a sandwich, asleep in the sun, sitting in a suitcase, and more. Each mood
 names its `places` (the same closed vocabulary as the activities) and may name `seasons`.
-`hiding` is still one of them and stays the most likely. He is always **on his own** and
+`hiding` is still one of them; since 2026-10-28 it weighs the same as any other mood (it was
+three times as likely, and the director now chooses moods anyway). He is always **on his own** and
 never posed with the children; that was asked for. His tap target may sit right beside a
 child's, but never on it: an overlap is trimmed off his side (never under the 36px floor),
 and only a dog who cannot clear is dropped.
@@ -303,15 +324,17 @@ to every earlier picture and cached pictures are reused. A director decision fro
 this existed has no `dog` key and means hiding, for the same reason. The finder is told what
 he is doing so it looks for a dog doing that, not a hidden one. `npm run verify:dog`.
 
-**Stacked children are fitted, not refused.** `fit_gutters` used to open the gap between two
-tap targets only sideways, which assumes the children stand in a row. A small child further
-back stands *above* a near one instead. That is a composition the household likes (*"I like
-the option of having kids smaller and in the background"*), and `2026w43-autumn-forest-nb2`
-was refused for an 8px vertical gap that no sideways trim could open. Now the pair opens
-along whichever axis is closer. A stacked pair loses the bottom of the upper box first (feet,
-never the head), then the top of the lower one, and neither box drops under the 48px height
-floor. The same `MAX_TRIM_PX` cap applies: one child drawn across another is still refused.
-`npm run verify:finder` runs the measured nb2 geometry as a case.
+**A slight overlap is split, not refused (2026-10-27).** Two tap targets may touch; there is
+no gutter. When two overlap by up to `MAX_OVERLAP` (25% of the smaller target, measured on the
+axis they overlap least), `fit_overlaps` moves the shared edge to the middle of the overlap,
+each giving up half and neither going under its floor (36px wide, 48px tall); a target
+already at its floor gives nothing and its neighbour pays the rest. More than 25% is one
+child drawn across another and is refused (20% until 2026-10-28, when the same picture
+was refused again at 20.3% and the household raised it: *"up to 25% overlap is fine"*). The rule came from
+`2026w44-halloween-party-lantern-night-eye-level-nb2`, refused for a 28px overlap with both
+girls plainly visible: *"if they're overlapping up to 20%, then just match them up next to
+each other."* A stacked pair, a small child further back standing *above* a near one, is
+split on the horizontal the same way. `npm run verify:finder` runs both measured geometries.
 
 **A tap target is the child, not what the child is doing.** The locator is asked for the
 child alone and does not always comply: the crouching boy in the same picture came back 324px
@@ -417,8 +440,10 @@ text model write each scene's activities, and the table is what it falls back to
 (fal `any-llm`, `google/gemini-2.5-flash`, allowlisted and ledgered, about $0.002). It receives the
 setting's text, tags and indoor flag, the season, THIS WEEK's lines, the crowd, wardrobe and
 swimwear flag, the number of children, whether this picture is shared or solo (the same seeded
-coin `pick_activities` tosses, so the choice does not move), and the last three written sets as
-"do not repeat". No names, ages, heights or household rows. It answers
+coin `pick_activities` tosses, so the choice does not move), the picture's premise and camera,
+and the last six written sets as "do not repeat" (three until 2026-10-28). A set whose KINDS
+all appeared in the last set written for the same place is refused too: word-for-word repeats
+were the only thing refused, so one place kept getting the same kinds of line. No names, ages, heights or household rows. It answers
 `{"lines":[{"do","kind"}]}`.
 
 **§2.4's three objections, answered:**

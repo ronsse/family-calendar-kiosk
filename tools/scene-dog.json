@@ -12,10 +12,12 @@
     "nothing means anywhere, so a mood that needs water is never drawn in a library. `seasons`",
     "is optional and narrows a mood to part of the year (a leaf pile is autumn's).",
     "`weight` is the seeded draw's weight when the director does not choose; the director reads",
-    "the same list. tools/scene_dog.py validates the file; `npm run verify:dog`."
+    "the same list. tools/scene_dog.py validates the file; `npm run verify:dog`.",
+    "Hiding weighed 3 until 2026-10-28; it is 1 like every mood now (docs/scene-variety-plan.md F),",
+    "so a run the director did not choose for no longer hides him three times as often as anything else."
   ],
   "moods": [
-    {"id": "hiding", "weight": 3, "do": "hiding",
+    {"id": "hiding", "weight": 1, "do": "hiding",
      "places": ["forest", "meadow", "park", "mountain", "lake", "river", "beach", "town", "indoor", "snow", "pool", "party", "travel"]},
     {"id": "tail-chase", "weight": 1, "do": "chasing his own tail in a tight, happy, dizzy circle",
      "places": ["forest", "meadow", "park", "mountain", "lake", "river", "beach", "town", "indoor", "snow", "party", "travel"]},

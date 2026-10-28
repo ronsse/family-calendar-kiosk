@@ -208,11 +208,14 @@ TAP_FLOOR_PX = 48      # 23.8 mm, a quarter. The preferred floor and what every 
                        # to — still comfortably larger than the coin the household measured.
 ABS_TAP_FLOOR_PX = 36  # 17.9 mm, a dime exactly: the measured floor, not an inherited one. A
                        # target may be TRIMMED toward it, sideways only, to open a gutter.
-GUTTER_PX = 12         # 6 mm of inert space between two targets. NOT scaled down as far as the
-                       # others: this one is not about hitting a target, it is about not hitting
-                       # the WRONG one, and two children standing together is the common case.
-MAX_TRIM_PX = 24       # the most `fit_gutters` will shave off a pair: a gutter's worth of
-                       # overlap plus the gutter itself; more than that is figure over figure.
+MAX_OVERLAP = 0.25     # how far two targets may overlap and still be FITTED rather than refused,
+                       # as a fraction of the smaller one's extent on the axis they overlap least.
+                       # Up to this, `fit_overlaps` splits the overlap down the middle and the
+                       # two targets touch; past it, one child is drawn across another. There is
+                       # no gutter any more (2026-10-27, the household: "if they're overlapping
+                       # up to 20%, then just match them up next to each other"); raised to
+                       # 25% on 2026-10-28 ("up to 25% overlap is fine") when a party picture
+                       # with both girls plainly visible was refused at 20.3%.
 # How small a child may be DRAWN, expressed in inches on the glass because that is the only
 # unit the question has a real answer in. A fraction of the frame means nothing without the
 # panel; 0.18 sounds modest and was 1.9 inches, which is a big figure and was quietly
@@ -614,80 +617,68 @@ def grow_to_tap_floor(regions: list[dict]) -> None:
         r["y"] = max(0.0, min(r["y"], 1.0 - r["h"]))
 
 
-def fit_gutters(regions: list[dict]) -> None:
-    """Open the gutter between two neighbouring targets by TRIMMING them, not refusing.
+def overlap(a: dict, b: dict) -> tuple[str, float, float] | None:
+    """How two targets overlap: (axis, px, fraction), or None when they are clear or touch.
 
-    The same principle as `grow_to_tap_floor`, in the other direction. On 2026-09-12 the finder
-    refused the two best pictures of the morning — three children walking abreast, exactly the
-    grouping every photograph of three children has — for a 1px and a 5px gap between two
-    targets it had itself just grown to 96px. The CHILDREN were not touching; the padding was.
+    The axis is the one they overlap LEAST on, because that is the cheaper way apart; the
+    fraction is the overlap over the smaller target's extent on that axis.
+    """
+    over_x = (min(a["x"] + a["w"], b["x"] + b["w"]) - max(a["x"], b["x"])) * LOGICAL_W
+    over_y = (min(a["y"] + a["h"], b["y"] + b["h"]) - max(a["y"], b["y"])) * LOGICAL_H
+    if over_x <= 1e-6 or over_y <= 1e-6:
+        return None
+    if over_x <= over_y:
+        return "x", over_x, over_x / (min(a["w"], b["w"]) * LOGICAL_W)
+    return "y", over_y, over_y / (min(a["h"], b["h"]) * LOGICAL_H)
 
-    A target that is 96px wide and 260px tall can lose 16px of width and still be a target
-    nobody misses: the trim comes off the side that faces the neighbour, which is an arm or a
-    sleeve, and the head and body stay inside. So a colliding pair gives up the shortfall
-    between them, the wider one first, and neither goes under `ABS_TAP_FLOOR_PX` — the
-    household's absolute 64px floor, which is about motor skill and does not move. If the pair
-    cannot open the gutter within that, `check` refuses the scene exactly as before.
 
-    Only a little. A shortfall bigger than `MAX_TRIM_PX` is not padding touching padding, it is
-    one figure drawn across another — a child in front of a child — and that is a picture to
-    refuse, not a pair of rectangles to shave into slivers.
+def fit_overlaps(regions: list[dict]) -> None:
+    """Split a SLIGHT overlap between two targets down the middle so they touch. In place.
 
-    VERTICALLY TOO, since 2026-10-18. It was sideways only, which assumed the children stand in
-    a row. A small child in the BACKGROUND stands above a big one in the foreground instead —
-    the composition the household asked for ("I like the option of having kids smaller and in
-    the background") — and `2026w43-autumn-forest-nb2` was refused for an 8px gap between a
-    girl at a leaf hut and the boy below her, which no sideways trim can open because the two
-    boxes overlap across their whole width. So the pair is opened along whichever axis is
-    nearer: a stacked pair gives up the bottom of the upper box first (feet and knees, never
-    the head that tells her apart), then the top of the lower one, and neither goes under
-    `TAP_FLOOR_PX` in height — the floor `check` holds every height to.
+    The child is what you look for and the target is what you touch, and two children standing
+    together is the common case: their padded targets overlap while the children do not. On
+    2026-09-12 the finder refused the two best pictures of the morning for a 1px and a 5px gap,
+    and on 2026-10-27 it refused `2026w44-halloween-party-lantern-night-eye-level-nb2` because
+    two targets overlapped by 28px, a fifth of the narrower one, with both girls plainly
+    visible. The household's rule since that night: an overlap of up to `MAX_OVERLAP` is
+    fitted, by moving the shared edge to the middle of the overlap, and the targets may touch.
+
+    Each side gives up half. A target already at its floor (`ABS_TAP_FLOOR_PX` wide,
+    `TAP_FLOOR_PX` tall) gives nothing, and its neighbour pays the rest. A pair that still
+    overlaps after that, or that overlaps by more than `MAX_OVERLAP`, is left as it is and
+    `check` refuses the scene: that is one figure drawn across another, a picture to refuse
+    and not a pair of rectangles to shave into slivers.
+
+    Along whichever axis they overlap least, since 2026-10-18: a small child further back
+    stands ABOVE a near one rather than beside her (*"I like the option of having kids smaller
+    and in the background"*), and a stacked pair is split across the horizontal instead.
     """
     abs_floor_w = ABS_TAP_FLOOR_PX / LOGICAL_W
     floor_h = TAP_FLOOR_PX / LOGICAL_H
     for i, a in enumerate(regions):
         for b in regions[i + 1:]:
-            gap_x = max(a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"])) * LOGICAL_W
-            gap_y = max(a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"])) * LOGICAL_H
-            if max(gap_x, gap_y) >= GUTTER_PX:
-                continue                       # already clear on one axis; nothing to open
-            short_x, short_y = GUTTER_PX - gap_x, GUTTER_PX - gap_y
-            for axis in sorted(("x", "y"), key=lambda k: short_x if k == "x" else short_y):
-                short_px = short_x if axis == "x" else short_y
-                if short_px > MAX_TRIM_PX:
-                    continue
-                if axis == "x":
-                    # Sideways: from the wider target first, then split what is left.
-                    left, right = (a, b) if a["x"] <= b["x"] else (b, a)
-                    short = short_px / LOGICAL_W
-                    for r, side in sorted(((left, "right"), (right, "left")), key=lambda t: -t[0]["w"]):
-                        give = min(short, max(0.0, r["w"] - abs_floor_w))
-                        if give <= 0:
-                            continue
-                        r["w"] -= give
-                        if side == "left":
-                            r["x"] += give
-                        r["trimmed"] = True
-                        short -= give
-                        if short <= 1e-9:
-                            break
-                else:
-                    # Stacked: the upper box's feet first, then the lower box's top.
-                    upper, lower = (a, b) if a["y"] <= b["y"] else (b, a)
-                    short = short_px / LOGICAL_H
-                    for r, side in ((upper, "bottom"), (lower, "top")):
-                        give = min(short, max(0.0, r["h"] - floor_h))
-                        if give <= 0:
-                            continue
-                        r["h"] -= give
-                        if side == "top":
-                            r["y"] += give
-                        r["trimmed_h"] = True      # height only; the width floor is untouched
-                        short -= give
-                        if short <= 1e-9:
-                            break
-                if short <= 1e-9:
-                    break
+            o = overlap(a, b)
+            if o is None or o[2] > MAX_OVERLAP + 1e-9:
+                continue
+            axis, px, _ = o
+            pos, size, floor, flag = (("x", "w", abs_floor_w, "trimmed") if axis == "x"
+                                      else ("y", "h", floor_h, "trimmed_h"))
+            unit = LOGICAL_W if axis == "x" else LOGICAL_H
+            first, second = (a, b) if a[pos] <= b[pos] else (b, a)   # first is left / upper
+            need = px / unit
+            room = {id(r): max(0.0, r[size] - floor) for r in (first, second)}
+            give_first = min(need / 2, room[id(first)])
+            give_second = min(need - give_first, room[id(second)])
+            give_first = min(need - give_second, room[id(first)])    # first pays what second cannot
+            if give_first + give_second < need - 1e-9:
+                continue                       # cannot clear above the floors; check refuses
+            if give_first > 0:
+                first[size] -= give_first      # its far edge comes in
+                first[flag] = True
+            if give_second > 0:
+                second[pos] += give_second     # its near edge moves out
+                second[size] -= give_second
+                second[flag] = True
 
 
 def check(regions: list[dict], children: int = 3) -> list[str]:
@@ -705,12 +696,13 @@ def check(regions: list[dict], children: int = 3) -> list[str]:
             )
     for i, a in enumerate(regions):
         for b in regions[i + 1:]:
-            gap_x = max(a["x"] - (b["x"] + b["w"]), b["x"] - (a["x"] + a["w"])) * LOGICAL_W
-            gap_y = max(a["y"] - (b["y"] + b["h"]), b["y"] - (a["y"] + a["h"])) * LOGICAL_H
-            gap = max(gap_x, gap_y)
-            if gap < GUTTER_PX - 1e-6:         # a gutter opened to exactly 16px is 16px
+            o = overlap(a, b)
+            if o is not None and o[1] > 0.5:   # sub-pixel float residue after a split is touching
                 problems.append(
-                    f"slots {a['slot']} and {b['slot']}: {gap:.0f}px apart, under the {GUTTER_PX}px gutter"
+                    f"slots {a['slot']} and {b['slot']}: targets overlap by {o[1]:.0f}px "
+                    f"({o[2]:.0%} of the smaller), "
+                    + (f"more than the {MAX_OVERLAP:.0%} that is fitted" if o[2] > MAX_OVERLAP
+                       else "and cannot be split above the tap floors")
                 )
     return problems
 
@@ -782,7 +774,11 @@ LOOKALIKE_MAX_CANDIDATES = len(LETTERS)
 # temperature 0) ran past the 120 s timeout on every attempt of three runs (2026-10-20). At
 # 1200 a crowded `swim-pool` list was cut off mid-JSON; 3000 holds ~70 children and still
 # stops a loop in seconds. A cut-off answer is unreadable JSON, which refuses, never errors.
-LOOKALIKE_MAX_TOKENS = 3000
+# 8000 since 2026-10-27: a Halloween party with a crowd of costumed children ran past 3000 on
+# both attempts (7204 characters of a still-growing list, then a loop), and both party
+# pictures were refused as "unreadable" with their geometry already passing. A loop still ends
+# at the cap within the 180 s timeout; it just ends later.
+LOOKALIKE_MAX_TOKENS = 8000
 # A run of this many boxes with one top and one bottom that TILE sideways (each starting where
 # the last ended) or step evenly at one width is the model COUNTING, not seeing: on
 # `2026w42-swim-pool-gpt` (2026-10-20) it cut a bleacher into [250, 268, 320, 296],
@@ -1094,7 +1090,7 @@ def main(scene_id: str, image: str, dst: str) -> None:
     ]
     tighten_to_head(regions)
     grow_to_tap_floor(regions)
-    fit_gutters(regions)
+    fit_overlaps(regions)
     problems = bad_boxes + too_far_back + check(regions, n)
     # The content pass runs EVEN WHEN GEOMETRY FAILS. They are different classes of problem
     # with different fixes — a gutter violation means re-roll the layout, a bare-chested child
@@ -1110,7 +1106,7 @@ def main(scene_id: str, image: str, dst: str) -> None:
         print(f"  slot {r['slot']}  {r['w'] * LOGICAL_W:5.0f}x{r['h'] * LOGICAL_H:5.0f} logical px"
               f"  at ({r['x']:.3f}, {r['y']:.3f})"
               f"{'  [tightened to the head]' if r.get('tightened') else ''}"
-              f"{'  [trimmed to open a gutter]' if r.get('trimmed') or r.get('trimmed_h') else ''}"
+              f"{'  [trimmed to clear a neighbour]' if r.get('trimmed') or r.get('trimmed_h') else ''}"
               f"  — {r['find']}", file=sys.stderr)
 
     if problems:
@@ -1245,34 +1241,55 @@ def selftest() -> None:
                 "w": (x1 - x0) / LOGICAL_W, "h": (y1 - y0) / LOGICAL_H}
 
     # 2026w43-autumn-forest-nb2, as the finder measured it: a small girl at the leaf hut stands
-    # 8px above the boy's box below her. Refused for the gutter before; it must pass now.
+    # 8px above the boy's box below her. Refused for the old 12px gutter; clear targets that
+    # nearly touch are fine now and nothing is trimmed.
     nb2 = [box(1, 140, 300, 260, 480), box(2, 552, 237, 600, 316), box(0, 470, 324, 794, 486)]
-    assert any("gutter" in p or "apart" in p or "gap" in p for p in check([dict(r) for r in nb2])), \
-        "the nb2 pair was supposed to fail before fitting"
-    fit_gutters(nb2)
+    fit_overlaps(nb2)
     assert check(nb2) == [], check(nb2)
-    girl, boy = nb2[1], nb2[2]
-    assert girl.get("trimmed_h") and not girl.get("trimmed"), "stacked pair trims height, not width"
-    assert abs(girl["h"] * LOGICAL_H - 75) < 0.01, girl["h"] * LOGICAL_H   # 4px off her feet
-    assert abs(boy["y"] * LOGICAL_H - 324) < 0.01, "the lower box keeps its top when the upper can pay"
+    assert not any(r.get("trimmed") or r.get("trimmed_h") for r in nb2), "a near miss is untouched"
 
-    # Side by side: unchanged behaviour, sideways trim, wider box first.
-    row = [box(0, 100, 100, 200, 400), box(1, 205, 100, 285, 400), box(2, 600, 100, 700, 400)]
-    fit_gutters(row)
-    assert check(row) == [], check(row)
-    assert row[0].get("trimmed") and not row[0].get("trimmed_h")
+    # 2026w44-halloween-party-lantern-night-eye-level-nb2, as measured: the eldest's target and
+    # the middle child's overlap by 28px, 19.6% of the narrower. Split down the middle: each
+    # gives 14px and they touch at x=446.
+    party = [box(1, 302, 191, 460, 435), box(2, 432, 258, 575, 416), box(0, 587, 319, 746, 540)]
+    assert check([dict(r) for r in party]) != [], "the party pair overlaps before fitting"
+    fit_overlaps(party)
+    assert check(party) == [], check(party)
+    eldest, middle = party[0], party[1]
+    assert abs((eldest["x"] + eldest["w"]) * LOGICAL_W - 446) < 0.01, eldest
+    assert abs(middle["x"] * LOGICAL_W - 446) < 0.01, middle
+    assert eldest.get("trimmed") and middle.get("trimmed") and not eldest.get("trimmed_h")
 
-    # One child drawn across another is still a refusal on both axes.
+    # Stacked: a 20px overlap across the whole width is split on the horizontal.
+    stack = [box(0, 300, 100, 400, 260), box(1, 300, 240, 400, 400), box(2, 700, 100, 800, 400)]
+    fit_overlaps(stack)
+    assert check(stack) == [], check(stack)
+    assert abs((stack[0]["y"] + stack[0]["h"]) * LOGICAL_H - 250) < 0.01
+    assert abs(stack[1]["y"] * LOGICAL_H - 250) < 0.01 and stack[1].get("trimmed_h")
+
+    # Over 25%: one child drawn across another is still a refusal, and nothing is shaved.
     over = [box(0, 100, 100, 260, 400), box(1, 200, 200, 300, 450), box(2, 600, 100, 700, 400)]
-    fit_gutters(over)
-    assert check(over) != [], "an overlap of 60px is a picture to refuse, not to shave"
+    before = [dict(r) for r in over]
+    fit_overlaps(over)
+    assert over == before, "a refused overlap is left as found"
+    assert any("more than the 25%" in p for p in check(over)), check(over)
+    just_over = [box(0, 100, 100, 200, 400), box(1, 174, 100, 274, 400), box(2, 600, 100, 700, 400)]
+    fit_overlaps(just_over)
+    assert check(just_over) != [], "26% is refused"
+    # 21%: refused under the old 20% (the 2026-10-28 party pair was 20.3%), now split.
+    party_pair = [box(0, 100, 100, 200, 400), box(1, 179, 100, 279, 400), box(2, 600, 100, 700, 400)]
+    fit_overlaps(party_pair)
+    assert check(party_pair) == [], check(party_pair)
 
-    # A stacked pair whose upper box is already at the height floor takes the rest from below.
-    floor = [box(0, 300, 100, 360, 100 + TAP_FLOOR_PX), box(1, 300, 100 + TAP_FLOOR_PX + 6, 400, 400),
+    # A target already trimmed to the dime floor (by another neighbour) gives nothing; this
+    # neighbour pays the whole 7px overlap.
+    floor = [box(0, 300, 100, 300 + ABS_TAP_FLOOR_PX, 400), box(1, 329, 100, 460, 400),
              box(2, 700, 100, 800, 400)]
-    fit_gutters(floor)
+    floor[0]["trimmed"] = True
+    fit_overlaps(floor)
     assert check(floor) == [], check(floor)
-    assert abs(floor[0]["h"] * LOGICAL_H - TAP_FLOOR_PX) < 0.01
+    assert abs(floor[0]["w"] * LOGICAL_W - ABS_TAP_FLOOR_PX) < 0.01
+    assert abs(floor[1]["x"] * LOGICAL_W - (300 + ABS_TAP_FLOOR_PX)) < 0.01
     # The boy in nb2 as the locator boxed him, squirrel and log included, and his head box.
     boy = box(0, 470, 324, 794, 486)
     boy["head"] = {"x": 681 / LOGICAL_W, "y": 324 / LOGICAL_H, "w": 87 / LOGICAL_W, "h": 78 / LOGICAL_H}
@@ -1360,7 +1377,7 @@ def selftest() -> None:
         m = Image.open(out)
         assert m.size == (1920, 1080) and m.getpixel((200, 400)) != (40, 120, 40), "frame drawn"
         assert m.getpixel((1800, 1000)) == (40, 120, 40), "nothing drawn outside the frames"
-    print("gutter fitting OK (stacked, side by side, overlap, height floor, head-anchored width)")
+    print("overlap fitting OK (near miss, split, stacked, over 25%, floor, head-anchored width)")
     print("look-alike verdict OK (a near twin refuses; far back and framed pass; unreadable refuses)")
     print("dog placement OK (beside a child kept, touching kept, inside dropped)")
 

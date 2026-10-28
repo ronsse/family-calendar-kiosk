@@ -158,6 +158,7 @@ function choreView(assignmentId: number, childId: string, state: ChoreState, lab
     localDate: TODAY,
     state,
     kind: 'extra',
+    countsTowardDay: false,
     dueByLocal: null,
     claimedAtUtc: null,
     points: 2,

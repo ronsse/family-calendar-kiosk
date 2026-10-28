@@ -282,6 +282,21 @@ at the process level.
 
 ## Amendments
 
+### 2026-10-27 — a duty can be a reminder (schema v13)
+
+`chore.counts_toward_day` (INTEGER 0/1, default 1), and `ChoreAssignmentView.countsTowardDay`
+on the wire. It says whether finishing the row counts toward a full day (ADR-0006 §4). A duty
+with `0` is a **reminder**: it is still on the board, still claimable and still pays what it
+pays, but it leaves the day's count on both sides, done or not, the way `superseded` does.
+Homework and eye exercises are the first two: not every day has homework, so leaving it
+undone must not cost the day. An extra is always `false`.
+
+Authored only through `db/chores.json` as `countsTowardDay` (optional; a duty defaults to
+`true`, an extra to `false`, and `true` on an extra is refused). The wall's New-chore sheet
+does not set it, so a chore made on the wall counts. Nothing on the wall draws the field yet;
+it is on the wire for the celebration (ADR-0006 §6), which must use the same definition as
+`dayCounts`. No error code or `InvalidateScope` is added.
+
 ### 2026-10-20 — a countdown's own horizon (schema v12)
 
 `countdown.horizon_days` (nullable INTEGER, 0–366). A countdown is off the wire until its

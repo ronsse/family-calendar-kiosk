@@ -41,13 +41,14 @@ interface ViewRow {
   kind: string;
   due_by_local: string | null;
   claimed_at_utc: string | null;
+  counts_toward_day: number;
 }
 
 const VIEW_SQL = `
   SELECT a.id AS assignment_id, a.child_id, a.state, a.claimed_at_utc,
          d.local_date, d.points_each,
          ch.id AS chore_id, ch.label_short, ch.label_full, ch.icon_asset_id, ch.category,
-         ch.kind, ch.due_by_local
+         ch.kind, ch.due_by_local, ch.counts_toward_day
     FROM chore_assignment a
     JOIN chore_day d ON d.id = a.chore_day_id
     JOIN chore ch    ON ch.id = d.chore_id
@@ -139,6 +140,7 @@ function toView(db: Db, r: ViewRow): ChoreAssignmentView {
     // existing table), so the read is where an unexpected value is caught. Anything that is
     // not 'extra' is a duty: the safe direction is the one that does not promise money.
     kind: (r.kind === 'extra' ? 'extra' : 'duty') satisfies ChoreKind,
+    countsTowardDay: r.kind !== 'extra' && r.counts_toward_day !== 0,
     dueByLocal: normaliseDueBy(r.due_by_local),
     points: r.points_each,
     labelShort: r.label_short,

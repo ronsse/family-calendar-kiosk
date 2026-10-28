@@ -80,20 +80,27 @@ PROPS = {
     "kitchen":     "a mixing bowl and an apron",
 }
 
-# The run's holiday, if any, by (month, day) of any day in its window. Easter is computed.
+# The run's holiday, if any: (first day, last day, words). A run whose window touches any day of
+# the span gets it. Until 2026-10-28 every holiday was ONE day, so of Halloween's two runs only
+# the one holding the 31st heard of it — the Sunday-to-Tuesday before it was "an ordinary autumn
+# week" to the director. The big three now run the week up to the day (docs/scene-variety-plan.md
+# D); Easter and Thanksgiving are computed in holidays_in().
 HOLIDAYS = [
-    ((10, 31), "Halloween: carved pumpkins on steps, and any costume is worn OVER ordinary clothes "
-               "with no mask and the hair fully showing"),
-    ((12, 24), "Christmas week: lights along the eaves, a decorated tree seen through a window, "
-               "wrapped parcels"),
-    ((12, 25), "Christmas week: lights along the eaves, a decorated tree seen through a window, "
-               "wrapped parcels"),
-    ((12, 31), "New Year: paper streamers, a few balloons, and someone carrying a clock"),
-    ((1, 1),   "New Year: paper streamers, a few balloons, and someone carrying a clock"),
-    ((2, 14),  "Valentine's: paper hearts in windows and a bunch of red flowers"),
-    ((3, 17),  "St Patrick's: shamrocks and a lot of green worn by the crowd"),
-    ((7, 4),   "the Fourth of July: bunting, small flags, and a parade forming up in the distance"),
+    ((10, 24), (10, 31), "Halloween week: carved pumpkins on steps, and any costume is worn OVER "
+                         "ordinary clothes with no mask and the hair fully showing"),
+    ((12, 18), (12, 25), "Christmas week: lights along the eaves, a decorated tree seen through a "
+                         "window, wrapped parcels"),
+    ((12, 31), (1, 1),   "New Year: paper streamers, a few balloons, and someone carrying a clock"),
+    ((2, 14), (2, 14),   "Valentine's: paper hearts in windows and a bunch of red flowers"),
+    ((3, 17), (3, 17),   "St Patrick's: shamrocks and a lot of green worn by the crowd"),
+    ((7, 4), (7, 4),     "the Fourth of July: bunting, small flags, and a parade forming up in the "
+                         "distance"),
 ]
+
+
+def _in_span(day: dt.date, first: tuple[int, int], last: tuple[int, int]) -> bool:
+    key = (day.month, day.day)
+    return first <= key <= last if first <= last else (key >= first or key <= last)
 
 
 def easter(year: int) -> dt.date:
@@ -181,16 +188,16 @@ def run_for_today(today: dt.date | None = None) -> tuple[dt.date, str]:
 def holidays_in(start: dt.date, end: dt.date) -> list[str]:
     days = [start + dt.timedelta(days=i) for i in range((end - start).days + 1)]
     found: list[str] = []
-    for day in days:
-        for (m, d), text in HOLIDAYS:
-            if (day.month, day.day) == (m, d) and text not in found:
-                found.append(text)
+    for first, last, text in HOLIDAYS:
+        if any(_in_span(day, first, last) for day in days):
+            found.append(text)
     for day in days:
         if day == easter(day.year):
             found.append("Easter: painted eggs half hidden in the grass and a basket or two")
-        if day == thanksgiving(day.year):
-            found.append("Thanksgiving: a long table being laid outdoors or seen through a window, "
-                         "and a pile of pumpkins")
+    thanks = thanksgiving(start.year)
+    if any(thanks - dt.timedelta(days=6) <= day <= thanks for day in days):
+        found.append("Thanksgiving week: a long table being laid outdoors or seen through a "
+                     "window, and a pile of pumpkins")
     return found
 
 

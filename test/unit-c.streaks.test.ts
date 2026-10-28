@@ -66,7 +66,7 @@ function assign(
   db: Db,
   date: string,
   state: 'pending' | 'claimed' | 'approved' | 'superseded',
-  opts: { kind?: 'duty' | 'extra'; child?: string; slot?: number } = {},
+  opts: { kind?: 'duty' | 'extra'; child?: string; slot?: number; reminder?: boolean } = {},
 ): void {
   const choreId = choreOf(db, opts.kind ?? 'duty');
   const slot = opts.slot ?? 0;
@@ -83,6 +83,11 @@ function assign(
       dayChore, src['label_short'], src['label_full'], src['icon_asset_id'], src['category'],
       src['assignment_model'], src['base_points'], src['rrule'], src['kind'],
     );
+  }
+  // A reminder needs its own chore row (a slot), or it would turn the shared one off too.
+  if (opts.reminder === true) {
+    assert.notEqual(slot, 0, 'give a reminder its own slot');
+    db.prepare(`UPDATE chore SET counts_toward_day = 0 WHERE id = ?`).run(dayChore);
   }
   db.prepare(
     `INSERT OR IGNORE INTO chore_day (chore_id, local_date, points_each, model, created_at_utc)
@@ -203,6 +208,27 @@ test('an EXTRA left undone never breaks a duty streak', () => {
     assign(db, '2026-03-02', 'approved');
     assign(db, '2026-03-02', 'pending', { kind: 'extra' });
     assert.equal(streak(db, '2026-03-02'), 2);
+  } finally {
+    cleanup();
+  }
+});
+
+test('a REMINDER duty leaves the day on both sides, done or not (rule 7)', () => {
+  // Homework is not set every day and eye exercises get skipped; the household put both on the
+  // board as reminders (2026-10-27). Two of them left undone beside one real duty would be two
+  // misses under the one-miss allowance, and the day would fail. They must not count at all.
+  const { db, cleanup } = freshDb();
+  try {
+    assign(db, '2026-03-01', 'approved');
+    assign(db, '2026-03-01', 'pending', { slot: 1, reminder: true });
+    assign(db, '2026-03-01', 'pending', { slot: 2, reminder: true });
+    assert.equal(streak(db, '2026-03-01'), 1, 'two undone reminders do not cost the day');
+
+    // A day of nothing but reminders is neutral: it neither extends the run nor ends it.
+    assign(db, '2026-03-02', 'approved', { slot: 1, reminder: true });
+    assign(db, '2026-03-02', 'pending', { slot: 2, reminder: true });
+    assign(db, '2026-03-03', 'approved');
+    assert.equal(streak(db, '2026-03-03'), 2, 'the reminders-only day is skipped, not counted');
   } finally {
     cleanup();
   }

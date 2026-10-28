@@ -169,6 +169,13 @@ export interface ChoreAssignmentView {
   state: ChoreState;
   kind: ChoreKind;
   /**
+   * Whether finishing it counts toward the child's full day (ADR-0006 §4). Always `false` for
+   * an extra. A duty that does not count is on the board as a reminder — homework, eye
+   * exercises — and leaving it undone costs the day nothing. Added 2026-10-27 (schema v13) for
+   * the all-done celebration, which must judge the day the way the server does.
+   */
+  countsTowardDay: boolean;
+  /**
    * "HH:MM" local, or `null` for a chore with no window.
    *
    * Carried RAW, and lateness is derived from it in the view layer against the wall's own

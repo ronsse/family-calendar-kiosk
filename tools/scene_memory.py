@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -35,6 +36,8 @@ CONTAINER = os.environ.get("WALL_CONTAINER", "family-calendar-wall")
 # leaves eight of eleven styles free — enough that a premise restricted to one family still has
 # somewhere to go.
 RECENT_STYLES = 3
+# Six settings is three runs of two pictures: the last week and a half of the wall.
+RECENT_SETTINGS = 6
 
 SCENES_JS = r"""
 const {DatabaseSync} = require("node:sqlite");
@@ -81,18 +84,40 @@ def recent_styles(rows: list[dict], base_id: str, suffixes: set[str],
     return seen
 
 
+def recent_settings(rows: list[dict], known: list[str], limit: int = RECENT_SETTINGS) -> list[str]:
+    """The settings of the wall's most recent pictures, newest first, from their ids
+    (`2026w43b-big-library-gpt` → big-library). Longest catalog id that the remainder starts
+    with; an invented setting is whatever is left after the model suffix.
+
+    Here rather than in the director since 2026-10-28, because the ROTATION needs it too: the
+    fallback was week arithmetic and could hand back the library the wall showed on Sunday."""
+    out: list[str] = []
+    for row in rows:
+        rest = re.sub(r"^\d{4}w\d{2}b?-", "", row.get("id", ""))
+        hit = max((k for k in known if rest == k or rest.startswith(k + "-")), key=len, default=None)
+        name = hit or re.sub(r"-(?:gpt|nb2|nbpro|flux)$", "", rest)
+        if name and name not in out:
+            out.append(name)
+        if len(out) == limit:
+            break
+    return out
+
+
 def own_style(rows: list[dict], base_id: str, suffixes: set[str]) -> str | None:
     return next((r["style_id"] for r in rows if belongs(r["id"], base_id, suffixes)), None)
 
 
 def settle(proposed: dict, pool: list[dict], rows: list[dict], base_id: str,
-           suffixes: set[str]) -> tuple[dict, str]:
-    """(style, one line saying why). `pool` is the styles allowed here, in rotation order."""
+           suffixes: set[str], extra_avoid: list[str] = ()) -> tuple[dict, str]:
+    """(style, one line saying why). `pool` is the styles allowed here, in rotation order.
+    `extra_avoid` is a style this run has already given its OTHER picture (2026-10-28: the two
+    candidates of a run are two different pictures, and the same style twice reads as one)."""
     by_id = {s["id"]: s for s in pool}
     mine = own_style(rows, base_id, suffixes)
     if mine in by_id:
         return by_id[mine], f"already drawn in {mine} — kept, so a re-run is the same picture"
-    avoid = recent_styles(rows, base_id, suffixes)
+    avoid = list(extra_avoid) + [s for s in recent_styles(rows, base_id, suffixes)
+                                 if s not in extra_avoid]
     start = next((i for i, s in enumerate(pool) if s["id"] == proposed["id"]), 0)
     for step in range(len(pool)):
         cand = pool[(start + step) % len(pool)]
@@ -134,6 +159,13 @@ def selftest() -> None:
     # A pool that is entirely recent keeps the rotation's pick rather than failing the week.
     got, why = settle({"id": "anime"}, [{"id": "anime"}], rows, "q", sfx)
     assert got["id"] == "anime" and "EVERY" in why, why
+    # The run's other picture is avoided as well as the wall's recent ones.
+    got, _ = settle({"id": "paper-diorama"}, pool, rows, "q", sfx, extra_avoid=["paper-diorama"])
+    assert got["id"] == "low-poly", got
+    # Setting recency, from ids: a forced style's suffix and the model's are not the setting.
+    assert recent_settings([{"id": "2026w43b-book-fair-cozy-painted-gpt"}, {"id": "2026w43-ski-mountain-nb2"},
+                            {"id": "2026w42-book-fair-gpt"}], ["book-fair", "big-library"]) \
+        == ["book-fair", "ski-mountain"]
     print("scene_memory selftest: ok")
 
 

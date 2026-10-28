@@ -60,6 +60,7 @@ test('migrate applies to an empty database and is idempotent', () => {
  * not-quite-v1 database would test the upgrade path against a shape production never has.
  */
 const UNDO: readonly { readonly from: number; readonly sql: string }[] = [
+  { from: 13, sql: 'ALTER TABLE chore DROP COLUMN counts_toward_day;' },
   { from: 12, sql: 'ALTER TABLE countdown DROP COLUMN horizon_days;' },
   { from: 11, sql: 'DROP TABLE scene_decision;' },
   { from: 10, sql: 'ALTER TABLE calendar_event DROP COLUMN category;' },

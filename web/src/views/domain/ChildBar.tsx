@@ -75,7 +75,7 @@ import type { RailDraw } from '../logic/theme.ts';
  * "Child" and nothing for the pre-reader; his name is for the readers in the room, not for him.
  *
  * The rail carries no progress, and that is a measurement rather than a preference. Marks
- * wrap: the middle child's eight ran to two rows, his tile came to ~190px, and three tiles then needed
+ * wrap: the middle child's eight ran to two rows, her tile came to ~190px, and three tiles then needed
  * more than the 420px the shell has to give. Progress belongs on the face as a RING — which
  * costs no height at all, and is what Skylight does (H5 §2) — and until that exists the rail
  * is navigation and only navigation.
