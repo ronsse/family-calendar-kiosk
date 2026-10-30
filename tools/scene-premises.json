@@ -167,6 +167,555 @@
           "family": "eat"
         }
       ]
+    },
+    {
+      "id": "toy-world",
+      "cast": [2, 3, 4, 5],
+      "label": "A toy-box world",
+      "wall": "Everything in the place is a toy at the children's own size — block houses they can duck into, wooden cone trees as tall as they are, a train set for a road — and they are the only soft, living figures in it. NOT giants: the toys are child-scale and the children walk through them, where `giants` puts a tiny town at their ankles. Written 2026-10-29, untested. The identity trick is the busy-town one made structural: every other person is a wooden peg doll with a smooth painted bead for a head, so hair belongs to the children by construction. Strongest in the `render` family (soft-3d, claymation), where glossy paint and wood grain are free. Watch for: a peg doll drawn with painted-on hair in a child's colour (the finder's look-alike check is the backstop), and the dog rendered as a plush toy — he is named after the crowd sentence and should still be himself.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is a picture of a TOY-BOX WORLD: the place described above has been built entirely out of toys and stands on a wooden playroom floor. The trees are painted wooden cones and bottle-brush pines, the houses are stacked building blocks with hinged roofs and painted-on windows, the hills are folded green felt, the river is a strip of shiny blue ribbon, the road is a wooden train track with a clockwork engine puffing round it, and the sky is the warm, plain wall of the playroom. Everything has the smooth, glossy, slightly chunky look of a well-loved toy: visible wood grain, thick paint, a wind-up key in the side of a tin car, stitches on a plush animal. The toys are built at the children's own size — a block house they could duck into, a wooden tree as tall as they are, a toy car they could sit on — and {the_children} are the only soft, living people in it, as if they had climbed into the toy box to play.",
+      "layout": "{The_children} are spread across the toy world with clear floor between them, each at least a quarter of the picture's height, each standing upright or sitting up straight on the playroom floor among the toys at their own size, never crouching or kneeling, never on top of one another and never in a huddle. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The toy world is crowded with toy versions of the place: {crowd} — every one of them made as a toy. EVERY PERSON among them is a wooden peg doll with a smooth, round, painted bead for a head and no hair at all: two painted dots for eyes, a painted smile, a painted coat. Peg dolls sit in toy carts, stand at toy stalls and lean against blocks everywhere, and the animals are plush animals with stitched seams or carved wooden ones on little wheels.",
+      "nearest": "{The_children} are the only children in the picture, and the only figures with hair, soft faces and cloth clothes; every other person in it is a smooth-headed wooden peg doll.",
+      "rules": "Every block is one plain painted colour on every face, every toy box is bare varnished wood, and every tin toy is painted in plain stripes and spots.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "stacking painted wooden blocks into a tower taller than themselves",
+          "family": "building"
+        },
+        {
+          "do": "building a bridge of wooden planks over the ribbon river",
+          "family": "building"
+        },
+        {
+          "do": "riding a wooden rocking horse painted with stars",
+          "family": "riding"
+        },
+        {
+          "do": "sitting on a big wind-up tin car and turning its key",
+          "family": "riding"
+        },
+        {
+          "do": "pushing a toy train along the wooden track behind its puffing engine",
+          "family": "play"
+        },
+        {
+          "do": "rolling a huge wooden ball down a felt hill",
+          "family": "play"
+        },
+        {
+          "do": "setting a striped top as tall as their waist spinning with one hand",
+          "family": "play"
+        },
+        {
+          "do": "winding up a tin robot and watching it walk",
+          "family": "wonder"
+        },
+        {
+          "do": "lifting the hinged roof off a block house to look inside",
+          "family": "wonder"
+        },
+        {
+          "do": "lining up wooden ducks on wheels in a long row",
+          "family": "arrange"
+        },
+        {
+          "do": "pulling a wooden duck on a string across the floor",
+          "family": "pull"
+        },
+        {
+          "do": "tapping a wooden xylophone with a mallet",
+          "family": "music"
+        }
+      ]
+    },
+    {
+      "id": "food-land",
+      "cast": [2, 3, 4, 5],
+      "label": "A land made of food",
+      "wall": "The place rebuilt out of things to eat — loaf hills, broccoli trees, a honey river, gingerbread houses — at the children's size, so a biscuit is a stepping stone and a strawberry comes up to a knee. The thing a three-year-old points at first. Written 2026-10-29, untested. Same structural identity trick as toy-world: every other person is a gingerbread figure with a smooth biscuit head, so no hair in the frame but the children's. Textures are the whole picture (crust, glossy icing, sugar sparkle), which suits every family and especially `render`. Watch for: wrappers and packets — they carry print, so the brief names only unwrapped food; and a model reading 'at the children's size' as 'the children are tiny', which would make it a `tiny` variant. The layout says they stand on the food ground at ordinary size.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is a picture of a LAND MADE OF FOOD: the place described above is built entirely out of things to eat. The hills are crusty loaves of bread, the trees are stalks of broccoli and sticks of pink candyfloss, the rocks are muffins and cupcakes, the path is a row of round biscuits, the river is slow golden honey, the ponds are bowls of wobbling jelly, the houses have gingerbread walls, white icing roofs and clear sugar-pane windows, and the fences are breadsticks. It is all built at the children's own scale: a loaf is a hill they can climb, a biscuit is a stepping stone, a strawberry comes up to a child's knee. The textures are the point — crumbly crust, glossy icing, the dimples on a strawberry, sugar sparkling on a sponge — in warm, bright, delicious colours.",
+      "layout": "{The_children} are drawn just as their portraits show them, with their own hair and their own heights, and they are the only things in the land not made of food. They are their ordinary size, standing on the food ground among the loaves and the biscuits, spread across the scene with clear ground between them and each at least a quarter of the picture's height, never in a huddle. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The land is busy: {crowd} — all of it made of food. EVERY PERSON among them is a gingerbread person with a smooth, round biscuit head, icing eyes and an icing smile, sugar buttons down the front and no hair at all; the animals are marzipan animals and sugar mice.",
+      "nearest": "{The_children} are the only children in the picture, and the only figures with hair; every other person in it is a smooth-headed gingerbread figure.",
+      "rules": "Every piece of food is bare, straight from the oven or the bowl: plain crusty bread, plain biscuits, bare boiled sweets and sugar in heaps.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "climbing a crusty loaf-of-bread hill",
+          "family": "climb"
+        },
+        {
+          "do": "climbing a ladder of breadsticks up the side of a cake",
+          "family": "climb"
+        },
+        {
+          "do": "sliding down a long curved spoon into a bowl of jelly",
+          "family": "slide"
+        },
+        {
+          "do": "sailing a hollowed bread roll across a pond of blue jelly",
+          "family": "boat"
+        },
+        {
+          "do": "rolling a giant green pea along a biscuit path",
+          "family": "play"
+        },
+        {
+          "do": "bouncing on a wobbling pond of jelly",
+          "family": "play"
+        },
+        {
+          "do": "picking sugar flowers in a meadow of green icing",
+          "family": "gather"
+        },
+        {
+          "do": "knocking on the icing door of a gingerbread house",
+          "family": "visit"
+        },
+        {
+          "do": "catching marshmallows that drift down like snow",
+          "family": "wonder"
+        },
+        {
+          "do": "holding a lollipop twice as tall as themselves",
+          "family": "eat"
+        },
+        {
+          "do": "stacking pancakes into a leaning tower",
+          "family": "building"
+        },
+        {
+          "do": "riding a sugar mouse the size of a pony",
+          "family": "riding"
+        }
+      ]
+    },
+    {
+      "id": "board-game",
+      "cast": [2, 3, 4, 5],
+      "label": "A giant board game",
+      "wall": "The place has become the board: a path of big flat coloured squares snakes across the ground, a die the size of a shed, a spinner, a ladder and a slide between squares, and the children are the players standing ON the path. Written 2026-10-29, untested. Pins `high-angle` so the path reads as a path. The squares do the finder's work — one child per square with empty squares between, which is the cutaway's rooms laid flat. The other players are wooden pawns with no hair and no faces. Watch for: anything on the board that wants print — the brief says plain single-colour squares, round black dots on the die, coloured wedges on the spinner, and the rules say so again; a board game is the one premise here whose props carry numbers in real life, so this is the risk to look at first.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "camera": "high-angle",
+      "brief": "This is a picture of a GIANT BOARD GAME: the place described above has become the board, and a winding path of big flat coloured squares — red, yellow, blue, green, one after another, each a single plain colour and each big enough for a child to stand on — snakes across the ground from one corner of the picture to the other, over the hills and between the buildings. Scattered about the board at a size to match are the pieces of the game: a wooden die as big as a garden shed with round black dots on its faces, a spinner with coloured wedges and a big pointer, tall painted playing pieces shaped like pawns, a stack of round wooden counters, a little ladder leaning from one square up to a higher one and a curly slide running from a high square down to a low one. {The_children} are the players.",
+      "layout": "{The_children} are each at a DIFFERENT square of the path, well apart along it with several empty squares between one child and the next — standing on the square itself, all of them on the near half of the board in the lower two-thirds of the picture — each at least a quarter of the picture's height. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "Around the board the place carries on at its own size: {crowd}; and the OTHER PLAYERS waiting beside the path are tall wooden pawns and painted playing pieces — smooth and rounded, with no hair and no faces — standing on squares of their own.",
+      "nearest": "{The_children} are the only children in the picture; every other player on the board is a wooden playing piece.",
+      "rules": "Every square of the path is one flat plain colour, the die shows only round black dots, and the spinner shows only coloured wedges.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "pushing over a wooden die as big as a garden shed",
+          "family": "roll"
+        },
+        {
+          "do": "rolling a round wooden counter along the path like a hoop",
+          "family": "roll"
+        },
+        {
+          "do": "climbing a little ladder from one square up to the next",
+          "family": "climb"
+        },
+        {
+          "do": "landing at the foot of a curly slide with both arms up",
+          "family": "slide"
+        },
+        {
+          "do": "spinning a giant spinner with both hands",
+          "family": "spin"
+        },
+        {
+          "do": "hopping from one coloured square to the next",
+          "family": "hop"
+        },
+        {
+          "do": "sitting on a stack of giant round counters",
+          "family": "sit"
+        },
+        {
+          "do": "pushing a tall wooden pawn along the path",
+          "family": "push"
+        },
+        {
+          "do": "standing on top of a huge wooden die with arms out wide",
+          "family": "stand"
+        },
+        {
+          "do": "leaning on a tall wooden pawn and grinning",
+          "family": "hide"
+        }
+      ]
+    },
+    {
+      "id": "parade",
+      "cast": [2, 3, 4, 5],
+      "label": "Leading the parade",
+      "wall": "The children at the very front of a parade coming towards the viewer through the place, with the band, the dancers, the stilt-walkers and a swan float stretching away behind them. Written 2026-10-29, untested. Pins `close-front`: the parade's leaders are by definition the nearest and largest, which is exactly the finder's rule, and the whole crowd is behind them where it cannot cover anyone. The hair trick is busy-town's: everyone in the parade and the crowd has a plumed hat, a paper crown, a flower wreath or a jester cap, so the only bare heads are the children's. Watch for: a child given a band hat too (the layout says bare heads, HAIR_V2 says it again), and the children drawn shoulder to shoulder in one marching rank — the layout asks for a loose line with clear ground between. No flags: a flag wants an emblem, and an emblem wants lettering. `flat_scale` is set, as in busy-town, because the find-difficulty bands would put a leader \"well back, genuinely hidden\".",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "camera": "close-front",
+      "brief": "This is a picture of a PARADE, and {the_children} are at the very front of it, leading it towards the viewer through the place described above. Behind them the parade stretches back into the distance: a marching band with big brass horns and drums, dancers in swirling skirts, stilt-walkers, jugglers, a pony pulling a cart heaped with flowers, a float shaped like a huge swan, bunches of balloons on strings, paper streamers and confetti in the air, and a cheering, waving crowd lining both sides. The light is bright and festive, the colours are the colours of balloons and bunting — red, yellow, sky blue, white — and everything in it is in motion.",
+      "layout": "{The_children} walk at the head of the parade, in a loose line across the front of the picture with clear ground between one and the next — never shoulder to shoulder — each at least a quarter of the picture's height and nearer and larger than anyone behind them, with their hair bare and uncovered. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "Marching behind them and cheering from both sides are {crowd}, all part of the parade. EVERY PERSON in the parade and in the crowd is a grown-up, and every one has their head covered as part of the show, each one differently: tall plumed band hats, paper crowns, flower wreaths, jester caps, bonnets, bandanas, feathered hats, pointed party hats. Not one of them shows their hair.",
+      "nearest": "{The_children} are the only children and the only bare heads in the whole picture: their hair is uncovered and plainly visible, and every other person, in the parade or watching it, has theirs covered. They are the nearest and largest figures in the picture.",
+      "solo_only": true,
+      "flat_scale": true,
+      "activities": [
+        {
+          "do": "beating a big drum hung on a strap over one shoulder",
+          "family": "music"
+        },
+        {
+          "do": "blowing a long brass trumpet",
+          "family": "music"
+        },
+        {
+          "do": "banging two shiny cymbals together",
+          "family": "music"
+        },
+        {
+          "do": "twirling a baton high in the air",
+          "family": "twirl"
+        },
+        {
+          "do": "waving a long rainbow ribbon on a stick in loops",
+          "family": "twirl"
+        },
+        {
+          "do": "waving to the crowd with both hands",
+          "family": "wave"
+        },
+        {
+          "do": "riding on a small flower-covered cart pulled by a pony",
+          "family": "riding"
+        },
+        {
+          "do": "scattering handfuls of confetti into the air",
+          "family": "throw"
+        },
+        {
+          "do": "holding a big bunch of balloons on strings",
+          "family": "carry"
+        },
+        {
+          "do": "walking on short stilts with a big grin",
+          "family": "walk"
+        },
+        {
+          "do": "doing a high-stepping march with knees up",
+          "family": "walk"
+        }
+      ]
+    },
+    {
+      "id": "flooded",
+      "cast": [2, 3, 4, 5],
+      "label": "An underwater day",
+      "wall": "The place has filled with clear sunlit sea water over the rooftops and everyone carries on with their day on the bottom as if water were air: fish between the branches, a turtle past a window, bubbles off everything. Written 2026-10-29, untested. The fully-clothed rule stands untouched (ordinary clothes, underwater, is the joke), nothing is on any face, and hair drifts but keeps its colour. The one real risk is ORIENTATION: a model's idea of 'underwater' is a horizontal swimmer, and the finder refuses anything not upright. The layout says UPRIGHT, heads up and feet down, twice; the activities keep them on the bottom (riding a turtle, collecting shells, sitting on a clam) and none of them floats up. If the first draw comes back with a child lying flat, that is this premise failing, not the art. Second risk: still water and a mirror surface above would draw the children twice; the brief keeps the surface far overhead and out of frame.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is an UNDERWATER picture: the place described above has filled up with clear, bright, sunlit sea water, right up over the treetops and the rooftops and far out of the top of the picture, and everyone is carrying on with their day down on the bottom as if the water were air. Shafts of sunlight slant down through the water, shoals of small striped fish drift between the branches, a slow sea turtle paddles past a window, seaweed sways where the grass was, a crab sits on a doorstep, an octopus reads in a chair, and strings of silver bubbles rise from everything. The colours are the blue-green of shallow sea with sunlight rippling across the ground. Everyone is in their ordinary clothes and breathes the water as easily as air, with nothing on any face, and hair lifts and drifts gently in the water while staying exactly its own colour and plainly visible.",
+      "layout": "{The_children} are UPRIGHT on the bottom — heads up, feet down, standing or stepping along the ground as if on dry land, never lying flat and never tilted — spread across the scene with clear water between them, each at least a quarter of the picture's height, their whole body in clear water from head to feet with nothing in front of it. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way. Their hair drifts a little in the water but stays its own colour and plainly visible.",
+      "crowd": "Around them, carrying on underwater as if nothing were different: {crowd}; and among them, at their ordinary size, an octopus, a sea turtle, a shoal of small striped fish, a seahorse, a crab and a pink anemone.",
+      "rules": "Nothing in the picture is lying flat or floating sideways: every person is upright with their head above their feet.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "walking beside a slow sea turtle with a hand on its shell",
+          "family": "riding"
+        },
+        {
+          "do": "holding the reins of a big friendly seahorse bobbing beside them",
+          "family": "riding"
+        },
+        {
+          "do": "blowing a long stream of silver bubbles",
+          "family": "play"
+        },
+        {
+          "do": "bouncing along the bottom in big slow moon-steps",
+          "family": "play"
+        },
+        {
+          "do": "waving at a curious octopus",
+          "family": "wave"
+        },
+        {
+          "do": "collecting shells into a little bucket",
+          "family": "gather"
+        },
+        {
+          "do": "scattering crumbs for a shoal of striped fish",
+          "family": "feed"
+        },
+        {
+          "do": "standing beside an open chest full of pearls holding up a string of them",
+          "family": "wonder"
+        },
+        {
+          "do": "standing beside a giant open clam shell holding up a pearl",
+          "family": "sit"
+        },
+        {
+          "do": "holding an open umbrella against a drift of rising bubbles",
+          "family": "wonder"
+        }
+      ]
+    },
+    {
+      "id": "star-visitors",
+      "cast": [2, 3, 4, 5],
+      "label": "The stars come down",
+      "wall": "A night picture in which the animals of the night sky — a bear, a swan, a lion, a horse, a hare — have climbed down out of the sky to play in the place, each made of bright points of light joined by thin glowing lines, see-through, and glowing enough to light the whole scene like a full moon. Written 2026-10-29, untested. The point of the glow clause is the 225-nit panel: hair colour is the identity and a dark picture loses it, so the creatures are the light source and the children are explicitly solid and fully coloured, never see-through. Sky stays plain (a few small stars) because RULES_V2 owns the top of the picture — the creatures are DOWN, which is the whole premise. Watch for: a child drawn in the same line-and-point style as the creatures (the layout forbids it), and darkness swallowing a brunette. Pairs naturally with lantern-night and dreamlike; works in render too.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is a NIGHT picture in which the STAR CREATURES HAVE COME DOWN TO PLAY. The great animals of the night sky — a bear, a swan, a lion, a horse, a hare, a deer, a dolphin — have climbed down out of the sky into the place described above, and each one is made of bright points of starlight joined by thin glowing lines, see-through, with the dark place showing faintly through its body. They stand and play among the trees and houses at the size of living animals, and they glow so brightly that the whole scene is lit as if by a full moon: every face, every head of hair and every colour is clear and bright in their blue-white light. Above, the sky is deep dark blue with only a few small stars left in it, empty where the creatures climbed down.",
+      "layout": "{The_children} stand on the ground among the star creatures, each lit bright by them, spread across the scene with clear ground between them and each at least a quarter of the picture's height. They are solid and fully coloured, drawn exactly like any child in daylight and never see-through or made of lines; only the star creatures glow. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The place at night is quiet but not empty: {crowd}, all of it bathed in the soft blue-white light of the star creatures.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "stroking the glowing nose of a star bear",
+          "family": "animal"
+        },
+        {
+          "do": "walking beside a star bear with one hand on its shoulder",
+          "family": "animal"
+        },
+        {
+          "do": "riding a star horse made of joined points of light",
+          "family": "riding"
+        },
+        {
+          "do": "dancing hand in paw with a star hare in a ring of light",
+          "family": "dance"
+        },
+        {
+          "do": "catching a small falling star in cupped hands",
+          "family": "catch"
+        },
+        {
+          "do": "tossing a glowing ball to a star lion",
+          "family": "throw"
+        },
+        {
+          "do": "holding a glowing star up high like a lantern",
+          "family": "carry"
+        },
+        {
+          "do": "tracing the glowing lines of a star swan with one finger",
+          "family": "wonder"
+        },
+        {
+          "do": "feeding a star deer a handful of glowing berries",
+          "family": "feed"
+        }
+      ]
+    },
+    {
+      "id": "painting-it",
+      "cast": [2, 3, 4, 5],
+      "label": "Painting the picture in",
+      "wall": "The children are painting the picture themselves and are only part-way through: the left and middle are the place in full colour, and towards the right the paint runs out into a wash, then pencil outlines, then bare white paper. Each child holds a brush, roller or crayon far bigger than an ordinary one. Written 2026-10-29, untested. The seven-year-old's premise: it is a picture ABOUT making pictures. Finder risk is contrast — a child standing in the unpainted part is pale lines on white — so the layout puts every child in the finished part and says they are always completely painted from head to toe. Illustration and anime only: 'half painted' has no honest meaning for a 3D render. Watch for: the model painting the top of the picture (sky) rather than the ground; and paint on faces, which FACE_COVER would refuse in a written line and the brief avoids by keeping the paint on brushes, trees and hands.",
+      "families": [
+        "illustration",
+        "anime"
+      ],
+      "brief": "This is a picture that {the_children} are PAINTING THEMSELVES, and they are only part-way through. The left side and the middle of the picture are finished — the place described above in full bright colour — and towards the right side the paint runs out: the colours thin to a pale wash, then to faint pencil outlines, then to plain white paper with nothing on it yet. Each child holds a paintbrush, a paint roller or a fat crayon far bigger than an ordinary one, and colour spreads out from wherever they have been working: a fresh wet stroke of green, a tree coloured in on one side and bare on the other, a drip running down from a cloud. The children themselves are always completely painted, in full colour from head to toe.",
+      "layout": "{The_children} stand in the FINISHED, fully coloured part of the picture, spread across it with clear ground between them and each at least a quarter of the picture's height, each at work on the place around them with a brush, roller or crayon. Every child is painted completely, in full colour from head to toe, with no bare paper anywhere on them. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "In the finished part the place is busy: {crowd}; in the unfinished part the same kinds of thing stand as faint pencil outlines on white paper, waiting for their colour.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "painting a tall tree green with a brush as big as a broom",
+          "family": "paint"
+        },
+        {
+          "do": "dabbing red apples onto a painted tree with a thick brush",
+          "family": "paint"
+        },
+        {
+          "do": "rolling a wash of colour across a bare hill with a roller on a long pole",
+          "family": "roll"
+        },
+        {
+          "do": "colouring in a house with a crayon as long as an arm",
+          "family": "crayon"
+        },
+        {
+          "do": "dipping a huge brush into a bucket of yellow paint",
+          "family": "dip"
+        },
+        {
+          "do": "stamping flowers onto the grass with a big round sponge",
+          "family": "stamp"
+        },
+        {
+          "do": "drawing the outline of a bird with a pencil taller than themselves",
+          "family": "draw"
+        },
+        {
+          "do": "standing back, brush in hand, to look at a half-painted tree",
+          "family": "look"
+        },
+        {
+          "do": "sitting on an upturned paint bucket mixing colours on a plate",
+          "family": "mix"
+        },
+        {
+          "do": "carrying a dripping paint pot in each hand",
+          "family": "carry"
+        }
+      ]
+    },
+    {
+      "id": "all-seasons",
+      "cast": [2, 3, 4],
+      "label": "Every season at once",
+      "wall": "The place drawn in every season at once: side-by-side slices across the width — snow, blossom, full summer, red and gold leaves — with the same trees and path running straight through all of them, and each child in a DIFFERENT season. Written 2026-10-29, untested. The slices are cells for the finder, the way the cutaway's rooms are. The trick that makes it work with the activity dealer: the activity pool's `family` IS the season, so 'at most one per family' deals each child a different season for free, and the layout says a child stands in the season their activity belongs to. Cast is 2 to 4 because there are four seasons. Watch for: the week's weather line (in SCENE) arguing with three of the four slices — the brief says every season on purpose; and seams drawn as literal lines or posts. `--no-context` is a reasonable pairing. Clothes change per slice, which the identity contract allows (clothes were always meant to vary) — hair stays bare in every one.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is a picture of the place described above in EVERY SEASON AT ONCE. The picture is divided across its width into side-by-side slices, each one the same place in a different season, joined edge to edge: deep snow, bare branches and a low pale sun in one; blossom, fresh green and puddles in the next; full summer leaves, long grass and bright hot sunshine in another; red and gold falling leaves and a soft golden light in the last. The same trees, the same path and the same buildings run straight on through all of them, changing their coats as they cross from one season into the next, and the change is sudden and clean, like a line drawn straight down the picture. {The_children} are each in a DIFFERENT season.",
+      "layout": "{The_children} each stand in a DIFFERENT season — the one that what they are doing belongs to — one child per slice, well apart across the picture, each of them in the picture exactly once; a season with none of them in it holds only the place itself and a few small strangers far off, each at least a quarter of the picture's height and dressed for the season around them: a warm coat, mittens and earmuffs in the snow, a raincoat and boots in spring, a t-shirt and shorts in summer, a jumper in autumn, with hair bare and plainly visible in every one. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "Each season's slice has its own life: {crowd}, shared out across the seasons and doing what suits each one — sledging where it snows, splashing where it rains, picnicking in the sunshine, kicking through leaves in the autumn.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "building a snowman with a carrot nose in deep snow",
+          "family": "winter"
+        },
+        {
+          "do": "pulling a wooden sledge up a snowy slope",
+          "family": "winter"
+        },
+        {
+          "do": "catching snowflakes on an outstretched mitten",
+          "family": "winter"
+        },
+        {
+          "do": "jumping into a puddle in bright rain boots",
+          "family": "spring"
+        },
+        {
+          "do": "picking a bunch of daffodils under a blossoming tree",
+          "family": "spring"
+        },
+        {
+          "do": "planting a seedling with a little trowel",
+          "family": "spring"
+        },
+        {
+          "do": "blowing a dandelion clock in long grass",
+          "family": "summer"
+        },
+        {
+          "do": "eating an ice lolly in bright sunshine",
+          "family": "summer"
+        },
+        {
+          "do": "flying a kite in a warm summer breeze",
+          "family": "summer"
+        },
+        {
+          "do": "kicking through a drift of red and gold leaves",
+          "family": "autumn"
+        },
+        {
+          "do": "carrying a fat orange pumpkin in both arms",
+          "family": "autumn"
+        },
+        {
+          "do": "throwing an armful of fallen leaves into the air",
+          "family": "autumn"
+        }
+      ]
+    },
+    {
+      "id": "dino-day",
+      "cast": [2, 3, 4, 5],
+      "label": "A day with the dinosaurs",
+      "wall": "The place exactly as it should be, and every other PERSON in it is a gentle, round-bellied dinosaur going about that person's business — a long-necked one with a shopping basket, a three-horned one pushing a pram, a small feathered one on a bicycle. Written 2026-10-29, untested. The crowd-swap family of premise: setting untouched, identity made structural because a dinosaur has no hair, and the children are the only people in the picture at all. The brief says PERSON, not creature, so the dog clause that follows the crowd sentence still describes him and not a dinosaur. Watch for: a house-high dinosaur standing in front of a child (the layout says around and behind, never in front), and a dinosaur drawn with teeth and a roar — kind eyes and gentle smiles are named instead. Describe, never name: no species names, only shapes.",
+      "families": [
+        "illustration",
+        "anime",
+        "render"
+      ],
+      "brief": "This is a picture in which EVERY OTHER PERSON IS A FRIENDLY DINOSAUR. The place described above is exactly as it should be, and all the people who would normally be in it are gentle, round-bellied, cheerful dinosaurs going about the very same business on two legs or four: a long-necked one with a shopping basket, a three-horned one pushing a pram, a small feathered one on a bicycle, a big spiky-backed one carrying a ladder, a tiny crested one holding a balloon — in soft greens, oranges, blues and spotted yellows, with kind eyes and gentle smiles. Some are as tall as a house and some are knee-high, and all of them are perfectly at home.",
+      "layout": "{The_children} are spread across the scene with clear ground between them, each at least a quarter of the picture's height, with the dinosaurs around and behind them and never in front of a child. A dinosaur a child is with stands BESIDE that child, an arm's length away, never behind or over them, so the child's whole body and face stand clear of it. Each child's face is towards the viewer (front on, three-quarter or profile) with head and body turned the same way.",
+      "crowd": "The place is as busy as ever: {crowd} — and every PERSON among them is one of the dinosaurs, in every size from knee-high to house-high, doing exactly what that person would be doing.",
+      "nearest": "{The_children} are the only children in the picture — the only people at all; everyone else is a dinosaur.",
+      "rules": "Every dinosaur is dressed only in its own bare scaly skin, in its own colours.",
+      "solo_only": true,
+      "activities": [
+        {
+          "do": "feeding a leafy branch to a tall long-necked dinosaur",
+          "family": "feed"
+        },
+        {
+          "do": "offering an apple to a small feathered dinosaur",
+          "family": "feed"
+        },
+        {
+          "do": "leading a slow spiky-backed dinosaur by a rope",
+          "family": "riding"
+        },
+        {
+          "do": "shaking claws with a small feathered dinosaur",
+          "family": "greet"
+        },
+        {
+          "do": "handing a sandwich up to a huge gentle dinosaur",
+          "family": "eat"
+        },
+        {
+          "do": "swinging on a swing while a dinosaur with tiny arms claps from the side",
+          "family": "play"
+        },
+        {
+          "do": "scrubbing a dinosaur's back with a big soapy brush",
+          "family": "care"
+        },
+        {
+          "do": "racing a small dinosaur along a path",
+          "family": "run"
+        },
+        {
+          "do": "painting bright spots on a patient dinosaur with a brush",
+          "family": "paint"
+        },
+        {
+          "do": "dancing with a tiny crested dinosaur",
+          "family": "dance"
+        }
+      ]
     }
   ]
 }

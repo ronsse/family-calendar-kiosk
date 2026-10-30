@@ -51,6 +51,10 @@ is byte-identical to every scene before the axis existed.
 | `giants` | all | — | The three children are giants, taller than the houses; the crowd at their feet. | untested |
 | `tiny` | all | low-angle (pinned) | Mouse-sized, the setting from ankle height; its own pool of 11 (beetle pony, bumblebee, leaf boat, dandelion, mushroom, grass slide, marble, raindrop, spider-thread swing, strawberry-with-a-mouse). | untested |
 
+Nine more premises were written on 2026-10-29 and none has been drawn: §6 has the brainstorm
+they came out of, what was kept and what was rejected on which rule. (`impossible-photo` in the
+table above was removed on 2026-09-18 with the photoreal family; the row is kept as history.)
+
 [^wim]: *Wimmelbilderbuch* — Ali Mitgutsch's "teeming picture books", the genre Waldo grew out
 of; the modern seek-and-find lists (imaginationsoup.net "20 best seek-and-find books") are the
 same shape. fal's Nano Banana Pro prompting guide confirms it holds 30–50 figures in a crowd.
@@ -99,7 +103,9 @@ silhouettes have no hair colour and no face), *underwater* (passes if hair float
 mask — snorkel pushed up), *on the moon* (helmet under the arm, as the astronaut activity),
 *storybook page* (a plain scene inside a painted border — the border is a noun; test once),
 *night with lanterns* (already a setting; not a premise), *parade float* (a shared vehicle —
-fights limit 4 unless each child has her own float).
+fights limit 4 unless each child has her own float). *Underwater* and the parade were written
+on 2026-10-29 as `flooded` and `parade` (§6); the moon, shadow puppets and the storybook border
+were rejected there, each on a limit.
 
 **Settings (where):** underwater reef, the moon's surface, a treetop village, a rooftop at
 night, inside a giant pumpkin, a snow-globe town, a dragon's back seen as terrain — see the
@@ -141,3 +147,174 @@ reachable says so on the run's first line and draws without.
 - Not measured: `giants`, `tiny`, the monster-truck roof, the winged horse, any context line in
   a generated picture (the wording was verified in `--print-prompt` and `--dry-run` only; the
   first live one is next Sunday's timer run), and the finder's look-alike rate on `busy-town`.
+
+## 6. Nine more premises, written 2026-10-29 — each drawn once the same day (§6.5)
+
+Brainstormed for the three (3, 5 and 7) and judged on three things: does a child point at it
+from the sofa, does it read on a 21.5" panel from a few feet, and can the hard rules of §1 be
+satisfied by construction rather than by hoping. Every entry below is in
+`tools/scene-premises.json` with its own activity pool; the five that were there are
+byte-identical (the pinned prompt fixture still passes, `npm run verify:*` all exit 0, and
+`scene-week.py --dry-run --no-context --premise <id> --week 2026-W45` exits 0 for each).
+Each was then drawn once by both models; the verdicts are in §6.5.
+
+Two things to know before using one. The timer's director only offers premises listed in
+`db/household.json` → `scenes.premises` (the example file lists `plain` alone), so a new one
+reaches the wall by `scene-week.py --premise <id>` until the household adds it there. And every
+premise except `parade` keeps the find-difficulty bands, exactly as `giants`, `tiny` and
+`cutaway` do; `parade` sets `flat_scale` like `busy-town`, because a band that puts child 1
+"well back, genuinely hidden" cannot lead a parade.
+
+### 6.1 The brainstorm, one line each
+
+1. **Toy-box world** — the place rebuilt out of toys at the children's size; peg dolls for people. *Kept.*
+2. **Land made of food** — loaf hills, honey river, gingerbread people. *Kept.*
+3. **Giant board game** — a path of coloured squares across the place, a shed-sized die, pawns for other players. *Kept.*
+4. **Leading the parade** — the children at the head of a parade coming at the viewer. *Kept.*
+5. **Underwater day** — the place flooded with clear sea, everyone carrying on. *Kept.*
+6. **The stars come down** — constellation animals, made of joined points of light, playing on the ground. *Kept.*
+7. **Painting the picture in** — the picture half-painted, the children holding the brushes. *Kept.*
+8. **Every season at once** — the place in four side-by-side seasons, each child in a different one. *Kept.*
+9. **A day with the dinosaurs** — every other person is a gentle dinosaur. *Kept.*
+10. Sky-sea — fish and whales swimming through the sky overhead. *Rejected.*
+11. Gravity-optional — everyone floating, the place drifting apart. *Rejected.*
+12. Inside a snow globe — the place under glass on a base. *Rejected.*
+13. A magic shop window — the children looking in through a lit window at the place. *Rejected.*
+14. Knitted / chalkboard / glowing-at-night world. *Rejected (styles).*
+15. Inside a giant object — a teapot, a pumpkin, a shoe. *Rejected (setting; near `tiny`).*
+16. Storybook page — the scene inside a painted border. *Rejected.*
+17. Puppet theatre / on stage — the place as a set with footlights and a curtain. *Rejected.*
+18. Riding in bubbles — each child in a floating soap bubble. *Rejected.*
+19. Hall of mirrors / kaleidoscope. *Rejected.*
+20. Pop-up book — the place rising off an open page. *Rejected.*
+21. Cloud kingdom / on the moon / dinosaur land. *Rejected (settings).*
+22. Balloon world — everything inflated. *Rejected (a third "made of", one too many).*
+23. Robot town — every other person a friendly robot. *Held back; same shape as dino-day.*
+24. Shadow puppets. *Rejected.*
+25. Totem / stacked / piggyback. *Rejected.*
+26. One shared parade float. *Rejected.*
+
+### 6.2 What was kept, and why
+
+| id | Label | Families | Camera | The one risk to look at first |
+|---|---|---|---|---|
+| `toy-world` | A toy-box world | all | — | A peg doll painted with hair in a child's colour; the dog drawn as a plush toy. |
+| `food-land` | A land made of food | all | — | "At the children's scale" read as "the children are tiny", which would make it `tiny`. |
+| `board-game` | A giant board game | all | high-angle (pinned) | Print — a board game's props carry numbers in real life; the brief says plain squares, round dots, coloured wedges, and the rules say it again. |
+| `parade` | Leading the parade | all | close-front (pinned) | A child given a band hat, or three drawn shoulder to shoulder in one rank. |
+| `flooded` | An underwater day | all | — | Orientation: a model's "underwater" is a horizontal swimmer, and the finder refuses anything not upright. The layout says UPRIGHT twice and no activity floats. |
+| `star-visitors` | The stars come down | all | — | A dark picture losing a brunette; a child drawn in the creatures' line-and-point style. The creatures are the light source on purpose. |
+| `painting-it` | Painting the picture in | illustration, anime | — | A child standing in the unpainted part is pale lines on white; the layout keeps every child in the finished part. |
+| `all-seasons` | Every season at once | all | — | The week's weather line arguing with three of the four slices (pair with `--no-context`); seams drawn as posts. Cast 2–4: there are four seasons. |
+| `dino-day` | A day with the dinosaurs | all | — | A house-high dinosaur standing in front of a child; teeth and a roar. The brief says kind eyes and gentle smiles, and the layout says around and behind. |
+
+Why these nine, in the terms of §1:
+
+- **Identity made structural, four ways.** `toy-world`, `food-land` and `board-game` make every
+  other person something with no hair at all (a peg doll, a gingerbread figure, a pawn);
+  `dino-day` makes them dinosaurs; `parade` reuses the busy-town move and covers every other
+  head. In each, the only hair in the frame belongs to the children by construction, not by
+  instruction. `flooded`, `star-visitors`, `painting-it` and `all-seasons` keep the default
+  "nearest and largest" rule and change the picture around the children instead.
+- **Cells for the finder.** `board-game` (one child per square, empty squares between),
+  `all-seasons` (one child per slice) and `parade` (a loose line across the front) each give
+  the finder three targets that cannot overlap, the way the cutaway's rooms do.
+- **The activity dealer does the work.** In `all-seasons` the activity pool's `family` IS the
+  season, so "at most one activity per family" deals each child a different season for free
+  and the layout says a child stands in the season her activity belongs to.
+- **The 225-nit panel.** `star-visitors` is the only night premise, and its creatures glow
+  "as if by a full moon" so that hair colour — the identity — survives the dark.
+- **Three "made of" premises would be two too many** — toy, food and balloon all swap the
+  material of the place. Toy and food stayed because they are the two a three-year-old names
+  unprompted; balloon went.
+- **Describe, never name**, throughout: no dinosaur species, no board game, no film. The
+  dinosaurs are "long-necked", "three-horned", "spiky-backed", "small feathered"; the game is
+  squares, a die, a spinner and pawns.
+
+### 6.3 What was rejected, and the rule each broke
+
+| Idea | Rule |
+|---|---|
+| Sky-sea (fish overhead) | `RULES_V2` owns the top strip of every picture — open sky with at most a bird, a star or a hill. A premise that fills the sky contradicts the rule block that follows it. |
+| Gravity-optional / floating | Orientation. Floating bodies tilt and turn, and the finder reads any non-upright pose as a head on backwards (§1 limit 3, the handstand). |
+| Snow globe | Glass between the viewer and the children, lettering on the base in every reference image, and a round picture in a 16:9 frame; what is left is `tiny`. |
+| Magic shop window | Lettering on the glass and the fascia; glass over the faces. |
+| Knitted / chalkboard / glowing night | Styles, not premises — they change how it is drawn, not what kind of picture it is. Chalk also fails the panel (dark ground). |
+| Inside a giant object | A setting (and a `tiny` variant); goes in `scene-settings.json` if wanted. |
+| Storybook border | "The border is a noun" (§3). A rule describing a border draws a border, and the border carries lettering. |
+| Puppet theatre / stage | A marquee is lettering; a stage is a cutaway with a curtain; footlights put faces in shadow from below. |
+| Riding in bubbles | Behind glass, and a bubble turns — orientation again. |
+| Mirrors / kaleidoscope | Reflections are look-alikes by definition, and the finder refuses a look-alike. |
+| Pop-up book | The open page carries lettering, and the picture is seen at an angle. |
+| Cloud kingdom, the moon, dinosaur land | Settings, not premises; the moon needs a helmet. |
+| Shadow puppets | Silhouettes have no hair colour and no face — fails limits 2 and 3. |
+| Totem / piggyback | No child carrying another. |
+| One shared float | A shared vehicle fights limit 4; `parade` gives each child their own thing to do instead. |
+| Robot town | Held back, not rejected: it is `dino-day` with a different crowd and the two should not land in the same week. Write it if dino-day draws well. |
+
+### 6.4 What has NOT been measured
+
+Before the first draws (§6.5), everything. Those draws answered most of it, once each: peg dolls
+and gingerbread people came back without hair; `flooded` came back upright on both models;
+`all-seasons` drew four clean slices on both; `star-visitors` held hair colour in the dark on
+both; and the finder boxed a child on the board-game squares and in a season slice. What one
+draw per model cannot say is how often any of that holds, and nothing yet says whether a CHILD
+finds herself in these pictures. That second question is the one that counts.
+
+### 6.5 First draws, 2026-10-29
+
+One forced `scene-week.py --no-context --premise <id> --setting <s>` run each (both models,
+one brief), $1.80 in all. Eleven of eighteen pictures passed the finder and went to the panel as
+candidates; at least one picture of every premise passed, and `star-visitors` and
+`painting-it` passed on both models. Each of the seven refusals was looked at by eye, and the
+three that looked wrong to refuse had the finder alone re-run on them (cents): all three were
+refused again, for the same reasons.
+
+| Premise | Setting (style) | gpt-image-2 | nano-banana-2 |
+|---|---|---|---|
+| `toy-world` | big-library | candidate | refused: slots 1/2 swapped (eldest drawn far back and small) |
+| `food-land` | castle-village (claymation) | candidate | refused, rightly: the claymation children are not ours |
+| `board-game` | autumn-forest | candidate | refused, rightly: middle child tiny at the top of a slide |
+| `parade` | lantern-night-market | refused: look-alike answer unreadable, twice | candidate |
+| `flooded` | dragon-shore (dreamlike) | candidate | refused: middle child cut off by her box (on a seahorse), twice |
+| `star-visitors` | lamppost-wood | candidate | candidate |
+| `painting-it` | harvest-market | candidate | candidate |
+| `all-seasons` | alpine-lake | refused, rightly: the boy drawn TWICE | candidate |
+| `dino-day` | rainy-market-street (house) | refused: locator failure, twice | candidate |
+
+What the draws taught:
+
+- **`all-seasons` had a hole and gpt-image-2 found it.** Four slices, three children: it filled
+  the spare season by drawing the youngest a second time, and the look-alike check refused the
+  copy (142% of his height, a boy in a blue jacket by a snowman). nano-banana-2 left the fourth
+  season to two small strangers far off, which is the right answer. The layout now says each
+  child is in the picture exactly once and that a season without one holds only the place
+  and a few small strangers far off. Not yet redrawn.
+- **`parade` on gpt-image-2 is the 2026-10-27 Halloween-party failure again.** The picture is
+  clean (three children at the front, hatted bandsmen behind), but the look-alike nomination
+  is asked to list every other child, and a parade crowd ran past `LOOKALIKE_MAX_TOKENS` on
+  both attempts. A premise built on a crowd will meet this cap every time. Raising it again,
+  or reading a cut-off list, is a decision about the finder rather than about this premise,
+  and has not been taken.
+- **`dino-day` on gpt-image-2 refused on geometry that the eye does not see**: all three faces
+  are plainly visible, yet the locator reported two of them hidden and one in the wrong portrait.
+  The likeliest cause is the child-sized dinosaurs, which wear clothes and stand beside each
+  child. The same refusal came back on a second run, so this is the locator's reading of this
+  picture rather than noise.
+- `toy-world`'s peg dolls and `dino-day`'s dinosaurs did their job: no look-alike refusal
+  in either, which is the structural identity move working as designed.
+
+**Prompt fixes, 2026-10-30, not yet redrawn.** Each refusal above got a change in the
+premise's own words, described as what should be there rather than as what must not be:
+`toy-world` keeps every child upright or sitting up straight (the crouched, far-back eldest
+was the slot swap) and its top-spinning activity no longer bends a child double; `food-land`
+says the children are drawn as their portraits show them and are the only things in the land
+not made of food; `board-game` puts all three on the near half of the board and lands the
+slide child at its foot rather than high on it; `parade` says every marcher and onlooker is a
+grown-up, so the look-alike nomination has no crowd of children to list; `flooded` gives each
+child a whole body in clear water with nothing in front of it, and every ride became walking
+or standing beside the creature; `dino-day` stands each dinosaur beside its child, dresses
+every dinosaur only in its own scaly skin, and turned the ride into leading one by a rope.
+The locator swap and the band-driven depth are made less likely by these, not ruled out.
+The first `food-land` rewording said "real children" and `prompt_guard` refused it as a
+likeness request before any spend; the committed wording does not.

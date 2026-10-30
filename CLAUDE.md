@@ -236,9 +236,12 @@ The kiosk's one knob is `DASHBOARD_URL` in `<pi>/.config/kiosk.env` (seeded from
   coordinate-order change; Qwen answered `[xmin,ymin,...]` the same day.
 - **A scene has FIVE axes now, and the fifth is opt-in.** Setting (where), style (how drawn),
   camera (where you stand), activities (what they do) and PREMISE (what KIND of picture —
-  `tools/scene-premises.json`: `busy-town` seek-and-find, `impossible-photo`, `cutaway`,
-  `giants`, `tiny`). The timer always draws `plain`, which is byte-identical to every earlier
-  scene; a person picks a premise for a week with `scene-week.py --premise X`. Measured
+  `tools/scene-premises.json`: `busy-town` seek-and-find, `cutaway`, `giants`, `tiny`, and
+  nine more added 2026-10-29, each first drawn that day — `docs/scene-ideas.md` §6). The
+  director may choose any premise in `scenes.premises` (household default `["plain"]`; this
+  household opted into all fourteen on 2026-10-29), the rotation
+  fallback always draws `plain`, which is byte-identical to every earlier scene, and a person
+  forces one with `scene-week.py --premise X`. Measured
   2026-09-13 (`docs/scene-ideas.md`): `impossible-photo` on gpt-image-2 held the cast and the
   described superhero suit was NOT refused — describe, never name, is the rule; `busy-town`
   drew a real busy-picture and **the finder tapped a look-alike** (a second braided figure);
